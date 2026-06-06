@@ -316,70 +316,96 @@ function CallOverlay() {
 
   // ─── Socket Listeners ─────────────────────────────────
   useEffect(() => {
-    const socket = getSocket()
-    if (!socket) return
+    let cleanupFns = null
 
-    const onIncomingCall = ({ callerId, callerName, callerAvatar, offer }) => {
-      console.log('📞 Incoming call from', callerName)
-      if (callStateRef.current !== 'idle') {
-        socket.emit('call_rejected', { callerId })
-        return
+    const setupListeners = (socket) => {
+      const onIncomingCall = ({ callerId, callerName, callerAvatar, offer }) => {
+        console.log('📞 Incoming call from', callerName, 'caller:', callerId)
+        if (callStateRef.current !== 'idle') {
+          socket.emit('call_rejected', { callerId })
+          return
+        }
+        callerIdRef.current = callerId
+        pendingOfferRef.current = offer
+        remoteDescSetRef.current = false
+        iceCandidateQueueRef.current = []
+        setRemoteUser({ name: callerName, avatar: callerAvatar })
+        setCallState('ringing')
       }
-      callerIdRef.current = callerId
-      pendingOfferRef.current = offer
-      remoteDescSetRef.current = false
-      iceCandidateQueueRef.current = []
-      setRemoteUser({ name: callerName, avatar: callerAvatar })
-      setCallState('ringing')
-      // DON'T create PC here — create it in answerCall when user accepts
-    }
 
-    const onCallAnswered = async ({ answer }) => {
-      console.log('📞 Remote answered!')
-      const pc = pcRef.current
-      if (!pc) return
-      try {
-        await pc.setRemoteDescription(new RTCSessionDescription(answer))
-        remoteDescSetRef.current = true
-        console.log('📞 Remote description set (answer)')
-        await flushIceCandidates(pc)
-      } catch(e) {
-        console.error('❌ setRemoteDescription error:', e)
-      }
-    }
-
-    const onCallRejected = () => { cleanup() }
-
-    const onIceCandidate = async ({ candidate }) => {
-      if (!candidate) return
-      const pc = pcRef.current
-      if (pc && remoteDescSetRef.current) {
+      const onCallAnswered = async ({ answer }) => {
+        console.log('📞 Remote answered!')
+        const pc = pcRef.current
+        if (!pc) return
         try {
-          await pc.addIceCandidate(new RTCIceCandidate(candidate))
-        } catch(e) { console.warn('ICE add error:', e) }
-      } else {
-        // Queue until remote description is set
-        iceCandidateQueueRef.current.push(candidate)
+          await pc.setRemoteDescription(new RTCSessionDescription(answer))
+          remoteDescSetRef.current = true
+          console.log('📞 Remote description set (answer)')
+          await flushIceCandidates(pc)
+        } catch(e) {
+          console.error('❌ setRemoteDescription error:', e)
+        }
+      }
+
+      const onCallRejected = () => { cleanup() }
+
+      const onIceCandidate = async ({ candidate }) => {
+        if (!candidate) return
+        const pc = pcRef.current
+        if (pc && remoteDescSetRef.current) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate))
+          } catch(e) { console.warn('ICE add error:', e) }
+        } else {
+          iceCandidateQueueRef.current.push(candidate)
+        }
+      }
+
+      const onCallEnded = () => { cleanup() }
+      const onCallUnavailable = () => { cleanup() }
+
+      socket.on('incoming_call', onIncomingCall)
+      socket.on('call_answered', onCallAnswered)
+      socket.on('call_rejected_response', onCallRejected)
+      socket.on('ice_candidate', onIceCandidate)
+      socket.on('call_ended', onCallEnded)
+      socket.on('call_unavailable', onCallUnavailable)
+
+      console.log('📞 Call listeners registered!')
+
+      return () => {
+        socket.off('incoming_call', onIncomingCall)
+        socket.off('call_answered', onCallAnswered)
+        socket.off('call_rejected_response', onCallRejected)
+        socket.off('ice_candidate', onIceCandidate)
+        socket.off('call_ended', onCallEnded)
+        socket.off('call_unavailable', onCallUnavailable)
       }
     }
 
-    const onCallEnded = () => { cleanup() }
-    const onCallUnavailable = () => { cleanup() }
+    // Try to setup immediately, or poll until socket is available
+    const trySetup = () => {
+      const socket = getSocket()
+      if (socket) {
+        cleanupFns = setupListeners(socket)
+        return true
+      }
+      return false
+    }
 
-    socket.on('incoming_call', onIncomingCall)
-    socket.on('call_answered', onCallAnswered)
-    socket.on('call_rejected_response', onCallRejected)
-    socket.on('ice_candidate', onIceCandidate)
-    socket.on('call_ended', onCallEnded)
-    socket.on('call_unavailable', onCallUnavailable)
+    if (!trySetup()) {
+      // Socket not ready yet — poll every 500ms
+      const interval = setInterval(() => {
+        if (trySetup()) clearInterval(interval)
+      }, 500)
+      return () => {
+        clearInterval(interval)
+        if (cleanupFns) cleanupFns()
+      }
+    }
 
     return () => {
-      socket.off('incoming_call', onIncomingCall)
-      socket.off('call_answered', onCallAnswered)
-      socket.off('call_rejected_response', onCallRejected)
-      socket.off('ice_candidate', onIceCandidate)
-      socket.off('call_ended', onCallEnded)
-      socket.off('call_unavailable', onCallUnavailable)
+      if (cleanupFns) cleanupFns()
     }
   }, [cleanup, flushIceCandidates])
   // ↑ NO callState dependency! Use callStateRef instead
