@@ -26,8 +26,8 @@ export async function getMe(req, res, next) {
 // PATCH /api/users/me
 export async function updateMe(req, res, next) {
   try {
-    const { displayName, statusText, statusEmoji } = req.body
-    const user = await User.updateProfile(req.user.id, { displayName, statusText, statusEmoji })
+    const { displayName, statusText, statusEmoji, avatarUrl } = req.body
+    const user = await User.updateProfile(req.user.id, { displayName, statusText, statusEmoji, avatarUrl })
     if (!user) {
       return res.status(400).json({ error: 'No se proporcionaron campos para actualizar' })
     }

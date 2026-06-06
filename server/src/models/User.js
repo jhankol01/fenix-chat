@@ -39,7 +39,7 @@ const User = {
     return result.rows[0] || null
   },
 
-  async updateProfile(id, { displayName, statusText, statusEmoji }) {
+  async updateProfile(id, { displayName, statusText, statusEmoji, avatarUrl }) {
     const fields = []
     const values = []
     let idx = 1
@@ -47,6 +47,7 @@ const User = {
     if (displayName !== undefined) { fields.push(`display_name = $${idx++}`); values.push(displayName) }
     if (statusText !== undefined) { fields.push(`status_text = $${idx++}`); values.push(statusText) }
     if (statusEmoji !== undefined) { fields.push(`status_emoji = $${idx++}`); values.push(statusEmoji) }
+    if (avatarUrl !== undefined) { fields.push(`avatar_url = $${idx++}`); values.push(avatarUrl) }
 
     if (fields.length === 0) return null
 

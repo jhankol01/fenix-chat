@@ -23,6 +23,9 @@ const useAuthStore = create((set, get) => {
     isAuthenticated: false,
     isLoading: true, // true initially to check stored session
 
+    // Update user data locally
+    setUser: (userData) => set({ user: userData }),
+
     // Register
     register: async ({ username, email, password }) => {
       const data = await api.post('/auth/register', { username, email, password })
