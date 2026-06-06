@@ -5,7 +5,7 @@ import { body, validationResult } from 'express-validator'
 import User from '../models/User.js'
 import config from '../config/index.js'
 import tokenStore from '../config/tokenStore.js'
-import { sendVerificationEmail } from '../services/email.js'
+import { sendVerificationEmail, sendPasswordResetEmail } from '../services/email.js'
 import logger from '../utils/logger.js'
 
 const SALT_ROUNDS = 12
@@ -263,6 +263,65 @@ export async function resendVerification(req, res, next) {
     logger.info(`Verification email resent to ${email}`)
 
     res.json({ message: 'Link de verificación reenviado. Revisa tu email.' })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// POST /api/auth/forgot-password
+export async function forgotPassword(req, res, next) {
+  try {
+    const { email } = req.body
+    if (!email) {
+      return res.status(400).json({ error: 'Email requerido' })
+    }
+
+    const user = await User.findByEmail(email)
+    if (!user || !user.is_verified) {
+      // Don't reveal if user exists
+      return res.json({ message: 'Si el email existe, recibirás un link para restablecer tu contraseña.' })
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex')
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+    await User.setResetToken(user.id, resetToken, resetExpires)
+
+    // Send reset email
+    await sendPasswordResetEmail(email, resetToken)
+
+    logger.info(`Password reset requested for ${email}`)
+
+    res.json({ message: 'Si el email existe, recibirás un link para restablecer tu contraseña.' })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// POST /api/auth/reset-password
+export async function resetPassword(req, res, next) {
+  try {
+    const { token, password } = req.body
+    if (!token || !password) {
+      return res.status(400).json({ error: 'Token y nueva contraseña requeridos' })
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' })
+    }
+
+    const user = await User.findByResetToken(token)
+    if (!user) {
+      return res.status(400).json({ error: 'Token inválido o expirado. Solicita un nuevo link.' })
+    }
+
+    // Hash new password
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS)
+    await User.updatePassword(user.id, passwordHash)
+
+    logger.info(`Password reset successful for ${user.username} (${user.email})`)
+
+    res.json({ message: '¡Contraseña actualizada! Ya puedes iniciar sesión.' })
   } catch (err) {
     next(err)
   }

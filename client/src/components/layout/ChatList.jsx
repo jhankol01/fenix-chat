@@ -1,328 +1,313 @@
-import { useState } from 'react'
-import { Flame, Search, Plus, Settings, Users, MessageCircle, Volume2 } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Flame, Search, Plus, Settings, MessageCircle, User, X, Loader2 } from 'lucide-react'
+import useChatStore from '../../stores/chatStore'
+import useAuthStore from '../../stores/authStore'
 import './ChatList.css'
 
 /**
- * Datos mock de comunidades
- */
-const MOCK_COMMUNITIES = [
-  {
-    id: 'c1',
-    name: 'Gamers Zone',
-    emoji: '🎮',
-    gradient: 'linear-gradient(135deg, #00D4DD, #0066FF)',
-    lastMessage: 'NeonCoder: gg ez!',
-    time: 'Ayer',
-    unread: 3,
-    voiceCount: 3,
-    voiceUsers: [
-      { name: 'NeonCoder', initials: 'NC', gradient: 'linear-gradient(135deg, #00D4DD, #0066FF)', photo: 'https://i.pravatar.cc/150?img=11' },
-      { name: 'Luna_Star', initials: 'LS', gradient: 'linear-gradient(135deg, #FF2DAA, #8A00FF)', photo: 'https://i.pravatar.cc/150?img=5' },
-      { name: 'DarkKnight', initials: 'DK', gradient: 'linear-gradient(135deg, #8A00FF, #5500cc)', photo: 'https://i.pravatar.cc/150?img=12' },
-    ],
-  },
-  {
-    id: 'c2',
-    name: 'Design Team',
-    emoji: '🎨',
-    gradient: 'linear-gradient(135deg, #FF2DAA, #8A00FF)',
-    lastMessage: 'Luna: miren el nuevo diseño',
-    time: '2h',
-    unread: 0,
-    voiceCount: 0,
-  },
-  {
-    id: 'c3',
-    name: 'Music Lovers',
-    emoji: '🎵',
-    gradient: 'linear-gradient(135deg, #00E676, #00B8D4)',
-    lastMessage: null,
-    voiceLabel: '🎙 2 en sala de voz',
-    time: '5h',
-    unread: 1,
-    voiceCount: 2,
-    voiceUsers: [
-      { name: 'PixelArtist', initials: 'PA', gradient: 'linear-gradient(135deg, #FFD740, #FF9100)', photo: 'https://i.pravatar.cc/150?img=33' },
-      { name: 'Crystal_Wave', initials: 'CW', gradient: 'linear-gradient(135deg, #00E676, #00B8D4)', photo: 'https://i.pravatar.cc/150?img=23' },
-    ],
-  },
-  {
-    id: 'c4',
-    name: 'Code Academy',
-    emoji: '💻',
-    gradient: 'linear-gradient(135deg, #8A00FF, #FF2DAA)',
-    lastMessage: 'ByteStorm: alguien sabe React?',
-    time: 'Ayer',
-    unread: 0,
-    voiceCount: 0,
-  },
-]
-
-/**
- * Datos mock de chats directos (DMs)
- */
-const MOCK_DMS = [
-  {
-    id: 'd1',
-    name: 'NeonCoder',
-    initials: 'NC',
-    gradient: 'linear-gradient(135deg, #00F5FF, #0066FF)',
-    photo: 'https://i.pravatar.cc/150?img=11',
-    lastMessage: 'Dale bro, nos vemos mañana',
-    time: '12:45',
-    unread: 2,
-    online: true,
-    typing: true,
-    activity: { emoji: '🎮', text: 'Jugando Valorant' },
-  },
-  {
-    id: 'd2',
-    name: 'Luna_Star',
-    initials: 'LS',
-    gradient: 'linear-gradient(135deg, #FF2DAA, #FF6B6B)',
-    photo: 'https://i.pravatar.cc/150?img=5',
-    lastMessage: 'Te envié el archivo 📎',
-    time: '11:30',
-    unread: 0,
-    online: true,
-    typing: true,
-    activity: { emoji: '🎨', text: 'Diseñando' },
-  },
-  {
-    id: 'd3',
-    name: 'DarkKnight',
-    initials: 'DK',
-    gradient: 'linear-gradient(135deg, #8A00FF, #4A00B4)',
-    photo: 'https://i.pravatar.cc/150?img=12',
-    lastMessage: 'Buena partida! 🔥',
-    time: 'Ayer',
-    unread: 0,
-    online: false,
-  },
-  {
-    id: 'd4',
-    name: 'PixelArtist',
-    initials: 'PA',
-    gradient: 'linear-gradient(135deg, #FF6B35, #FFD740)',
-    photo: 'https://i.pravatar.cc/150?img=33',
-    lastMessage: 'Mira este diseño que hice',
-    time: 'Ayer',
-    unread: 1,
-    online: false,
-  },
-  {
-    id: 'd5',
-    name: 'ByteStorm',
-    initials: 'BS',
-    gradient: 'linear-gradient(135deg, #00E676, #00B8D4)',
-    photo: 'https://i.pravatar.cc/150?img=59',
-    lastMessage: 'Gracias por la ayuda! 🙏',
-    time: 'Lun',
-    unread: 0,
-    online: true,
-    activity: { emoji: '💻', text: 'Programando' },
-  },
-]
-
-/**
- * ChatList — Panel izquierdo con dos secciones:
- * - Chats (mensajes directos 1-a-1)
- * - Comunidades (grupos)
+ * ChatList — Panel izquierdo de conversaciones reales
+ * Muestra las conversaciones del usuario con búsqueda de usuarios para iniciar DMs
  *
  * Props:
- *  - section (opcional): 'chats' | 'comunidades'
- *    Cuando se provee (mobile), se filtra a esa sección
- *    y se ocultan los tabs internos.
- *    Cuando no se provee (desktop), se muestran los tabs
- *    internos para cambiar entre secciones.
+ *  - section (opcional): 'chats' | 'comunidades' — para mobile
+ *  - onSelectConversation: callback cuando se selecciona una conversación
  */
-function ChatList({ activeItemId, onSelectItem, section }) {
-  const [internalSection, setInternalSection] = useState('chats') // 'chats' o 'comunidades'
+function ChatList({ section, onSelectConversation }) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [showNewChat, setShowNewChat] = useState(false)
+  const [newChatQuery, setNewChatQuery] = useState('')
+  const [isStartingDM, setIsStartingDM] = useState(false)
+  const searchTimeoutRef = useRef(null)
+  const newChatInputRef = useRef(null)
 
-  // Determinar la sección activa: prop externa (mobile) o interna (desktop)
-  const currentSection = section || internalSection
-  // ¿Mostrar tabs internos? Solo si no se provee prop section (modo desktop)
-  const showInternalTabs = !section
+  const {
+    conversations,
+    activeConversation,
+    isLoadingConversations,
+    typingUsers,
+    searchUsers,
+    startDM,
+    setActiveConversation,
+  } = useChatStore()
 
-  const items = currentSection === 'chats' ? MOCK_DMS : MOCK_COMMUNITIES
-
-  // Placeholder de búsqueda según sección
-  const searchPlaceholder = currentSection === 'chats' ? 'Buscar chat...' : 'Buscar comunidad...'
+  const user = useAuthStore(state => state.user)
 
   // Título del header según modo
-  const headerTitle = section
-    ? (section === 'chats' ? 'Chats' : 'Comunidades')
-    : 'Fénix Chat'
+  const headerTitle = section ? 'Chats' : 'Fénix Chat'
 
-  // Filtrar por búsqueda
-  const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Focus en el input de nuevo chat cuando se abre
+  useEffect(() => {
+    if (showNewChat && newChatInputRef.current) {
+      newChatInputRef.current.focus()
+    }
+  }, [showNewChat])
+
+  // Buscar usuarios con debounce
+  const handleUserSearch = useCallback((query) => {
+    setNewChatQuery(query)
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+
+    if (query.length < 2) {
+      setSearchResults([])
+      setIsSearching(false)
+      return
+    }
+
+    setIsSearching(true)
+    searchTimeoutRef.current = setTimeout(async () => {
+      const results = await searchUsers(query)
+      setSearchResults(results)
+      setIsSearching(false)
+    }, 400)
+  }, [searchUsers])
+
+  // Iniciar DM con un usuario encontrado
+  const handleStartDM = async (targetUser) => {
+    setIsStartingDM(true)
+    try {
+      const conversation = await startDM(targetUser.id)
+      setShowNewChat(false)
+      setNewChatQuery('')
+      setSearchResults([])
+      if (onSelectConversation) onSelectConversation(conversation)
+    } catch (err) {
+      console.error('Error al iniciar DM:', err)
+    } finally {
+      setIsStartingDM(false)
+    }
+  }
+
+  // Seleccionar una conversación existente
+  const handleSelectConversation = (conv) => {
+    setActiveConversation(conv)
+    if (onSelectConversation) onSelectConversation(conv)
+  }
+
+  // Filtrar conversaciones por búsqueda local
+  const filteredConversations = conversations.filter(conv => {
+    if (!searchQuery) return true
+    const otherName = getConversationName(conv, user)
+    return otherName.toLowerCase().includes(searchQuery.toLowerCase())
+  })
+
+  // Formatear la hora relativa
+  const formatTime = (dateString) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    if (diffMins < 1) return 'Ahora'
+    if (diffMins < 60) return `${diffMins}m`
+    if (diffHours < 24) return `${diffHours}h`
+    if (diffDays === 1) return 'Ayer'
+    if (diffDays < 7) {
+      const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+      return days[date.getDay()]
+    }
+    return date.toLocaleDateString('es', { day: 'numeric', month: 'short' })
+  }
 
   return (
     <div className="chat-list">
       {/* Header */}
       <div className="chat-list__header">
         <div className="chat-list__logo">
-          {/* Solo mostrar el ícono de llama en modo desktop */}
           {!section && (
             <Flame size={24} className="chat-list__logo-icon" />
           )}
           <span className="chat-list__logo-text">{headerTitle}</span>
         </div>
-        <button className="chat-list__new-btn" aria-label="Nuevo">
-          <Plus size={20} />
+        <button
+          className="chat-list__new-btn"
+          aria-label="Nueva conversación"
+          onClick={() => setShowNewChat(!showNewChat)}
+        >
+          {showNewChat ? <X size={20} /> : <Plus size={20} />}
         </button>
       </div>
 
-      {/* Tabs internos: solo en modo desktop (sin prop section) */}
-      {showInternalTabs && (
-        <div className="chat-list__tabs">
-          <button
-            className={`chat-list__tab ${internalSection === 'chats' ? 'chat-list__tab--active' : ''}`}
-            onClick={() => { setInternalSection('chats'); setSearchQuery('') }}
-          >
-            <MessageCircle size={16} />
-            <span>Chats</span>
-          </button>
-          <button
-            className={`chat-list__tab ${internalSection === 'comunidades' ? 'chat-list__tab--active' : ''}`}
-            onClick={() => { setInternalSection('comunidades'); setSearchQuery('') }}
-          >
-            <Users size={16} />
-            <span>Comunidades</span>
-          </button>
+      {/* Panel de nueva conversación — búsqueda de usuarios */}
+      {showNewChat && (
+        <div className="chat-list__new-chat-panel">
+          <div className="chat-list__new-chat-search">
+            <Search size={16} className="chat-list__search-icon" />
+            <input
+              ref={newChatInputRef}
+              type="text"
+              className="chat-list__search-input"
+              placeholder="Buscar usuario por nombre..."
+              value={newChatQuery}
+              onChange={(e) => handleUserSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="chat-list__new-chat-results">
+            {isSearching && (
+              <div className="chat-list__search-status">
+                <Loader2 size={16} className="chat-list__spinner" />
+                <span>Buscando...</span>
+              </div>
+            )}
+
+            {!isSearching && newChatQuery.length >= 2 && searchResults.length === 0 && (
+              <div className="chat-list__search-status">
+                <span>No se encontraron usuarios</span>
+              </div>
+            )}
+
+            {searchResults.map((foundUser) => (
+              <button
+                key={foundUser.id}
+                className="chat-list__search-result"
+                onClick={() => handleStartDM(foundUser)}
+                disabled={isStartingDM}
+              >
+                <div className="chat-list__avatar chat-list__avatar--small">
+                  {foundUser.avatar_url ? (
+                    <img src={foundUser.avatar_url} alt={foundUser.username} className="chat-list__avatar-img" />
+                  ) : (
+                    getInitials(foundUser.username)
+                  )}
+                </div>
+                <div className="chat-list__search-result-info">
+                  <span className="chat-list__search-result-name">{foundUser.username}</span>
+                  {foundUser.display_name && (
+                    <span className="chat-list__search-result-display">{foundUser.display_name}</span>
+                  )}
+                </div>
+                <MessageCircle size={16} className="chat-list__search-result-icon" />
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Barra de búsqueda */}
+      {/* Barra de búsqueda de conversaciones */}
       <div className="chat-list__search">
         <div className="chat-list__search-bar">
           <Search size={16} className="chat-list__search-icon" />
           <input
             type="text"
             className="chat-list__search-input"
-            placeholder={searchPlaceholder}
+            placeholder="Buscar conversación..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Lista de items */}
+      {/* Lista de conversaciones */}
       <div className="chat-list__items">
-        {filteredItems.map((item) => {
-          const isActive = activeItemId === item.id
-          const hasUnread = item.unread > 0
-          const itemClasses = [
-            'chat-list__item',
-            isActive && 'chat-list__item--active',
-            hasUnread && 'chat-list__item--unread',
-          ].filter(Boolean).join(' ')
-
-          // Preview: voz activa, o último mensaje
-          const previewText = item.voiceLabel || item.lastMessage || ''
-
-          // El avatar depende de la sección
-          const isDM = currentSection === 'chats'
-
-          const hasVoice = !isDM && item.voiceUsers && item.voiceUsers.length > 0
-
-          return (
-            <div key={item.id} className="chat-list__item-wrapper">
-              <div
-                className={itemClasses}
-                onClick={() => onSelectItem(item.id, currentSection)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && onSelectItem(item.id, currentSection)}
-              >
-                {/* Avatar redondo */}
-                <div
-                  className={`chat-list__avatar ${item.typing ? 'chat-list__avatar--typing' : ''}`}
-                  style={{ background: isDM ? 'none' : item.gradient }}
-                >
-                  {isDM && item.photo ? (
-                    <img src={item.photo} alt={item.name} className="chat-list__avatar-img" />
-                  ) : (
-                    isDM ? item.initials : item.emoji
-                  )}
-                  {/* Punto de estado */}
-                  {isDM && item.online && (
-                    <span className="chat-list__avatar-status chat-list__avatar-status--online" />
-                  )}
-                  {!isDM && item.voiceCount > 0 && (
-                    <span className="chat-list__avatar-status chat-list__avatar-status--voice" />
-                  )}
+        {isLoadingConversations && conversations.length === 0 ? (
+          // Skeleton loading
+          <div className="chat-list__loading">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="chat-list__skeleton-item">
+                <div className="chat-list__skeleton-avatar skeleton" />
+                <div className="chat-list__skeleton-content">
+                  <div className="chat-list__skeleton-name skeleton" />
+                  <div className="chat-list__skeleton-message skeleton" />
                 </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredConversations.length === 0 ? (
+          <div className="chat-list__empty">
+            <MessageCircle size={40} className="chat-list__empty-icon" />
+            <p className="chat-list__empty-text">
+              {searchQuery ? 'No se encontraron conversaciones' : 'Aún no tienes conversaciones'}
+            </p>
+            {!searchQuery && (
+              <p className="chat-list__empty-hint">
+                Toca <Plus size={14} style={{ verticalAlign: 'middle' }} /> para iniciar un chat
+              </p>
+            )}
+          </div>
+        ) : (
+          filteredConversations.map((conv) => {
+            const isActive = activeConversation?.id === conv.id
+            const otherName = getConversationName(conv, user)
+            const otherAvatar = getConversationAvatar(conv, user)
+            const isTyping = typingUsers[conv.id]
+            const hasUnread = false // TODO: implementar conteo de no leídos
 
-                {/* Contenido */}
-                <div className="chat-list__item-content">
-                  <div className="chat-list__item-top">
-                    <span className="chat-list__item-name">{item.name}</span>
-                    <span className="chat-list__item-time">{item.time}</span>
-                  </div>
-                  <div className="chat-list__item-bottom">
-                    {item.typing ? (
-                      <span className="chat-list__item-typing">
-                        escribiendo<span className="chat-list__typing-dots"><span>.</span><span>.</span><span>.</span></span>
-                      </span>
-                    ) : item.activity ? (
-                      <span className="chat-list__item-activity">
-                        {item.activity.emoji} {item.activity.text}
-                      </span>
+            const itemClasses = [
+              'chat-list__item',
+              isActive && 'chat-list__item--active',
+              hasUnread && 'chat-list__item--unread',
+            ].filter(Boolean).join(' ')
+
+            return (
+              <div key={conv.id} className="chat-list__item-wrapper">
+                <div
+                  className={itemClasses}
+                  onClick={() => handleSelectConversation(conv)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSelectConversation(conv)}
+                >
+                  {/* Avatar */}
+                  <div className={`chat-list__avatar ${isTyping ? 'chat-list__avatar--typing' : ''}`}>
+                    {otherAvatar ? (
+                      <img src={otherAvatar} alt={otherName} className="chat-list__avatar-img" />
                     ) : (
-                      <span className="chat-list__item-preview">{previewText}</span>
+                      getInitials(otherName)
                     )}
-                    {hasUnread && (
-                      <span className="chat-list__unread-badge">
-                        <Flame size={12} />
-                        <span>{item.unread}</span>
+                    {/* Estado online — TODO: implementar presencia real */}
+                  </div>
+
+                  {/* Contenido */}
+                  <div className="chat-list__item-content">
+                    <div className="chat-list__item-top">
+                      <span className="chat-list__item-name">{otherName}</span>
+                      <span className="chat-list__item-time">
+                        {formatTime(conv.last_message_at)}
                       </span>
-                    )}
+                    </div>
+                    <div className="chat-list__item-bottom">
+                      {isTyping ? (
+                        <span className="chat-list__item-typing">
+                          escribiendo
+                          <span className="chat-list__typing-dots">
+                            <span>.</span><span>.</span><span>.</span>
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="chat-list__item-preview">
+                          {conv.last_sender && conv.last_sender !== otherName
+                            ? `Tú: ${conv.last_message || ''}`
+                            : conv.last_message || 'Conversación nueva'
+                          }
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-
-              {/* Participantes en voz — desplegado debajo del item */}
-              {hasVoice && (
-                <div className="chat-list__voice-panel">
-                  <div className="chat-list__voice-header">
-                    <Volume2 size={14} className="chat-list__voice-icon" />
-                    <span>Sala de voz</span>
-                  </div>
-                  {item.voiceUsers.map((user, i) => (
-                    <div key={i} className="chat-list__voice-user">
-                      <div
-                        className="chat-list__voice-user-avatar"
-                        style={{ background: user.photo ? 'none' : user.gradient }}
-                      >
-                        {user.photo ? (
-                          <img src={user.photo} alt={user.name} className="chat-list__voice-user-img" />
-                        ) : (
-                          user.initials
-                        )}
-                      </div>
-                      <span className="chat-list__voice-user-name">{user.name}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
-        })}
+            )
+          })
+        )}
       </div>
 
       {/* Barra de usuario (abajo) — solo en modo desktop */}
-      {!section && (
+      {!section && user && (
         <div className="chat-list__user-bar">
           <div className="chat-list__user-avatar">
-            FU
+            {user.avatar_url ? (
+              <img src={user.avatar_url} alt={user.username} className="chat-list__avatar-img" />
+            ) : (
+              getInitials(user.username)
+            )}
             <span className="chat-list__user-online-dot" />
           </div>
           <div className="chat-list__user-info">
-            <div className="chat-list__user-name">FenixUser</div>
+            <div className="chat-list__user-name">{user.username}</div>
             <div className="chat-list__user-status">En línea</div>
           </div>
           <button className="chat-list__settings-btn" aria-label="Configuración">
@@ -332,6 +317,33 @@ function ChatList({ activeItemId, onSelectItem, section }) {
       )}
     </div>
   )
+}
+
+// --- Utilidades ---
+
+/** Obtener nombre de la conversación (el otro participante) */
+function getConversationName(conversation, currentUser) {
+  if (conversation.name) return conversation.name
+  if (conversation.participants) {
+    const other = conversation.participants.find(p => p.id !== currentUser?.id)
+    return other?.username || other?.display_name || 'Usuario'
+  }
+  return conversation.other_username || 'Conversación'
+}
+
+/** Obtener avatar de la conversación */
+function getConversationAvatar(conversation, currentUser) {
+  if (conversation.participants) {
+    const other = conversation.participants.find(p => p.id !== currentUser?.id)
+    return other?.avatar_url || null
+  }
+  return conversation.other_avatar_url || null
+}
+
+/** Obtener iniciales de un nombre */
+function getInitials(name) {
+  if (!name) return '?'
+  return name.slice(0, 2).toUpperCase()
 }
 
 export default ChatList

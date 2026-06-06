@@ -86,6 +86,10 @@ function LoginPage() {
           </Button>
         </form>
 
+        <p className="auth-card__footer" style={{ marginTop: 'var(--space-3)', marginBottom: 0 }}>
+          <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
+        </p>
+
         <p className="auth-card__footer">
           ¿No tienes cuenta?{' '}
           <Link to="/register">Regístrate</Link>

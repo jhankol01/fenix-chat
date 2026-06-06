@@ -1,297 +1,108 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, Phone, Bell, MoreVertical,
-  Smile, Paperclip, Mic, Send, Flame, Reply, X
+  ArrowLeft, MoreVertical, Send, Smile, Loader2
 } from 'lucide-react'
+import useChatStore from '../../stores/chatStore'
+import useAuthStore from '../../stores/authStore'
 import './ChatView.css'
 
 /**
- * Datos mock de comunidades
+ * ChatView — Vista principal del chat con mensajes reales
+ * Recibe la conversación activa del chatStore
+ * Muestra mensajes, input, typing, auto-scroll, y carga de más mensajes
  */
-const COMMUNITY_DATA = {
-  'c1': {
-    name: 'Gamers Zone',
-    emoji: '🎮',
-    gradient: 'linear-gradient(135deg, #00D4DD, #0066FF)',
-    members: 24,
-    voiceCount: 3,
-    voiceUsers: [
-      { initials: 'NC', bg: '#00D4DD' },
-      { initials: 'LS', bg: '#FF2DAA' },
-      { initials: 'DK', bg: '#8A00FF' },
-    ],
-  },
-  'c2': {
-    name: 'Design Team',
-    emoji: '🎨',
-    gradient: 'linear-gradient(135deg, #FF2DAA, #8A00FF)',
-    members: 12,
-    voiceCount: 0,
-    voiceUsers: [],
-  },
-  'c3': {
-    name: 'Music Lovers',
-    emoji: '🎵',
-    gradient: 'linear-gradient(135deg, #00E676, #00B8D4)',
-    members: 18,
-    voiceCount: 2,
-    voiceUsers: [
-      { initials: 'PA', bg: '#FFD740' },
-      { initials: 'CW', bg: '#00E676' },
-    ],
-  },
-  'c4': {
-    name: 'Code Academy',
-    emoji: '💻',
-    gradient: 'linear-gradient(135deg, #8A00FF, #FF2DAA)',
-    members: 31,
-    voiceCount: 0,
-    voiceUsers: [],
-  },
-}
-
-/**
- * Datos mock de DMs
- */
-const DM_DATA = {
-  'd1': {
-    name: 'NeonCoder',
-    initials: 'NC',
-    gradient: 'linear-gradient(135deg, #00F5FF, #0066FF)',
-    photo: 'https://i.pravatar.cc/150?img=11',
-    online: true,
-    activity: { emoji: '🎮', text: 'Jugando Valorant' },
-  },
-  'd2': {
-    name: 'Luna_Star',
-    initials: 'LS',
-    gradient: 'linear-gradient(135deg, #FF2DAA, #FF6B6B)',
-    photo: 'https://i.pravatar.cc/150?img=5',
-    online: true,
-    activity: { emoji: '🎨', text: 'Diseñando' },
-  },
-  'd3': {
-    name: 'DarkKnight',
-    initials: 'DK',
-    gradient: 'linear-gradient(135deg, #8A00FF, #4A00B4)',
-    photo: 'https://i.pravatar.cc/150?img=12',
-    online: false,
-  },
-  'd4': {
-    name: 'PixelArtist',
-    initials: 'PA',
-    gradient: 'linear-gradient(135deg, #FF6B35, #FFD740)',
-    photo: 'https://i.pravatar.cc/150?img=33',
-    online: false,
-  },
-  'd5': {
-    name: 'ByteStorm',
-    initials: 'BS',
-    gradient: 'linear-gradient(135deg, #00E676, #00B8D4)',
-    photo: 'https://i.pravatar.cc/150?img=59',
-    online: true,
-    activity: { emoji: '💻', text: 'Programando' },
-  },
-}
-
-/**
- * Mensajes mock — comunidad
- */
-const COMMUNITY_MESSAGES = [
-  {
-    id: 1, userId: 'neon', username: 'NeonCoder', initials: 'NC',
-    avatarBg: 'linear-gradient(135deg, #00D4DD, #0066FF)',
-    photo: 'https://i.pravatar.cc/150?img=11',
-    texts: ['Alguien quiere jugar ranked? 🎮'], time: '12:34', isOwn: false,
-    reactions: { flame: 2 },
-  },
-  {
-    id: 2, userId: 'luna', username: 'Luna_Star', initials: 'LS',
-    avatarBg: 'linear-gradient(135deg, #FF2DAA, #8A00FF)',
-    photo: 'https://i.pravatar.cc/150?img=5',
-    texts: ['Yo me apunto!', 'Espero que no sea tan tarde 😅'], time: '12:35', isOwn: false,
-  },
-  {
-    id: 3, userId: 'dark', username: 'DarkKnight', initials: 'DK',
-    avatarBg: 'linear-gradient(135deg, #8A00FF, #5500cc)',
-    photo: 'https://i.pravatar.cc/150?img=12',
-    texts: ['Yo también, denme 5 min'], time: '12:37', isOwn: false,
-  },
-  {
-    id: 4, userId: 'neon', username: 'NeonCoder', initials: 'NC',
-    avatarBg: 'linear-gradient(135deg, #00D4DD, #0066FF)',
-    photo: 'https://i.pravatar.cc/150?img=11',
-    texts: ['Dale, los espero en la sala de voz 🎧'], time: '12:38', isOwn: false,
-    reactions: { flame: 1 },
-  },
-  {
-    id: 5, userId: 'pixel', username: 'PixelArtist', initials: 'PA',
-    avatarBg: 'linear-gradient(135deg, #FFD740, #FF9100)',
-    photo: 'https://i.pravatar.cc/150?img=33',
-    texts: ['GG la última partida estuvo brutal 🔥'], time: '12:40', isOwn: false,
-    reactions: { flame: 5 },
-  },
-  {
-    id: 6, userId: 'fenix', username: 'FenixUser', initials: 'FU',
-    avatarBg: 'linear-gradient(135deg, #FF2DAA, #8A00FF)',
-    photo: 'https://i.pravatar.cc/150?img=68',
-    texts: ['Ey! Yo quiero jugar también 🙋‍♂️'], time: '12:42', isOwn: true,
-    readBy: [
-      { initials: 'NC', photo: 'https://i.pravatar.cc/150?img=11' },
-      { initials: 'LS', photo: 'https://i.pravatar.cc/150?img=5' },
-      { initials: 'DK', photo: 'https://i.pravatar.cc/150?img=12' },
-    ],
-  },
-  {
-    id: 7, userId: 'neon', username: 'NeonCoder', initials: 'NC',
-    avatarBg: 'linear-gradient(135deg, #00D4DD, #0066FF)',
-    photo: 'https://i.pravatar.cc/150?img=11',
-    texts: ['Perfecto! Únete a la sala de voz', 'Empezamos en 2 minutos ⚡'], time: '12:43', isOwn: false,
-  },
-]
-
-/**
- * Mensajes mock — DM
- */
-const DM_MESSAGES = {
-  'd1': [
-    {
-      id: 1, userId: 'neon', username: 'NeonCoder', initials: 'NC',
-      avatarBg: 'linear-gradient(135deg, #00F5FF, #0066FF)',
-      photo: 'https://i.pravatar.cc/150?img=11',
-      texts: ['Hey bro, ¿vas a jugar hoy?'], time: '11:20', isOwn: false,
-      reactions: { flame: 1 },
-    },
-    {
-      id: 2, userId: 'fenix', username: 'FenixUser', initials: 'FU',
-      avatarBg: 'linear-gradient(135deg, #FF2DAA, #8A00FF)',
-      photo: 'https://i.pravatar.cc/150?img=68',
-      texts: ['Sí! Estoy libre en la tarde', 'A qué hora quedamos?'], time: '11:25', isOwn: true,
-      readBy: [
-        { initials: 'NC', photo: 'https://i.pravatar.cc/150?img=11' },
-      ],
-    },
-    {
-      id: 3, userId: 'neon', username: 'NeonCoder', initials: 'NC',
-      avatarBg: 'linear-gradient(135deg, #00F5FF, #0066FF)',
-      photo: 'https://i.pravatar.cc/150?img=11',
-      texts: ['A las 6 está bien?'], time: '11:30', isOwn: false,
-    },
-    {
-      id: 4, userId: 'fenix', username: 'FenixUser', initials: 'FU',
-      avatarBg: 'linear-gradient(135deg, #FF2DAA, #8A00FF)',
-      photo: 'https://i.pravatar.cc/150?img=68',
-      texts: ['Perfecto! 🔥'], time: '11:32', isOwn: true,
-      readBy: [
-        { initials: 'NC', photo: 'https://i.pravatar.cc/150?img=11' },
-      ],
-    },
-    {
-      id: 5, userId: 'neon', username: 'NeonCoder', initials: 'NC',
-      avatarBg: 'linear-gradient(135deg, #00F5FF, #0066FF)',
-      photo: 'https://i.pravatar.cc/150?img=11',
-      texts: ['Dale bro, nos vemos mañana'], time: '12:45', isOwn: false,
-    },
-  ],
-  'd2': [
-    {
-      id: 1, userId: 'luna', username: 'Luna_Star', initials: 'LS',
-      avatarBg: 'linear-gradient(135deg, #FF2DAA, #FF6B6B)',
-      photo: 'https://i.pravatar.cc/150?img=5',
-      texts: ['Hola! Mira lo que hice 🎨'], time: '10:00', isOwn: false,
-    },
-    {
-      id: 2, userId: 'fenix', username: 'FenixUser', initials: 'FU',
-      avatarBg: 'linear-gradient(135deg, #FF2DAA, #8A00FF)',
-      photo: 'https://i.pravatar.cc/150?img=68',
-      texts: ['Wow se ve increíble!'], time: '10:15', isOwn: true,
-      readBy: [
-        { initials: 'LS', photo: 'https://i.pravatar.cc/150?img=5' },
-      ],
-    },
-    {
-      id: 3, userId: 'luna', username: 'Luna_Star', initials: 'LS',
-      avatarBg: 'linear-gradient(135deg, #FF2DAA, #FF6B6B)',
-      photo: 'https://i.pravatar.cc/150?img=5',
-      texts: ['Te envié el archivo 📎'], time: '11:30', isOwn: false,
-    },
-  ],
-}
-
-/**
- * ChatView — Vista principal del chat (comunidad o DM)
- */
-function ChatView({ itemId, itemType, onBack }) {
-  const isCommunity = itemType === 'comunidades'
+function ChatView({ onBack }) {
+  const [inputValue, setInputValue] = useState('')
+  const [isTypingLocal, setIsTypingLocal] = useState(false)
+  const messagesEndRef = useRef(null)
+  const messagesContainerRef = useRef(null)
+  const typingTimeoutRef = useRef(null)
   const touchStartRef = useRef(null)
-  const msgSwipeRef = useRef({})
-  const [replyTo, setReplyTo] = useState(null)
-  
-  // Obtener datos según el tipo
-  const data = isCommunity ? COMMUNITY_DATA[itemId] : DM_DATA[itemId]
-  if (!data) return null
 
-  // Mensajes según el tipo
-  const messages = isCommunity ? COMMUNITY_MESSAGES : (DM_MESSAGES[itemId] || DM_MESSAGES['d1'])
+  const {
+    activeConversation,
+    messages,
+    typingUsers,
+    isLoadingMessages,
+    hasMoreMessages,
+    sendMessage,
+    loadMessages,
+    setTyping,
+    stopTyping,
+  } = useChatStore()
 
-  // Initialize flame reactions from mock data
-  const initialReactions = {}
-  messages.forEach((msg) => {
-    if (msg.reactions && msg.reactions.flame) {
-      initialReactions[msg.id] = msg.reactions.flame
+  const user = useAuthStore(state => state.user)
+
+  // Auto-scroll al fondo cuando llegan nuevos mensajes
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
-  })
-  const [reactions, setReactions] = useState(initialReactions)
+  }, [messages])
 
-  // Handle double-click flame reaction
-  const handleDoubleClick = (msgId) => {
-    setReactions((prev) => ({
-      ...prev,
-      [msgId]: (prev[msgId] || 0) + 1,
-    }))
+  // Scroll al fondo inicialmente cuando se cargan los mensajes
+  useEffect(() => {
+    if (messages.length > 0 && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'instant' })
+    }
+  }, [activeConversation?.id])
+
+  // Cargar más mensajes al hacer scroll arriba
+  const handleScroll = useCallback(() => {
+    const container = messagesContainerRef.current
+    if (!container || isLoadingMessages || !hasMoreMessages) return
+
+    if (container.scrollTop < 60 && messages.length > 0) {
+      const oldestMessage = messages[0]
+      if (oldestMessage?.created_at) {
+        loadMessages(activeConversation.id, oldestMessage.created_at)
+      }
+    }
+  }, [isLoadingMessages, hasMoreMessages, messages, activeConversation, loadMessages])
+
+  // Manejar envío de mensaje
+  const handleSend = () => {
+    if (!inputValue.trim()) return
+    sendMessage(inputValue)
+    setInputValue('')
+    handleStopTyping()
   }
 
-  // Swipe-left reply handlers
-  const handleMsgTouchStart = (e, msg) => {
-    msgSwipeRef.current[msg.id] = {
-      startX: e.touches[0].clientX,
-      el: e.currentTarget,
+  // Enter para enviar
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
     }
   }
 
-  const handleMsgTouchMove = (e, msg) => {
-    const ref = msgSwipeRef.current[msg.id]
-    if (!ref) return
-    const deltaX = e.touches[0].clientX - ref.startX
-    if (deltaX < -10) {
-      const clampedX = Math.max(deltaX, -120)
-      ref.el.style.transform = `translateX(${clampedX}px)`
+  // Indicador de escritura con debounce
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value)
+
+    if (!isTypingLocal && activeConversation) {
+      setIsTypingLocal(true)
+      setTyping(activeConversation.id)
     }
+
+    // Reset del timeout de typing
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+    typingTimeoutRef.current = setTimeout(() => {
+      handleStopTyping()
+    }, 2000)
   }
 
-  const handleMsgTouchEnd = (e, msg) => {
-    const ref = msgSwipeRef.current[msg.id]
-    if (!ref) return
-    const endX = e.changedTouches[0].clientX
-    const deltaX = endX - ref.startX
-    ref.el.style.transform = ''
-    if (deltaX < -80) {
-      setReplyTo(msg)
+  const handleStopTyping = () => {
+    if (isTypingLocal && activeConversation) {
+      setIsTypingLocal(false)
+      stopTyping(activeConversation.id)
     }
-    delete msgSwipeRef.current[msg.id]
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
   }
 
-  // Subtítulo del header
-  const subtitle = isCommunity
-    ? `${data.members} miembros`
-    : (!isCommunity && data.activity)
-      ? `${data.activity.emoji} ${data.activity.text}`
-      : data.online ? 'En línea' : 'Desconectado'
-
-  // --- Swipe-right para volver (edge swipe desde la izquierda) ---
+  // Swipe-right para volver (edge swipe desde la izquierda)
   const handleTouchStart = (e) => {
     const startX = e.touches[0].clientX
-    // Solo registrar si el toque empieza en los primeros 40px (borde izquierdo)
     if (startX <= 40) {
       touchStartRef.current = startX
     } else {
@@ -303,11 +114,40 @@ function ChatView({ itemId, itemType, onBack }) {
     if (touchStartRef.current === null) return
     const endX = e.changedTouches[0].clientX
     const deltaX = endX - touchStartRef.current
-    // Si el swipe es mayor a 80px hacia la derecha, volver
-    if (deltaX > 80) {
+    if (deltaX > 80 && onBack) {
       onBack()
     }
     touchStartRef.current = null
+  }
+
+  if (!activeConversation) return null
+
+  // Datos de la conversación
+  const otherName = getConversationName(activeConversation, user)
+  const otherAvatar = getConversationAvatar(activeConversation, user)
+  const typingUser = typingUsers[activeConversation.id]
+
+  // Agrupar mensajes consecutivos del mismo usuario
+  const groupedMessages = groupMessages(messages)
+
+  // Formatear hora del mensaje
+  const formatMessageTime = (dateString) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    return date.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  // Formatear fecha para separadores
+  const formatDateSeparator = (dateString) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    if (date.toDateString() === today.toDateString()) return 'Hoy'
+    if (date.toDateString() === yesterday.toDateString()) return 'Ayer'
+    return date.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' })
   }
 
   return (
@@ -326,155 +166,96 @@ function ChatView({ itemId, itemType, onBack }) {
           <ArrowLeft size={20} />
         </button>
 
-        <div
-          className="chat-view__header-avatar"
-          style={{ background: !isCommunity && data.photo ? 'none' : data.gradient }}
-        >
-          {isCommunity ? data.emoji : (
-            data.photo ? (
-              <img src={data.photo} alt={data.name} className="chat-view__header-avatar-img" />
-            ) : data.initials
-          )}
-          {/* Online dot for DMs */}
-          {!isCommunity && data.online && (
-            <span className="chat-view__header-online-dot" />
+        <div className="chat-view__header-avatar">
+          {otherAvatar ? (
+            <img src={otherAvatar} alt={otherName} className="chat-view__header-avatar-img" />
+          ) : (
+            getInitials(otherName)
           )}
         </div>
 
         <div className="chat-view__header-info">
-          <div className="chat-view__header-name">{data.name}</div>
-          <div className={`chat-view__header-subtitle ${!isCommunity && data.activity ? 'chat-view__header-subtitle--activity' : ''} ${!isCommunity && data.online && !data.activity ? 'chat-view__header-subtitle--online' : ''}`}>
-            {subtitle}
+          <div className="chat-view__header-name">{otherName}</div>
+          <div className={`chat-view__header-subtitle ${typingUser ? 'chat-view__header-subtitle--typing' : ''}`}>
+            {typingUser
+              ? 'escribiendo...'
+              : 'En línea' /* TODO: estado real de presencia */
+            }
           </div>
         </div>
 
         <div className="chat-view__header-actions">
-          <button className="chat-view__header-btn" aria-label="Llamar">
-            <Phone size={18} />
-          </button>
-          {isCommunity && (
-            <button className="chat-view__header-btn" aria-label="Notificaciones">
-              <Bell size={18} />
-            </button>
-          )}
           <button className="chat-view__header-btn" aria-label="Más opciones">
             <MoreVertical size={18} />
           </button>
         </div>
       </div>
 
-      {/* --- Voice strip — LLAMATIVO (solo comunidades con voz activa) --- */}
-      {isCommunity && data.voiceCount > 0 && (
-        <div className="chat-view__voice-strip">
-          {/* Barras de onda animadas */}
-          <div className="chat-view__voice-waves">
-            <span className="chat-view__voice-wave-bar" />
-            <span className="chat-view__voice-wave-bar" />
-            <span className="chat-view__voice-wave-bar" />
-            <span className="chat-view__voice-wave-bar" />
-            <span className="chat-view__voice-wave-bar" />
-          </div>
-
-          <div className="chat-view__voice-info">
-            <span>{data.voiceCount} en sala de voz</span>
-            <div className="chat-view__voice-avatars">
-              {data.voiceUsers.map((u, i) => (
-                <div
-                  key={i}
-                  className="chat-view__voice-mini-avatar"
-                  style={{ background: u.bg }}
-                >
-                  {u.initials}
-                </div>
-              ))}
-            </div>
-          </div>
-          <button className="chat-view__voice-join">Unirse</button>
-        </div>
-      )}
-
       {/* --- Mensajes --- */}
-      <div className="chat-view__messages">
-        {messages.map((msg) => {
-          const flameCount = reactions[msg.id] || 0
-          return (
+      <div
+        className="chat-view__messages"
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+      >
+        {/* Indicador de carga de más mensajes */}
+        {isLoadingMessages && (
+          <div className="chat-view__loading-more">
+            <Loader2 size={20} className="chat-view__spinner" />
+            <span>Cargando mensajes...</span>
+          </div>
+        )}
+
+        {/* Mensajes agrupados */}
+        {groupedMessages.map((group, groupIdx) => (
+          <div key={group.key}>
+            {/* Separador de fecha */}
+            {group.showDateSeparator && (
+              <div className="chat-view__date-separator">
+                <span className="chat-view__date-separator-text">
+                  {formatDateSeparator(group.messages[0].created_at)}
+                </span>
+              </div>
+            )}
+
             <div
-              key={msg.id}
-              className={`chat-view__msg-group ${msg.isOwn ? 'chat-view__msg-group--own' : ''}`}
-              onTouchStart={(e) => handleMsgTouchStart(e, msg)}
-              onTouchMove={(e) => handleMsgTouchMove(e, msg)}
-              onTouchEnd={(e) => handleMsgTouchEnd(e, msg)}
+              className={`chat-view__msg-group ${group.isOwn ? 'chat-view__msg-group--own' : ''}`}
             >
-              {/* Avatar redondo */}
-              <div
-                className="chat-view__msg-avatar"
-                style={{ background: msg.photo ? 'none' : msg.avatarBg }}
-              >
-                {msg.photo ? (
-                  <img src={msg.photo} alt={msg.username} className="chat-view__msg-avatar-img" />
+              {/* Avatar del remitente */}
+              <div className="chat-view__msg-avatar">
+                {group.avatar ? (
+                  <img src={group.avatar} alt={group.username} className="chat-view__msg-avatar-img" />
                 ) : (
-                  msg.initials
+                  getInitials(group.username)
                 )}
               </div>
 
-              {/* Cuerpo del mensaje */}
+              {/* Cuerpo de los mensajes */}
               <div className="chat-view__msg-body">
                 <div className="chat-view__msg-header">
-                  <span className="chat-view__msg-username">{msg.username}</span>
-                  <span className="chat-view__msg-time">{msg.time}</span>
+                  <span className="chat-view__msg-username">{group.username}</span>
+                  <span className="chat-view__msg-time">
+                    {formatMessageTime(group.messages[0].created_at)}
+                  </span>
                 </div>
-                {msg.texts.map((text, i) => (
-                  <div
-                    key={i}
-                    className="chat-view__msg-text"
-                    onDoubleClick={() => handleDoubleClick(msg.id)}
-                  >
-                    {text}
+
+                {group.messages.map((msg) => (
+                  <div key={msg.id} className="chat-view__msg-text">
+                    {msg.content}
                   </div>
                 ))}
-
-                {/* Flame reactions */}
-                {flameCount > 0 && (
-                  <div className="chat-view__reactions">
-                    <button
-                      className="chat-view__reaction chat-view__reaction--active"
-                      onClick={() => handleDoubleClick(msg.id)}
-                    >
-                      <Flame size={14} className="chat-view__reaction-flame" />
-                      <span>{flameCount}</span>
-                    </button>
-                  </div>
-                )}
-
-                {/* Read receipts — only for own messages */}
-                {msg.isOwn && msg.readBy && msg.readBy.length > 0 && (
-                  <div className="chat-view__read-receipts">
-                    {msg.readBy.map((reader, i) => (
-                      <img
-                        key={i}
-                        src={reader.photo}
-                        alt={reader.initials}
-                        className="chat-view__read-avatar"
-                      />
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
-          )
-        })}
+          </div>
+        ))}
 
-        {/* Indicador de escritura — solo DMs */}
-        {!isCommunity && (
+        {/* Indicador de escritura */}
+        {typingUser && (
           <div className="chat-view__typing-indicator">
-            <div
-              className="chat-view__msg-avatar chat-view__msg-avatar--typing"
-              style={{ background: data.photo ? 'none' : data.gradient }}
-            >
-              {data.photo ? (
-                <img src={data.photo} alt={data.name} className="chat-view__msg-avatar-img" />
+            <div className="chat-view__msg-avatar chat-view__msg-avatar--typing">
+              {otherAvatar ? (
+                <img src={otherAvatar} alt={otherName} className="chat-view__msg-avatar-img" />
               ) : (
-                data.initials
+                getInitials(otherName)
               )}
             </div>
             <div className="chat-view__typing-bubble">
@@ -484,25 +265,10 @@ function ChatView({ itemId, itemType, onBack }) {
             </div>
           </div>
         )}
-      </div>
 
-      {/* --- Reply preview bar --- */}
-      {replyTo && (
-        <div className="chat-view__reply-bar">
-          <Reply size={16} style={{ color: 'var(--color-brand)', flexShrink: 0 }} />
-          <div className="chat-view__reply-info">
-            <div className="chat-view__reply-name">{replyTo.username}</div>
-            <div className="chat-view__reply-text">{replyTo.texts[0]}</div>
-          </div>
-          <button
-            className="chat-view__reply-close"
-            onClick={() => setReplyTo(null)}
-            aria-label="Cerrar respuesta"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
+        {/* Ancla para auto-scroll */}
+        <div ref={messagesEndRef} />
+      </div>
 
       {/* --- Input bar --- */}
       <div className="chat-view__input-bar">
@@ -514,20 +280,92 @@ function ChatView({ itemId, itemType, onBack }) {
             type="text"
             className="chat-view__input"
             placeholder="Escribe un mensaje..."
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
           />
-          <button className="chat-view__input-btn" aria-label="Adjuntar">
-            <Paperclip size={18} />
-          </button>
-          <button className="chat-view__input-btn" aria-label="Mensaje de voz">
-            <Mic size={18} />
-          </button>
         </div>
-        <button className="chat-view__send-btn" aria-label="Enviar">
+        <button
+          className={`chat-view__send-btn ${inputValue.trim() ? 'chat-view__send-btn--active' : ''}`}
+          aria-label="Enviar"
+          onClick={handleSend}
+          disabled={!inputValue.trim()}
+        >
           <Send size={18} />
         </button>
       </div>
     </div>
   )
+}
+
+// --- Utilidades ---
+
+/** Obtener nombre de la conversación */
+function getConversationName(conversation, currentUser) {
+  if (conversation.name) return conversation.name
+  if (conversation.participants) {
+    const other = conversation.participants.find(p => p.id !== currentUser?.id)
+    return other?.username || other?.display_name || 'Usuario'
+  }
+  return conversation.other_username || 'Conversación'
+}
+
+/** Obtener avatar de la conversación */
+function getConversationAvatar(conversation, currentUser) {
+  if (conversation.participants) {
+    const other = conversation.participants.find(p => p.id !== currentUser?.id)
+    return other?.avatar_url || null
+  }
+  return conversation.other_avatar_url || null
+}
+
+/** Obtener iniciales */
+function getInitials(name) {
+  if (!name) return '?'
+  return name.slice(0, 2).toUpperCase()
+}
+
+/**
+ * Agrupar mensajes consecutivos del mismo usuario
+ * con separadores de fecha entre días distintos
+ */
+function groupMessages(messages) {
+  const groups = []
+  let currentGroup = null
+  let lastDate = null
+
+  messages.forEach((msg, idx) => {
+    const msgDate = msg.created_at ? new Date(msg.created_at).toDateString() : null
+    const showDateSeparator = msgDate && msgDate !== lastDate
+    lastDate = msgDate
+
+    const senderId = msg.sender_id || msg.user_id
+    const senderName = msg.sender_username || msg.username || 'Usuario'
+    const senderAvatar = msg.sender_avatar_url || msg.avatar_url || null
+
+    // Si es del mismo usuario y no necesitamos separador de fecha, agrupar
+    if (
+      currentGroup &&
+      currentGroup.senderId === senderId &&
+      !showDateSeparator
+    ) {
+      currentGroup.messages.push(msg)
+    } else {
+      // Nuevo grupo
+      currentGroup = {
+        key: `group-${idx}`,
+        senderId,
+        username: senderName,
+        avatar: senderAvatar,
+        isOwn: msg.is_own || false,
+        showDateSeparator,
+        messages: [msg],
+      }
+      groups.push(currentGroup)
+    }
+  })
+
+  return groups
 }
 
 export default ChatView

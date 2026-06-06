@@ -5,6 +5,8 @@ import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import AppLayout from './pages/AppLayout'
 
 /**
@@ -63,6 +65,8 @@ function App() {
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
       <Route path="/verify/:token" element={<VerifyEmailPage />} />
+      <Route path="/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+      <Route path="/reset-password/:token" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
       <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>} />
       <Route path="/app/community/:id" element={<ProtectedRoute><AppLayout /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />

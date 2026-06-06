@@ -4,6 +4,9 @@ import ChatList from '../components/layout/ChatList'
 import ChatView from '../components/layout/ChatView'
 import BottomNav from '../components/layout/BottomNav'
 import ProfileView from '../components/layout/ProfileView'
+import useAuthStore from '../stores/authStore'
+import useChatStore from '../stores/chatStore'
+import { connectSocket, disconnectSocket, getSocket } from '../lib/socket'
 import './AppLayout.css'
 
 /**
@@ -25,32 +28,68 @@ function useIsMobile(breakpoint = 768) {
 
 /**
  * AppLayout — Shell principal con diseño adaptativo
+ * Conecta el socket, carga conversaciones, y escucha eventos en tiempo real
  *
- * Desktop (>= 768px): ChatList (340px, con tabs internos) | ChatView/Welcome
+ * Desktop (>= 768px): ChatList (340px) | ChatView/Welcome
  * Mobile  (< 768px):  BottomNav + contenido dinámico por sección
  */
 function AppLayout() {
-  const [activeItemId, setActiveItemId] = useState(null)
-  const [activeItemType, setActiveItemType] = useState(null)       // 'chats' o 'comunidades'
-  const [mobileSection, setMobileSection] = useState('chats')      // Sección activa del BottomNav
+  const [mobileSection, setMobileSection] = useState('chats')
+  const [showMobileChat, setShowMobileChat] = useState(false)
   const isMobile = useIsMobile()
 
-  /** Seleccionar un item (comunidad o DM) */
-  const handleSelectItem = (id, section) => {
-    setActiveItemId(id)
-    setActiveItemType(section)
+  const accessToken = useAuthStore(state => state.accessToken)
+  const { activeConversation, loadConversations, addMessage, setUserTyping, clearTyping } = useChatStore()
+
+  // Conectar socket y configurar event listeners
+  useEffect(() => {
+    if (!accessToken) return
+
+    // Conectar socket con el token de autenticación
+    const socket = connectSocket(accessToken)
+
+    // Escuchar nuevos mensajes
+    socket.on('new_message', (message) => {
+      addMessage(message)
+    })
+
+    // Escuchar indicadores de escritura
+    socket.on('user_typing', ({ conversationId, username }) => {
+      setUserTyping(conversationId, username)
+    })
+
+    socket.on('user_stop_typing', ({ conversationId }) => {
+      clearTyping(conversationId)
+    })
+
+    // Cargar conversaciones al montar
+    loadConversations()
+
+    // Limpiar al desmontar
+    return () => {
+      socket.off('new_message')
+      socket.off('user_typing')
+      socket.off('user_stop_typing')
+      disconnectSocket()
+    }
+  }, [accessToken]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /** Cuando se selecciona una conversación (desde ChatList) */
+  const handleSelectConversation = () => {
+    if (isMobile) {
+      setShowMobileChat(true)
+    }
   }
 
   /** Volver a la lista (mobile) */
   const handleBack = () => {
-    setActiveItemId(null)
+    setShowMobileChat(false)
   }
 
   /** Cambiar sección del BottomNav (mobile) */
   const handleSectionChange = (section) => {
     setMobileSection(section)
-    // Limpiar item activo al cambiar de sección
-    setActiveItemId(null)
+    setShowMobileChat(false)
   }
 
   /* ============================
@@ -59,22 +98,17 @@ function AppLayout() {
   if (!isMobile) {
     return (
       <div className="app-layout">
-        {/* Panel izquierdo — Lista con tabs internos */}
+        {/* Panel izquierdo — Lista de conversaciones */}
         <div className="app-layout__sidebar">
           <ChatList
-            activeItemId={activeItemId}
-            onSelectItem={handleSelectItem}
+            onSelectConversation={handleSelectConversation}
           />
         </div>
 
         {/* Panel principal — Chat o Welcome */}
         <div className="app-layout__main">
-          {activeItemId ? (
-            <ChatView
-              itemId={activeItemId}
-              itemType={activeItemType}
-              onBack={handleBack}
-            />
+          {activeConversation ? (
+            <ChatView />
           ) : (
             <div className="welcome-screen">
               <div className="welcome-screen__icon">
@@ -82,7 +116,7 @@ function AppLayout() {
               </div>
               <h1 className="welcome-screen__title">Fénix Chat</h1>
               <p className="welcome-screen__subtitle">
-                Selecciona un chat o comunidad para comenzar
+                Selecciona una conversación para comenzar a chatear
               </p>
             </div>
           )}
@@ -94,26 +128,20 @@ function AppLayout() {
   /* ============================
      MOBILE LAYOUT (< 768px)
      ============================ */
-
-  // Si hay un item activo, mostrar ChatView a pantalla completa
-  const showChatView = !!activeItemId
-
   return (
     <div className="app-layout app-layout--mobile">
       {/* Contenido principal basado en la sección activa */}
-      <div className={`app-layout__mobile-content ${showChatView ? 'app-layout__mobile-content--hidden' : ''}`}>
+      <div className={`app-layout__mobile-content ${showMobileChat ? 'app-layout__mobile-content--hidden' : ''}`}>
         {mobileSection === 'chats' && (
           <ChatList
-            activeItemId={activeItemId}
-            onSelectItem={handleSelectItem}
             section="chats"
+            onSelectConversation={handleSelectConversation}
           />
         )}
         {mobileSection === 'comunidades' && (
           <ChatList
-            activeItemId={activeItemId}
-            onSelectItem={handleSelectItem}
             section="comunidades"
+            onSelectConversation={handleSelectConversation}
           />
         )}
         {mobileSection === 'perfil' && (
@@ -121,14 +149,10 @@ function AppLayout() {
         )}
       </div>
 
-      {/* ChatView a pantalla completa cuando hay item activo */}
-      {showChatView && (
+      {/* ChatView a pantalla completa cuando hay conversación activa */}
+      {showMobileChat && activeConversation && (
         <div className="app-layout__mobile-chat">
-          <ChatView
-            itemId={activeItemId}
-            itemType={activeItemType}
-            onBack={handleBack}
-          />
+          <ChatView onBack={handleBack} />
         </div>
       )}
 

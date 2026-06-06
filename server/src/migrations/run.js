@@ -17,9 +17,18 @@ const pool = new Pool({
 async function runMigrations() {
   console.log('Running migrations...')
   try {
-    const sql = readFileSync(join(__dirname, '001_create_users.sql'), 'utf-8')
-    await pool.query(sql)
-    console.log('Migration 001_create_users completed')
+    const migrations = [
+      '001_create_users.sql',
+      '002_create_conversations.sql',
+      '003_add_reset_token.sql',
+    ]
+
+    for (const file of migrations) {
+      const sql = readFileSync(join(__dirname, file), 'utf-8')
+      await pool.query(sql)
+      console.log(`Migration ${file} completed`)
+    }
+
     console.log('All migrations completed successfully!')
   } catch (err) {
     console.error('Migration failed:', err.message)

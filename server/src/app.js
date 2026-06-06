@@ -1,4 +1,6 @@
 import express from 'express';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -9,12 +11,25 @@ import logger from './utils/logger.js';
 import routes from './routes/index.js';
 import notFound from './middleware/notFound.js';
 import errorHandler from './middleware/errorHandler.js';
+import chatHandler from './sockets/chatHandler.js';
 
 // ─── Validate Environment ───────────────────────────────────────────────────────
 validateConfig();
 
-// ─── Create Express App ─────────────────────────────────────────────────────────
+// ─── Create Express App & HTTP Server ───────────────────────────────────────────
 const app = express();
+const server = createServer(app);
+
+// ─── Socket.IO ──────────────────────────────────────────────────────────────────
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: config.corsOrigin,
+    credentials: true,
+  },
+});
+
+// Register socket event handlers
+chatHandler(io);
 
 // ─── Security Middleware ────────────────────────────────────────────────────────
 app.use(helmet());
@@ -57,15 +72,21 @@ app.use(notFound);
 app.use(errorHandler);
 
 // ─── Start Server ───────────────────────────────────────────────────────────────
-const server = app.listen(config.port, () => {
+server.listen(config.port, () => {
   logger.info(`🔥 Fénix Chat server running on port ${config.port}`);
   logger.info(`📡 Environment: ${config.nodeEnv}`);
   logger.info(`🌐 CORS origin: ${config.corsOrigin}`);
+  logger.info(`🔌 Socket.IO ready`);
 });
 
 // ─── Graceful Shutdown ──────────────────────────────────────────────────────────
 function gracefulShutdown(signal) {
   logger.info(`\n${signal} received. Shutting down gracefully...`);
+
+  // Close all socket connections
+  io.close(() => {
+    logger.info('Socket.IO connections closed.');
+  });
 
   server.close(() => {
     logger.info('HTTP server closed.');
@@ -83,4 +104,5 @@ function gracefulShutdown(signal) {
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
+export { io };
 export default app;

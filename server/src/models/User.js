@@ -70,6 +70,28 @@ const User = {
       [verifyToken, verifyExpires, id]
     )
   },
+
+  async setResetToken(id, resetToken, resetExpires) {
+    await query(
+      'UPDATE users SET reset_token = $1, reset_expires = $2, updated_at = NOW() WHERE id = $3',
+      [resetToken, resetExpires, id]
+    )
+  },
+
+  async findByResetToken(token) {
+    const result = await query(
+      'SELECT * FROM users WHERE reset_token = $1 AND reset_expires > NOW()',
+      [token]
+    )
+    return result.rows[0] || null
+  },
+
+  async updatePassword(id, passwordHash) {
+    await query(
+      'UPDATE users SET password_hash = $1, reset_token = NULL, reset_expires = NULL, updated_at = NOW() WHERE id = $2',
+      [passwordHash, id]
+    )
+  },
 }
 
 export default User

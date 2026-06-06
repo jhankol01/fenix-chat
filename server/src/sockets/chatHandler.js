@@ -1,0 +1,135 @@
+import jwt from 'jsonwebtoken'
+import config from '../config/index.js'
+import Message from '../models/Message.js'
+import Conversation from '../models/Conversation.js'
+import logger from '../utils/logger.js'
+
+// Track online users: Map<userId, Set<socketId>>
+const onlineUsers = new Map()
+
+/**
+ * Register socket.io event handlers.
+ * @param {import('socket.io').Server} io
+ */
+export default function chatHandler(io) {
+  // ─── Authentication Middleware ──────────────────────────────────────────────
+  io.use((socket, next) => {
+    const token = socket.handshake.auth?.token
+    if (!token) {
+      return next(new Error('Token de acceso requerido'))
+    }
+
+    try {
+      const decoded = jwt.verify(token, config.jwtSecret)
+      socket.user = { id: decoded.id, email: decoded.email, username: decoded.username }
+      next()
+    } catch (err) {
+      return next(new Error('Token inválido'))
+    }
+  })
+
+  // ─── Connection ─────────────────────────────────────────────────────────────
+  io.on('connection', (socket) => {
+    const { user } = socket
+    logger.info(`Socket connected: ${user.username} (${socket.id})`)
+
+    // Track online status
+    if (!onlineUsers.has(user.id)) {
+      onlineUsers.set(user.id, new Set())
+    }
+    onlineUsers.get(user.id).add(socket.id)
+
+    // Broadcast that user is online
+    socket.broadcast.emit('user_online', { userId: user.id, username: user.username })
+
+    // Send current online user list to the newly connected socket
+    const onlineUserIds = Array.from(onlineUsers.keys())
+    socket.emit('online_users', onlineUserIds)
+
+    // ─── Join Conversation Room ───────────────────────────────────────────────
+    socket.on('join_conversation', async (conversationId) => {
+      try {
+        // Verify the user is a member of this conversation
+        const isMember = await Conversation.isMember(conversationId, user.id)
+        if (!isMember) {
+          return socket.emit('error_message', { error: 'No tienes acceso a esta conversación' })
+        }
+
+        socket.join(conversationId)
+        logger.debug(`${user.username} joined room: ${conversationId}`)
+      } catch (err) {
+        logger.error('Error joining conversation:', err.message)
+        socket.emit('error_message', { error: 'Error al unirse a la conversación' })
+      }
+    })
+
+    // ─── Leave Conversation Room ──────────────────────────────────────────────
+    socket.on('leave_conversation', (conversationId) => {
+      socket.leave(conversationId)
+      logger.debug(`${user.username} left room: ${conversationId}`)
+    })
+
+    // ─── Send Message ─────────────────────────────────────────────────────────
+    socket.on('send_message', async ({ conversationId, content, type = 'text' }) => {
+      try {
+        if (!conversationId || !content?.trim()) {
+          return socket.emit('error_message', { error: 'conversationId y content son requeridos' })
+        }
+
+        // Verify membership
+        const isMember = await Conversation.isMember(conversationId, user.id)
+        if (!isMember) {
+          return socket.emit('error_message', { error: 'No tienes acceso a esta conversación' })
+        }
+
+        // Save message to database
+        const message = await Message.create({
+          conversationId,
+          senderId: user.id,
+          content: content.trim(),
+          type,
+        })
+
+        // Broadcast to all members in the conversation room (including sender)
+        io.to(conversationId).emit('new_message', message)
+
+        logger.debug(`Message from ${user.username} in ${conversationId}: ${content.substring(0, 50)}`)
+      } catch (err) {
+        logger.error('Error sending message:', err.message)
+        socket.emit('error_message', { error: 'Error al enviar el mensaje' })
+      }
+    })
+
+    // ─── Typing Indicators ────────────────────────────────────────────────────
+    socket.on('typing', (conversationId) => {
+      socket.to(conversationId).emit('user_typing', {
+        conversationId,
+        userId: user.id,
+        username: user.username,
+      })
+    })
+
+    socket.on('stop_typing', (conversationId) => {
+      socket.to(conversationId).emit('user_stop_typing', {
+        conversationId,
+        userId: user.id,
+      })
+    })
+
+    // ─── Disconnect ───────────────────────────────────────────────────────────
+    socket.on('disconnect', (reason) => {
+      logger.info(`Socket disconnected: ${user.username} (${reason})`)
+
+      // Remove socket from online tracking
+      const userSockets = onlineUsers.get(user.id)
+      if (userSockets) {
+        userSockets.delete(socket.id)
+        // If user has no more active sockets, they're offline
+        if (userSockets.size === 0) {
+          onlineUsers.delete(user.id)
+          socket.broadcast.emit('user_offline', { userId: user.id, username: user.username })
+        }
+      }
+    })
+  })
+}
