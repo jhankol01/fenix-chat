@@ -13,7 +13,7 @@ import { requestNotificationPermission, notifyNewMessage } from '../lib/notifica
 import './AppLayout.css'
 
 // Only this email sees the online-users panel
-const ADMIN_EMAIL = 'jhan_herrera09@outlook.es'
+const ADMIN_EMAIL = 'jhanamazon1729@gmail.com'
 
 /**
  * Hook para detectar si estamos en pantalla móvil
