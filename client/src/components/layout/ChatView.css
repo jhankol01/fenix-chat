@@ -671,3 +671,132 @@
     max-width: 90%;
   }
 }
+
+/* ========== Mic Button ========== */
+.chat-view__mic-btn {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-muted);
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.chat-view__mic-btn:hover {
+  color: var(--color-brand);
+  background: rgba(0, 245, 255, 0.08);
+}
+
+/* ========== Recording UI ========== */
+.chat-view__recording {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  animation: fadeIn 0.2s ease;
+}
+
+.chat-view__recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 12px;
+  background: rgba(255, 60, 60, 0.1);
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(255, 60, 60, 0.2);
+}
+
+.chat-view__recording-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #FF3C3C;
+  animation: recordPulse 1s infinite;
+}
+
+.chat-view__recording-time {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #FF3C3C;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes recordPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.chat-view__recording-cancel {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  transition: all 0.2s;
+}
+.chat-view__recording-cancel:hover {
+  color: #FF3C3C; background: rgba(255, 60, 60, 0.1);
+}
+
+.chat-view__recording-stop {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  color: white;
+  background: var(--color-brand);
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 245, 255, 0.3);
+}
+.chat-view__recording-stop:hover {
+  transform: scale(1.05);
+}
+
+/* ========== Audio Message Player ========== */
+.audio-msg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+  padding: 4px 0;
+}
+
+.audio-msg__play {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--color-brand);
+  color: white;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 245, 255, 0.25);
+}
+.audio-msg__play:hover { transform: scale(1.08); }
+
+.audio-msg__waveform {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.audio-msg__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 28px;
+}
+
+.audio-msg__bar {
+  width: 3px;
+  border-radius: 2px;
+  background: var(--color-brand);
+  transition: opacity 0.15s;
+  min-height: 4px;
+}
+
+.chat-view__msg-group--own .audio-msg__bar {
+  background: rgba(0, 245, 255, 0.7);
+}
+
+.audio-msg__time {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}

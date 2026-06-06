@@ -84,7 +84,7 @@ export default function chatHandler(io) {
     // ─── Send Message ─────────────────────────────────────────────────────────
     socket.on('send_message', async ({ conversationId, content, type = 'text' }) => {
       try {
-        if (!conversationId || !content?.trim()) {
+        if (!conversationId || !content) {
           return socket.emit('error_message', { error: 'conversationId y content son requeridos' })
         }
 
@@ -98,7 +98,7 @@ export default function chatHandler(io) {
         const message = await Message.create({
           conversationId,
           senderId: user.id,
-          content: content.trim(),
+          content: type === 'text' ? content.trim() : content,
           type,
         })
 

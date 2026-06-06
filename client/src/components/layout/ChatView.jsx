@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User
+  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause
 } from 'lucide-react'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
 import useChatStore from '../../stores/chatStore'
@@ -22,6 +22,13 @@ function ChatView({ onBack }) {
   const inputRef = useRef(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showContactInfo, setShowContactInfo] = useState(false)
+
+  // Voice note state
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingDuration, setRecordingDuration] = useState(0)
+  const mediaRecorderRef = useRef(null)
+  const audioChunksRef = useRef([])
+  const recordingTimerRef = useRef(null)
 
   const {
     activeConversation,
@@ -103,6 +110,75 @@ function ChatView({ onBack }) {
       stopTyping(activeConversation.id)
     }
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+  }
+
+  // --- Voice Recording ---
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm'
+      })
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data)
+      }
+
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop())
+      }
+
+      mediaRecorder.start()
+      setIsRecording(true)
+      setRecordingDuration(0)
+
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(d => d + 1)
+      }, 1000)
+    } catch (err) {
+      console.error('Microphone error:', err)
+      alert('No se pudo acceder al micrófono')
+    }
+  }
+
+  const handleStopRecording = () => {
+    if (!mediaRecorderRef.current) return
+
+    const recorder = mediaRecorderRef.current
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) audioChunksRef.current.push(e.data)
+    }
+
+    recorder.onstop = () => {
+      recorder.stream.getTracks().forEach(t => t.stop())
+      const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+      const reader = new FileReader()
+      reader.onload = () => {
+        const base64 = reader.result
+        sendMessage(base64, 'audio')
+      }
+      reader.readAsDataURL(blob)
+    }
+
+    recorder.stop()
+    clearInterval(recordingTimerRef.current)
+    setIsRecording(false)
+    setRecordingDuration(0)
+  }
+
+  const handleCancelRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop())
+      mediaRecorderRef.current.stop()
+    }
+    clearInterval(recordingTimerRef.current)
+    setIsRecording(false)
+    setRecordingDuration(0)
+    audioChunksRef.current = []
   }
 
   // Swipe-right para volver (edge swipe desde la izquierda)
@@ -341,7 +417,11 @@ function ChatView({ onBack }) {
 
                 {group.messages.map((msg) => (
                   <div key={msg.id} className="chat-view__msg-text">
-                    {msg.content}
+                    {msg.type === 'audio' ? (
+                      <AudioMessage src={msg.content} />
+                    ) : (
+                      msg.content
+                    )}
                   </div>
                 ))}
               </div>
@@ -411,14 +491,48 @@ function ChatView({ onBack }) {
             onFocus={() => setShowEmojiPicker(false)}
           />
         </div>
-        <button
-          className={`chat-view__send-btn ${inputValue.trim() ? 'chat-view__send-btn--active' : ''}`}
-          aria-label="Enviar"
-          onClick={handleSend}
-          disabled={!inputValue.trim()}
-        >
-          <Send size={18} />
-        </button>
+
+        {/* Recording UI */}
+        {isRecording ? (
+          <div className="chat-view__recording">
+            <div className="chat-view__recording-indicator">
+              <span className="chat-view__recording-dot" />
+              <span className="chat-view__recording-time">
+                {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+              </span>
+            </div>
+            <button
+              className="chat-view__recording-cancel"
+              onClick={handleCancelRecording}
+              aria-label="Cancelar"
+            >
+              <X size={18} />
+            </button>
+            <button
+              className="chat-view__recording-stop"
+              onClick={handleStopRecording}
+              aria-label="Enviar nota de voz"
+            >
+              <Send size={18} />
+            </button>
+          </div>
+        ) : inputValue.trim() ? (
+          <button
+            className="chat-view__send-btn chat-view__send-btn--active"
+            aria-label="Enviar"
+            onClick={handleSend}
+          >
+            <Send size={18} />
+          </button>
+        ) : (
+          <button
+            className="chat-view__mic-btn"
+            aria-label="Nota de voz"
+            onClick={handleStartRecording}
+          >
+            <Mic size={20} />
+          </button>
+        )}
       </div>
     </div>
   )
@@ -492,6 +606,77 @@ function groupMessages(messages, currentUser) {
   })
 
   return groups
+}
+
+/** Audio message player component */
+function AudioMessage({ src }) {
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const audioRef = useRef(null)
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const onTimeUpdate = () => {
+      if (audio.duration) setProgress((audio.currentTime / audio.duration) * 100)
+    }
+    const onLoadedMetadata = () => setDuration(audio.duration)
+    const onEnded = () => { setIsPlaying(false); setProgress(0) }
+
+    audio.addEventListener('timeupdate', onTimeUpdate)
+    audio.addEventListener('loadedmetadata', onLoadedMetadata)
+    audio.addEventListener('ended', onEnded)
+
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate)
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata)
+      audio.removeEventListener('ended', onEnded)
+    }
+  }, [])
+
+  const togglePlay = () => {
+    const audio = audioRef.current
+    if (!audio) return
+    if (isPlaying) {
+      audio.pause()
+    } else {
+      audio.play()
+    }
+    setIsPlaying(!isPlaying)
+  }
+
+  const formatDur = (s) => {
+    if (!s || isNaN(s)) return '0:00'
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60)
+    return `${m}:${sec.toString().padStart(2, '0')}`
+  }
+
+  return (
+    <div className="audio-msg">
+      <audio ref={audioRef} src={src} preload="metadata" />
+      <button className="audio-msg__play" onClick={togglePlay}>
+        {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+      </button>
+      <div className="audio-msg__waveform">
+        <div className="audio-msg__bars">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="audio-msg__bar"
+              style={{
+                height: `${15 + Math.sin(i * 0.8) * 12 + Math.random() * 8}px`,
+                opacity: progress > (i / 20) * 100 ? 1 : 0.3,
+              }}
+            />
+          ))}
+        </div>
+        <div className="audio-msg__time">{formatDur(duration)}</div>
+      </div>
+    </div>
+  )
 }
 
 export default ChatView

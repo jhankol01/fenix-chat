@@ -77,13 +77,14 @@ const useChatStore = create((set, get) => ({
   },
 
   // Enviar un mensaje vía socket
-  sendMessage: (content) => {
+  sendMessage: (content, type = 'text') => {
     const socket = getSocket()
     const { activeConversation } = get()
-    if (socket && activeConversation && content.trim()) {
+    if (socket && activeConversation && content) {
       socket.emit('send_message', {
         conversationId: activeConversation.id,
-        content: content.trim()
+        content: type === 'text' ? content.trim() : content,
+        type
       })
     }
   },
