@@ -1,0 +1,166 @@
+/* ========== Call Overlay ========== */
+.call-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: linear-gradient(180deg, #0a0f1c 0%, #0d1a2d 50%, #091420 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: callFadeIn 0.3s ease;
+}
+
+.call-overlay__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px;
+  width: 100%;
+  max-width: 360px;
+}
+
+/* Avatar */
+.call-overlay__avatar {
+  position: relative;
+  width: 140px; height: 140px;
+  margin-bottom: 8px;
+}
+
+.call-overlay__avatar--pulsing::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 245, 255, 0.3);
+  animation: callPulseRing 2s infinite;
+}
+
+.call-overlay__avatar-img {
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(0, 245, 255, 0.4);
+  box-shadow: 0 0 40px rgba(0, 245, 255, 0.15);
+}
+
+.call-overlay__avatar-fallback {
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3rem;
+  font-weight: 800;
+  color: white;
+  background: linear-gradient(135deg, #6C63FF, #FF2DAA);
+  box-shadow: 0 0 40px rgba(108, 99, 255, 0.2);
+}
+
+/* Name & status */
+.call-overlay__name {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  text-align: center;
+}
+
+.call-overlay__status {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  animation: callStatusPulse 2s infinite;
+}
+
+/* Wave animation */
+.call-overlay__wave {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  margin: 16px 0;
+}
+
+.call-overlay__wave-bar {
+  width: 4px;
+  height: 8px;
+  background: #00F5FF;
+  border-radius: 4px;
+  animation: waveBar 1s ease-in-out infinite;
+}
+
+@keyframes waveBar {
+  0%, 100% { height: 8px; opacity: 0.4; }
+  50% { height: 28px; opacity: 1; }
+}
+
+/* Action buttons */
+.call-overlay__actions {
+  display: flex;
+  gap: 32px;
+  margin-top: 32px;
+}
+
+.call-overlay__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  justify-content: center;
+  transition: all 0.2s;
+  color: white;
+  position: relative;
+}
+
+.call-overlay__btn span {
+  position: absolute;
+  bottom: -22px;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.6);
+  white-space: nowrap;
+}
+
+.call-overlay__btn--accept {
+  background: #00E676;
+  box-shadow: 0 4px 20px rgba(0, 230, 118, 0.4);
+}
+.call-overlay__btn--accept:hover { transform: scale(1.1); }
+
+.call-overlay__btn--reject,
+.call-overlay__btn--end {
+  background: #FF3C3C;
+  box-shadow: 0 4px 20px rgba(255, 60, 60, 0.4);
+}
+.call-overlay__btn--reject:hover,
+.call-overlay__btn--end:hover { transform: scale(1.1); }
+
+.call-overlay__btn--mute {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.call-overlay__btn--mute:hover { background: rgba(255, 255, 255, 0.15); }
+
+.call-overlay__btn--muted {
+  background: rgba(255, 60, 60, 0.2) !important;
+  border-color: rgba(255, 60, 60, 0.3) !important;
+  color: #FF6B6B;
+}
+
+/* Animations */
+@keyframes callFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes callPulseRing {
+  0% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.15); opacity: 0; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@keyframes callStatusPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}

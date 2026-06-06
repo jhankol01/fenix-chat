@@ -3,6 +3,7 @@ import { Flame } from 'lucide-react'
 import ChatList from '../components/layout/ChatList'
 import ChatView from '../components/layout/ChatView'
 import ProfileView from '../components/layout/ProfileView'
+import CallOverlay from '../components/layout/CallOverlay'
 import BottomNav from '../components/layout/BottomNav'
 import useAuthStore from '../stores/authStore'
 import useChatStore from '../stores/chatStore'
@@ -120,6 +121,8 @@ function AppLayout() {
      ============================ */
   if (!isMobile) {
     return (
+      <>
+      <CallOverlay />
       <div className="app-layout">
         {/* Panel izquierdo — Lista de conversaciones */}
         <div className="app-layout__sidebar">
@@ -148,6 +151,7 @@ function AppLayout() {
           )}
         </div>
       </div>
+      </>
     )
   }
 
@@ -155,6 +159,8 @@ function AppLayout() {
      MOBILE LAYOUT (< 768px)
      ============================ */
   return (
+    <>
+    <CallOverlay />
     <div className="app-layout app-layout--mobile">
       {/* Contenido principal basado en la sección activa */}
       <div className={`app-layout__mobile-content ${showMobileChat ? 'app-layout__mobile-content--hidden' : ''}`}>
@@ -188,6 +194,7 @@ function AppLayout() {
         onSectionChange={handleSectionChange}
       />
     </div>
+    </>
   )
 }
 

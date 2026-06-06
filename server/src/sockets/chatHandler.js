@@ -140,6 +140,66 @@ export default function chatHandler(io) {
       })
     })
 
+    // ─── WebRTC Call Signaling ─────────────────────────────────────────────────
+
+    // Initiate a call
+    socket.on('call_user', ({ targetUserId, offer, callerName, callerAvatar }) => {
+      const targetSockets = onlineUsers.get(targetUserId)
+      if (targetSockets) {
+        for (const sid of targetSockets) {
+          io.to(sid).emit('incoming_call', {
+            callerId: user.id,
+            callerName: callerName || user.username,
+            callerAvatar,
+            offer,
+          })
+        }
+        logger.info(`📞 ${user.username} calling user ${targetUserId}`)
+      } else {
+        socket.emit('call_unavailable', { reason: 'El usuario no está en línea' })
+      }
+    })
+
+    // Accept call — send answer back to caller
+    socket.on('call_accepted', ({ callerId, answer }) => {
+      const callerSockets = onlineUsers.get(callerId)
+      if (callerSockets) {
+        for (const sid of callerSockets) {
+          io.to(sid).emit('call_answered', { answer, answererId: user.id })
+        }
+      }
+    })
+
+    // Reject call
+    socket.on('call_rejected', ({ callerId }) => {
+      const callerSockets = onlineUsers.get(callerId)
+      if (callerSockets) {
+        for (const sid of callerSockets) {
+          io.to(sid).emit('call_rejected_response', { reason: 'Llamada rechazada' })
+        }
+      }
+    })
+
+    // ICE candidate relay
+    socket.on('ice_candidate', ({ targetUserId, candidate }) => {
+      const targetSockets = onlineUsers.get(targetUserId)
+      if (targetSockets) {
+        for (const sid of targetSockets) {
+          io.to(sid).emit('ice_candidate', { candidate, fromUserId: user.id })
+        }
+      }
+    })
+
+    // End call
+    socket.on('end_call', ({ targetUserId }) => {
+      const targetSockets = onlineUsers.get(targetUserId)
+      if (targetSockets) {
+        for (const sid of targetSockets) {
+          io.to(sid).emit('call_ended', { userId: user.id })
+        }
+      }
+    })
+
     // ─── Disconnect ───────────────────────────────────────────────────────────
     socket.on('disconnect', (reason) => {
       logger.info(`Socket disconnected: ${user.username} (${reason})`)

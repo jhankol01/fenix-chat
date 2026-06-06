@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause
+  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone
 } from 'lucide-react'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
 import useChatStore from '../../stores/chatStore'
@@ -265,6 +265,19 @@ function ChatView({ onBack }) {
         </div>
 
         <div className="chat-view__header-actions">
+          <button
+            className="chat-view__header-btn"
+            aria-label="Llamar"
+            onClick={() => {
+              const other = activeConversation.participants?.find(p => p.id !== user?.id)
+              const otherId = other?.id || activeConversation.other_user_id
+              if (otherId && window.__fenixStartCall) {
+                window.__fenixStartCall(otherId, otherName, otherAvatar)
+              }
+            }}
+          >
+            <Phone size={18} />
+          </button>
           <button className="chat-view__header-btn" aria-label="Más opciones">
             <MoreVertical size={18} />
           </button>
