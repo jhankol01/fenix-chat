@@ -7,6 +7,7 @@ import ProfileView from '../components/layout/ProfileView'
 import useAuthStore from '../stores/authStore'
 import useChatStore from '../stores/chatStore'
 import { connectSocket, disconnectSocket, getSocket } from '../lib/socket'
+import { requestNotificationPermission, notifyNewMessage } from '../lib/notifications'
 import './AppLayout.css'
 
 /**
@@ -39,11 +40,15 @@ function AppLayout() {
   const isMobile = useIsMobile()
 
   const accessToken = useAuthStore(state => state.accessToken)
+  const currentUser = useAuthStore(state => state.user)
   const { activeConversation, loadConversations, addMessage, setUserTyping, clearTyping } = useChatStore()
 
   // Conectar socket y configurar event listeners
   useEffect(() => {
     if (!accessToken) return
+
+    // Solicitar permiso para notificaciones
+    requestNotificationPermission()
 
     // Conectar socket con el token de autenticación
     const socket = connectSocket(accessToken)
@@ -51,6 +56,17 @@ function AppLayout() {
     // Escuchar nuevos mensajes
     socket.on('new_message', (message) => {
       addMessage(message)
+
+      // Notificar si el mensaje NO es del usuario actual
+      if (message.sender_id !== currentUser?.id) {
+        const activeId = useChatStore.getState().activeConversation?.id
+        notifyNewMessage({
+          senderName: message.sender_username || 'Nuevo mensaje',
+          content: message.content,
+          conversationId: message.conversation_id,
+          activeConversationId: activeId,
+        })
+      }
     })
 
     // Escuchar indicadores de escritura
