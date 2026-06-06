@@ -3,6 +3,7 @@ import { Flame } from 'lucide-react'
 import ChatList from '../components/layout/ChatList'
 import ChatView from '../components/layout/ChatView'
 import ProfileView from '../components/layout/ProfileView'
+import OnlineUsers from '../components/layout/OnlineUsers'
 import CallOverlay from '../components/layout/CallOverlay'
 import BottomNav from '../components/layout/BottomNav'
 import useAuthStore from '../stores/authStore'
@@ -10,6 +11,9 @@ import useChatStore from '../stores/chatStore'
 import { connectSocket, disconnectSocket, getSocket } from '../lib/socket'
 import { requestNotificationPermission, notifyNewMessage } from '../lib/notifications'
 import './AppLayout.css'
+
+// Only this email sees the online-users panel
+const ADMIN_EMAIL = 'jhan_herrera09@outlook.es'
 
 /**
  * Hook para detectar si estamos en pantalla móvil
@@ -171,10 +175,13 @@ function AppLayout() {
           />
         )}
         {mobileSection === 'comunidades' && (
-          <ChatList
-            section="comunidades"
-            onSelectConversation={handleSelectConversation}
-          />
+          currentUser?.email === ADMIN_EMAIL ? (
+            <OnlineUsers onSelectConversation={handleSelectConversation} />
+          ) : (
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', color:'var(--color-text-muted)' }}>
+              <p>Próximamente</p>
+            </div>
+          )
         )}
         {mobileSection === 'perfil' && (
           <ProfileView />
