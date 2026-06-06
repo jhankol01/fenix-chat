@@ -6,7 +6,7 @@ import { query } from '../config/database.js'
 export async function getConversations(req, res, next) {
   try {
     const conversations = await Conversation.getByUser(req.user.id)
-    res.json(conversations)
+    res.json({ conversations })
   } catch (err) {
     next(err)
   }
@@ -39,8 +39,10 @@ export async function createConversation(req, res, next) {
     const members = await Conversation.getMembers(conversationId)
 
     res.status(201).json({
-      ...conversation,
-      members,
+      conversation: {
+        ...conversation,
+        members,
+      }
     })
   } catch (err) {
     next(err)
@@ -64,7 +66,7 @@ export async function getMessages(req, res, next) {
       before: before || null,
     })
 
-    res.json(messages)
+    res.json({ messages })
   } catch (err) {
     next(err)
   }
@@ -90,7 +92,7 @@ export async function searchUsers(req, res, next) {
       [`%${q.trim()}%`, req.user.id]
     )
 
-    res.json(result.rows)
+    res.json({ users: result.rows })
   } catch (err) {
     next(err)
   }
