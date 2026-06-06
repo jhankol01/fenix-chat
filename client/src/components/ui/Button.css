@@ -1,0 +1,153 @@
+/* ============================================
+   🔥 Button Component Styles
+   Variantes: primary, secondary, danger
+   ============================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-family: var(--font-primary);
+  font-weight: var(--weight-semibold);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  border: none;
+  position: relative;
+  overflow: hidden;
+  transition:
+    background var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast),
+    opacity var(--transition-fast);
+  white-space: nowrap;
+  user-select: none;
+}
+
+/* --- Tamaños --- */
+.btn--sm {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+  height: 32px;
+  border-radius: var(--radius-md);
+}
+
+.btn--md {
+  padding: var(--space-2) var(--space-5);
+  font-size: var(--text-base);
+  height: 40px;
+}
+
+.btn--lg {
+  padding: var(--space-3) var(--space-8);
+  font-size: var(--text-lg);
+  height: 48px;
+  border-radius: var(--radius-xl);
+}
+
+/* --- Variante Primary (gradiente brand — Electric Cyan) --- */
+.btn--primary {
+  background: linear-gradient(135deg, var(--color-brand), #00B8C4);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-md);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-brand-hover), #00D4DD);
+  box-shadow: var(--shadow-glow-brand);
+  transform: translateY(-1px);
+}
+
+.btn--primary:active:not(:disabled) {
+  background: linear-gradient(135deg, var(--color-brand-active), #009EA6);
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* --- Variante Secondary (ghost) --- */
+.btn--secondary {
+  background: transparent;
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-hover);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 12px rgba(0, 245, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.btn--secondary:active:not(:disabled) {
+  background: var(--color-bg-active);
+  transform: translateY(0);
+}
+
+/* --- Variante Danger --- */
+.btn--danger {
+  background: linear-gradient(135deg, var(--color-error), #dc2626);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.btn--danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #FF7676, var(--color-error));
+  box-shadow: 0 0 20px rgba(255, 82, 82, 0.3), 0 0 60px rgba(255, 82, 82, 0.1);
+  transform: translateY(-1px);
+}
+
+.btn--danger:active:not(:disabled) {
+  background: linear-gradient(135deg, #b91c1c, #991b1b);
+  transform: translateY(0);
+}
+
+/* --- Estados --- */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--loading {
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+/* --- Spinner de carga --- */
+.btn__spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: var(--radius-full);
+  animation: spin 0.6s linear infinite;
+}
+
+.btn--secondary .btn__spinner {
+  border-color: rgba(160, 160, 184, 0.3);
+  border-top-color: var(--color-text-primary);
+}
+
+/* --- Icon only --- */
+.btn--icon-only {
+  padding: 0;
+  aspect-ratio: 1;
+}
+
+.btn--icon-only.btn--sm {
+  width: 32px;
+}
+
+.btn--icon-only.btn--md {
+  width: 40px;
+}
+
+.btn--icon-only.btn--lg {
+  width: 48px;
+}
+
+/* Icono dentro del botón */
+.btn__icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}

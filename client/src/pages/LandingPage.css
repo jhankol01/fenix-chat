@@ -1,0 +1,277 @@
+/* ============================================
+   🔥 Landing Page Styles
+   Página de aterrizaje con orbes animados y glassmorphism
+   ============================================ */
+
+.landing {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  overflow-y: auto;
+  background: var(--color-bg-primary);
+}
+
+/* --- Fondo animado con orbes --- */
+.landing__bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.landing__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  animation: orbFloat 20s ease-in-out infinite;
+}
+
+.landing__orb--purple {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #00F5FF, transparent 70%);
+  top: -10%;
+  left: -5%;
+  animation-duration: 22s;
+}
+
+.landing__orb--cyan {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, #FF2DAA, transparent 70%);
+  top: 40%;
+  right: -8%;
+  animation-duration: 18s;
+  animation-delay: -5s;
+}
+
+.landing__orb--orange {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, #8A00FF, transparent 70%);
+  bottom: -5%;
+  left: 30%;
+  animation-duration: 25s;
+  animation-delay: -10s;
+}
+
+.landing__orb--small-purple {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, #33F7FF, transparent 70%);
+  top: 60%;
+  left: 10%;
+  animation-duration: 16s;
+  animation-delay: -3s;
+  opacity: 0.2;
+}
+
+@keyframes orbFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(30px, -40px) scale(1.05);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+  75% {
+    transform: translate(15px, 30px) scale(1.02);
+  }
+}
+
+/* --- Hero Section --- */
+.landing__hero {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 85vh;
+  padding: var(--space-8) var(--space-4);
+  text-align: center;
+}
+
+/* Logo flotante */
+.landing__logo {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-2xl);
+  background: linear-gradient(135deg, #00F5FF, #FF2DAA);
+  color: white;
+  margin-bottom: var(--space-8);
+  box-shadow: var(--shadow-glow-brand);
+  animation: float 4s ease-in-out infinite;
+}
+
+.landing__title {
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: var(--weight-extrabold);
+  line-height: var(--leading-tight);
+  margin-bottom: var(--space-4);
+  background: linear-gradient(135deg, #00F5FF, #FF2DAA);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: fadeInUp 0.8s ease;
+}
+
+.landing__subtitle {
+  font-size: clamp(var(--text-base), 2.5vw, var(--text-xl));
+  color: var(--color-text-secondary);
+  max-width: 600px;
+  margin-bottom: var(--space-10);
+  line-height: var(--leading-relaxed);
+  animation: fadeInUp 0.8s ease 0.15s both;
+}
+
+.landing__cta {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  justify-content: center;
+  animation: fadeInUp 0.8s ease 0.3s both;
+}
+
+/* --- Features Section --- */
+.landing__features {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-6);
+  max-width: 1000px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--space-16) var(--space-6) var(--space-20);
+}
+
+.landing__feature-card {
+  background: var(--color-surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-surface-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+  transition:
+    transform var(--transition-base),
+    box-shadow var(--transition-base),
+    border-color var(--transition-base);
+  animation: fadeInUp 0.6s ease both;
+}
+
+.landing__feature-card:nth-child(1) { animation-delay: 0.1s; }
+.landing__feature-card:nth-child(2) { animation-delay: 0.2s; }
+.landing__feature-card:nth-child(3) { animation-delay: 0.3s; }
+
+.landing__feature-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-glow-brand);
+  border-color: var(--color-border-hover);
+}
+
+.landing__feature-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-4);
+  border-radius: var(--radius-lg);
+  color: white;
+}
+
+.landing__feature-icon--chat {
+  background: linear-gradient(135deg, #00F5FF, #00A8B0);
+}
+
+.landing__feature-icon--voice {
+  background: linear-gradient(135deg, #FF2DAA, #C00080);
+}
+
+.landing__feature-icon--community {
+  background: linear-gradient(135deg, #8A00FF, #5C00B0);
+}
+
+.landing__feature-title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.landing__feature-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+/* --- Footer --- */
+.landing__footer {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: var(--space-6);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+/* --- Phoenix background element --- */
+.landing__phoenix-glow {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(
+    circle,
+    rgba(0, 245, 255, 0.08) 0%,
+    rgba(255, 45, 170, 0.04) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+  animation: phoenixPulse 6s ease-in-out infinite;
+}
+
+@keyframes phoenixPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.1);
+  }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .landing__cta {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .landing__cta .btn {
+    width: 100%;
+    max-width: 300px;
+  }
+
+  .landing__features {
+    grid-template-columns: 1fr;
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+}

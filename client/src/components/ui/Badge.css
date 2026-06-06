@@ -1,0 +1,63 @@
+/* ============================================
+   🔥 Badge Component Styles
+   Notificaciones con variantes y pulse
+   ============================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: var(--weight-bold);
+  line-height: 1;
+  color: white;
+  user-select: none;
+}
+
+.badge--brand {
+  background: var(--color-brand);
+}
+
+.badge--accent {
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+}
+
+.badge--danger {
+  background: var(--color-error);
+}
+
+/* Animación pulse para nuevas notificaciones */
+.badge--pulse {
+  animation: badgePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+.badge--danger.badge--pulse {
+  animation-name: badgePulseDanger;
+}
+
+@keyframes badgePulseDanger {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px transparent;
+  }
+}

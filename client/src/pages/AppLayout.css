@@ -1,0 +1,101 @@
+/* ============================================
+   AppLayout — Layout principal adaptativo
+   Desktop: 2 paneles (ChatList + ChatView)
+   Mobile: BottomNav + contenido dinámico
+   ============================================ */
+
+.app-layout {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--color-bg-primary);
+}
+
+/* ---------- Panel izquierdo (desktop) ---------- */
+.app-layout__sidebar {
+  width: 340px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--color-border-subtle);
+  height: 100%;
+}
+
+/* ---------- Panel principal (desktop) ---------- */
+.app-layout__main {
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+}
+
+/* ---------- Welcome screen ---------- */
+.welcome-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: var(--space-4);
+  background: var(--color-bg-primary);
+  animation: fadeIn 0.4s ease;
+}
+
+.welcome-screen__icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-brand);
+  filter: drop-shadow(0 0 20px var(--color-brand-glow));
+  animation: float 3s ease-in-out infinite;
+}
+
+.welcome-screen__title {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  background: linear-gradient(135deg, var(--color-brand), var(--color-accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+.welcome-screen__subtitle {
+  font-size: var(--text-base);
+  color: var(--color-text-secondary);
+  text-align: center;
+  max-width: 300px;
+  line-height: var(--leading-relaxed);
+}
+
+/* ============================================
+   Responsive: Mobile (< 768px)
+   ============================================ */
+@media (max-width: 767px) {
+  .app-layout--mobile {
+    flex-direction: column;
+    padding-bottom: 56px; /* Espacio para el BottomNav */
+  }
+
+  /* Contenido mobile — ocupa todo el espacio disponible */
+  .app-layout__mobile-content {
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* Ocultar lista cuando se muestra un chat */
+  .app-layout__mobile-content--hidden {
+    display: none;
+  }
+
+  /* ChatView a pantalla completa en mobile */
+  .app-layout__mobile-chat {
+    flex: 1;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+}

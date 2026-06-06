@@ -1,0 +1,219 @@
+============================================================
+🔥 FÉNIX CHAT — MEJORAS Y PENDIENTES POR FASE
+============================================================
+Última actualización: 2026-06-06
+
+Este archivo documenta todo lo que necesita mejoras,
+correcciones o ajustes en cada fase del proyecto.
+Se actualiza conforme avanzamos.
+
+============================================================
+FASE 1: FUNDACIÓN Y DESIGN SYSTEM
+============================================================
+Estado: ✅ Completada (con pendientes menores)
+
+--- COLORES Y DISEÑO ---
+[ ] Verificar contraste de texto sobre fondos en todos los paneles
+    (el cyan #00F5FF sobre fondos claros puede ser difícil de leer)
+[ ] Revisar que el texto del botón primary (dark text sobre cyan)
+    se vea bien en todos los navegadores
+[ ] Probar la paleta en modo pantalla de baja calidad / proyector
+[ ] Agregar soporte para tema claro en el futuro (preparar variables)
+
+--- LANDING PAGE ---
+[ ] Los orbes animados pueden ser pesados en dispositivos móviles
+    viejos — considerar reducir animaciones con prefers-reduced-motion
+[ ] Falta una navbar/header en la landing (logo + links login/register)
+[ ] Falta sección "¿Qué es Fénix Chat?" con más detalles
+[ ] Falta sección de testimonios o social proof (para cuando haya users)
+[ ] El footer es muy básico — agregar links a redes sociales, términos, privacidad
+
+--- RESPONSIVE ---
+[ ] Probar en iPhone SE (pantalla 375px) — verificar que nada se rompa
+[ ] Probar en tablets (768px-1024px) — los paneles pueden necesitar ajuste
+[ ] El AppLayout (sidebar + paneles) no tiene menú hamburguesa para móvil
+[ ] Falta gesture support para abrir/cerrar paneles en móvil (swipe)
+
+--- COMPONENTES UI ---
+[ ] El Tooltip no se reposiciona si se sale de la pantalla (overflow)
+[ ] El Modal no tiene trap de foco (accesibilidad - tab debería quedarse dentro)
+[ ] Falta componente Toast/Snackbar para notificaciones temporales
+[ ] Falta componente Dropdown/Select reutilizable
+[ ] El Avatar no carga imágenes reales todavía (solo iniciales)
+[ ] Falta dark/light mode toggle
+
+--- LAYOUT (APP SHELL) — REDISEÑADO 2026-06-06 ---
+[x] Eliminados componentes Discord-like (Sidebar, ChannelPanel, MemberPanel, Header)
+[x] Nuevo CommunityNav con tarjetas visuales (banners, actividad en vivo)
+[x] Nuevo TabBar (Chat | Voz | Anuncios | Miembros)
+[x] Nuevo VoiceBar persistente en la parte inferior
+[x] Nuevo CommunityHeader con info de comunidad
+[x] Pantalla de bienvenida cuando no hay comunidad seleccionada
+[x] Menú hamburguesa para móvil en CommunityNav
+[ ] CommunityNav: los datos son mock — conectar con backend en Fase 3
+[ ] VoiceBar: el botón "Unirse" no tiene funcionalidad real — Fase 5
+[ ] TabBar: el contenido de cada tab es placeholder
+[ ] Chat tab: no tiene mensajes reales — Fase 4
+[ ] Voz tab: no conecta a WebRTC — Fase 5
+[ ] Anuncios tab: datos mock — Fase 6
+[ ] Miembros tab: datos mock — Fase 3
+[ ] Falta indicador de estado de conexión (online/offline/reconectando)
+[ ] Los iconos del CommunityHeader (buscar, notificaciones, settings) no tienen funcionalidad
+[ ] Transición animada al cambiar de comunidad
+[ ] Las tarjetas de comunidad necesitan banners/imágenes reales
+
+--- REGISTRO Y AUTH ---
+[ ] El PhoneInput: verificar que el formato funcione con todos los países
+[ ] El PhoneInput: el dropdown puede quedar cortado en pantallas pequeñas
+[ ] El PinInput: probar paste en todos los navegadores (Firefox, Safari)
+[ ] El PinInput: agregar soporte para auto-fill de SMS en móvil (Web OTP API)
+[ ] Falta validación de email más robusta (regex mejorado)
+[ ] Falta indicador de fortaleza de contraseña
+[ ] Falta opción "Olvidé mi contraseña"
+[ ] Falta opción de registro/login con Google/Discord (OAuth) — futuro
+[ ] La simulación del PIN acepta cualquier código — conectar con backend en Fase 2
+
+--- BACKEND ---
+[ ] El servidor Express solo tiene health check — no hay endpoints reales
+[ ] Falta conexión a PostgreSQL (se configura en Fase 2)
+[ ] Falta conexión a Redis (se configura en Fase 2)
+[ ] Falta HTTPS en desarrollo (no crítico pero buena práctica)
+[ ] El rate limiting es global — debería ser por endpoint en producción
+
+--- RENDIMIENTO ---
+[ ] Agregar lazy loading en las rutas (React.lazy + Suspense)
+[ ] Las fuentes de Google se cargan de forma bloqueante — usar font-display: swap
+[ ] Falta service worker para PWA (offline support)
+[ ] Falta manifest.json completo para instalación PWA
+[ ] Optimizar bundle — lucide-react importa iconos individualmente (verificar tree-shaking)
+
+--- ACCESIBILIDAD (a11y) ---
+[ ] Agregar aria-labels a todos los botones de icono
+[ ] Verificar navegación por teclado en todos los componentes
+[ ] El sidebar necesita role="navigation" y aria-labels
+[ ] Los inputs necesitan asociación label-input correcta
+[ ] Verificar contraste WCAG AA en la nueva paleta
+
+--- SEO ---
+[ ] Falta Open Graph meta tags (og:title, og:description, og:image)
+[ ] Falta Twitter Card meta tags
+[ ] Falta sitemap.xml
+[ ] Falta robots.txt
+
+
+============================================================
+FASE 2: AUTENTICACIÓN (PRÓXIMA)
+============================================================
+Estado: ⬜ Pendiente
+
+--- POR CONSTRUIR ---
+[ ] Endpoint POST /api/auth/register
+[ ] Endpoint POST /api/auth/login
+[ ] Endpoint POST /api/auth/refresh
+[ ] Endpoint POST /api/auth/logout
+[ ] JWT con access + refresh tokens
+[ ] Hashing de contraseñas con bcrypt
+[ ] Almacenamiento de refresh tokens en Redis
+[ ] Middleware de autenticación para rutas protegidas
+[ ] Validación de inputs en el backend (express-validator)
+[ ] Migración SQL para tabla users
+[ ] Decidir: verificación por SMS ($10) o por email (gratis)
+[ ] Conectar el frontend con los endpoints reales
+[ ] Proteger rutas /app/* (redirect a /login si no auth)
+[ ] Perfil de usuario: ver y editar
+[ ] Upload de avatar
+
+--- NOTAS ---
+- El PhoneInput y PinInput ya están construidos en el frontend
+- Solo falta conectarlos con el backend real
+- Para SMS: Twilio ($0.01-0.05/SMS) o Telnyx ($0.004/SMS)
+- Para email: Resend (3,000 emails/mes gratis)
+
+
+============================================================
+FASE 3: COMUNIDADES
+============================================================
+Estado: ⬜ Pendiente
+
+--- POR CONSTRUIR ---
+[ ] CRUD completo de comunidades
+[ ] Sistema de invitaciones por link
+[ ] Roles básicos (owner, admin, member)
+[ ] Lista de miembros real
+[ ] Iconos/avatares de comunidad
+[ ] Reemplazar mock data con datos reales
+
+
+============================================================
+FASE 4: CHAT EN TIEMPO REAL
+============================================================
+Estado: ⬜ Pendiente
+
+--- POR CONSTRUIR ---
+[ ] Socket.io server
+[ ] Mensajes en tiempo real
+[ ] Historial de mensajes (paginado)
+[ ] Reacciones con emojis
+[ ] Envío de imágenes
+[ ] Indicador "escribiendo..."
+[ ] Presencia online
+
+
+============================================================
+FASE 5: SALAS DE VOZ
+============================================================
+Estado: ⬜ Pendiente
+
+--- POR CONSTRUIR ---
+[ ] Servidor Mediasoup
+[ ] WebRTC client
+[ ] Sala de voz permanente por comunidad
+[ ] Controles de audio (mute/unmute)
+[ ] Indicador de quién habla
+[ ] Barra persistente de voz
+
+--- NOTAS ---
+- Esta es la fase MÁS COMPLEJA y COSTOSA
+- Requiere segundo servidor (Hetzner CX31)
+- Probar con pocos usuarios antes de escalar
+
+
+============================================================
+FASE 6: HERRAMIENTAS PARA CREADORES
+============================================================
+Estado: ⬜ Pendiente
+
+--- POR CONSTRUIR ---
+[ ] Canal de anuncios
+[ ] Publicaciones destacadas
+[ ] Notificaciones push (Web Push API)
+[ ] Centro de notificaciones
+
+
+============================================================
+FASE 7: DEPLOY Y PRODUCCIÓN
+============================================================
+Estado: ⬜ Pendiente
+
+--- POR CONSTRUIR ---
+[ ] Configurar servidor Hetzner
+[ ] Docker + Docker Compose para producción
+[ ] Nginx como reverse proxy
+[ ] SSL con Let's Encrypt
+[ ] Cloudflare DNS + CDN
+[ ] Backups automáticos de PostgreSQL
+[ ] CI/CD básico (GitHub Actions)
+[ ] Monitoreo y alertas
+[ ] Tests de carga (200 conexiones simultáneas)
+[ ] Dominio conectado (Hostinger → Hetzner)
+
+
+============================================================
+NOTAS GENERALES
+============================================================
+- Hosting: Hostinger (dominio) + Hetzner (servidores)
+- El usuario no tiene GitHub todavía — crearlo antes de Fase 7
+- Escenario A: económico, self-hosted, escalar progresivamente
+- Público objetivo inicial: gamers
+- Meta MVP: 200 usuarios
+- Stack: React + Vite + Node.js + Express + PostgreSQL + Redis + Mediasoup

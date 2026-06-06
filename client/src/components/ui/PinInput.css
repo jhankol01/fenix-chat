@@ -1,0 +1,150 @@
+/* ============================================
+   🔥 PinInput Component Styles
+   6-digit verification PIN with premium feel
+   Brand color: cyan #00F5FF
+   ============================================ */
+
+.pin-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* --- Contenedor de las 6 cajas --- */
+.pin-input__boxes {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+/* --- Caja individual --- */
+.pin-input__box {
+  width: 50px;
+  height: 58px;
+  text-align: center;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  font-family: var(--font-mono);
+  color: var(--color-text-primary);
+  background: var(--color-bg-tertiary);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  outline: none;
+  caret-color: #00F5FF;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast),
+    transform var(--transition-fast);
+  animation: pinBoxIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+/* Animación escalonada de entrada */
+.pin-input__box:nth-child(1) { animation-delay: 0ms; }
+.pin-input__box:nth-child(2) { animation-delay: 50ms; }
+.pin-input__box:nth-child(3) { animation-delay: 100ms; }
+.pin-input__box:nth-child(4) { animation-delay: 150ms; }
+.pin-input__box:nth-child(5) { animation-delay: 200ms; }
+.pin-input__box:nth-child(6) { animation-delay: 250ms; }
+
+@keyframes pinBoxIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Hover */
+.pin-input__box:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg-elevated);
+}
+
+/* Focus — glow cyan */
+.pin-input__box:focus {
+  border-color: #00F5FF;
+  box-shadow:
+    0 0 0 3px rgba(0, 245, 255, 0.12),
+    0 0 20px rgba(0, 245, 255, 0.2);
+  background: var(--color-bg-elevated);
+  transform: scale(1.05);
+}
+
+/* Caja con valor (llena) */
+.pin-input__box--filled {
+  background: rgba(0, 245, 255, 0.06);
+  border-color: rgba(0, 245, 255, 0.3);
+}
+
+/* --- Estado de error (shake + rojo) --- */
+.pin-input--error .pin-input__boxes {
+  animation: pinShake 0.5s ease;
+}
+
+.pin-input--error .pin-input__box {
+  border-color: var(--color-error);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+}
+
+@keyframes pinShake {
+  0%, 100% { transform: translateX(0); }
+  10%, 50%, 90% { transform: translateX(-6px); }
+  30%, 70% { transform: translateX(6px); }
+}
+
+/* --- Estado de éxito (verde + escala) --- */
+.pin-input--success .pin-input__box {
+  border-color: var(--color-success);
+  box-shadow: 0 0 0 2px rgba(6, 214, 160, 0.2), 0 0 15px rgba(6, 214, 160, 0.15);
+  background: rgba(6, 214, 160, 0.06);
+}
+
+/* --- Checkmark animado (éxito) --- */
+.pin-input__check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: rgba(6, 214, 160, 0.12);
+  border: 2px solid var(--color-success);
+  color: var(--color-success);
+  animation: pinCheckIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pinCheckIn {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* --- Mensaje de error debajo --- */
+.pin-input__error-msg {
+  font-size: var(--text-sm);
+  color: var(--color-error);
+  animation: fadeInDown 0.2s ease;
+}
+
+/* --- Responsive: cajas más pequeñas en pantallas chicas --- */
+@media (max-width: 400px) {
+  .pin-input__boxes {
+    gap: var(--space-2);
+  }
+
+  .pin-input__box {
+    width: 42px;
+    height: 50px;
+    font-size: var(--text-lg);
+  }
+}

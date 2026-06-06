@@ -1,0 +1,127 @@
+/* ============================================
+   ProfileView — Pantalla de perfil (tab "Yo")
+   Avatar, estado, opciones de menú
+   ============================================ */
+
+.profile-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-bg-primary);
+  overflow-y: auto;
+}
+
+/* ---------- Sección del avatar y datos del usuario ---------- */
+.profile-view__user-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-8) var(--space-4) var(--space-6);
+  background: var(--color-bg-secondary);
+}
+
+.profile-view__avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: white;
+  background: linear-gradient(135deg, #FF2DAA, #8A00FF);
+  margin-bottom: var(--space-4);
+  flex-shrink: 0;
+}
+
+.profile-view__username {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.profile-view__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-online);
+}
+
+.profile-view__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-online);
+  flex-shrink: 0;
+}
+
+/* ---------- Divisor ---------- */
+.profile-view__divider {
+  height: 1px;
+  background: var(--color-border-subtle);
+  margin: 0;
+  border: none;
+}
+
+/* ---------- Menu items ---------- */
+.profile-view__menu {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) 0;
+}
+
+.profile-view__menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  height: 56px;
+  padding: 0 var(--space-5);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.profile-view__menu-item:hover {
+  background: var(--color-bg-hover);
+}
+
+.profile-view__menu-item:active {
+  background: var(--color-bg-active);
+}
+
+.profile-view__menu-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.profile-view__menu-label {
+  flex: 1;
+  font-size: var(--text-base);
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+}
+
+.profile-view__menu-chevron {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+/* ---------- Footer con versión ---------- */
+.profile-view__footer {
+  margin-top: auto;
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.profile-view__version {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}

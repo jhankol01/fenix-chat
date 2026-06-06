@@ -1,0 +1,252 @@
+/* ============================================
+   🔥 Register Page Styles
+   2-step registration flow with phone verification
+   Brand accent: cyan #00F5FF
+   ============================================ */
+
+/* --- Card para el registro --- */
+.register-card {
+  max-width: 440px;
+}
+
+/* ============================================
+   Step Indicator (2 puntos + línea)
+   ============================================ */
+.register-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-bottom: var(--space-6);
+}
+
+.register-steps__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-hover);
+  border: 2px solid var(--color-border-hover);
+  transition: all var(--transition-base);
+  flex-shrink: 0;
+}
+
+.register-steps__dot--active {
+  background: var(--color-brand);
+  border-color: var(--color-brand);
+  box-shadow: 0 0 8px var(--color-brand-glow), 0 0 20px rgba(0, 245, 255, 0.15);
+}
+
+.register-steps__line {
+  width: 60px;
+  height: 2px;
+  background: var(--color-bg-hover);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.register-steps__line-fill {
+  width: 0%;
+  height: 100%;
+  background: var(--color-brand);
+  border-radius: var(--radius-full);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.register-steps__line-fill--active {
+  width: 100%;
+}
+
+/* ============================================
+   Animaciones de paso (enter / exit)
+   ============================================ */
+
+/* Entrada — aparece con fade + slide suave */
+.register-step--enter {
+  animation: stepEnter 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Salida hacia siguiente paso */
+.register-step--exit-next {
+  animation: stepExitNext 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* Salida hacia paso anterior */
+.register-step--exit-back {
+  animation: stepExitBack 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes stepEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes stepExitNext {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+@keyframes stepExitBack {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+/* ============================================
+   Paso 2: Verificación
+   ============================================ */
+.register-verify {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+/* Botón volver */
+.register-verify__back {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: flex-start;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  margin-bottom: var(--space-2);
+  background: none;
+  border: none;
+}
+
+.register-verify__back:hover {
+  color: var(--color-brand);
+  background: var(--color-brand-subtle);
+}
+
+/* Ícono shield */
+.register-verify__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-xl);
+  background: var(--color-brand-subtle);
+  border: 1px solid rgba(0, 245, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-brand);
+  margin-bottom: var(--space-2);
+}
+
+.register-verify__title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+}
+
+.register-verify__text {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-normal);
+}
+
+.register-verify__phone {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--color-brand);
+  font-family: var(--font-mono);
+  letter-spacing: 1px;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-brand-subtle);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(0, 245, 255, 0.1);
+}
+
+/* Contenedor del PinInput */
+.register-verify__pin {
+  margin: var(--space-4) 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Reenviar código */
+.register-verify__resend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.register-verify__resend-text {
+  color: var(--color-text-tertiary);
+}
+
+.register-verify__resend-btn {
+  color: var(--color-brand);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  font-size: var(--text-sm);
+  background: none;
+  border: none;
+}
+
+.register-verify__resend-btn:hover {
+  background: var(--color-brand-subtle);
+  text-shadow: 0 0 8px var(--color-brand-glow);
+}
+
+.register-verify__resend-timer {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+/* Botón verificar */
+.register-verify__submit {
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 480px) {
+  .register-card {
+    max-width: 100%;
+  }
+
+  .register-verify__icon {
+    width: 52px;
+    height: 52px;
+  }
+
+  .register-verify__icon svg {
+    width: 26px;
+    height: 26px;
+  }
+}

@@ -1,0 +1,17 @@
+import { Router } from 'express'
+import {
+  register, login, refresh, logout, verifyEmail, resendVerification,
+  registerValidation, loginValidation,
+} from '../controllers/auth.js'
+import authenticate from '../middleware/auth.js'
+
+const router = Router()
+
+router.post('/register', registerValidation, register)
+router.post('/login', loginValidation, login)
+router.post('/refresh', refresh)
+router.post('/logout', authenticate, logout)
+router.get('/verify/:token', verifyEmail)
+router.post('/resend-verification', resendVerification)
+
+export default router

@@ -1,0 +1,187 @@
+# Proyecto Fénix Chat - Contexto General
+
+## Visión
+
+Fénix Chat es una plataforma de comunicación que busca ocupar el espacio entre WhatsApp y Discord.
+
+La idea principal no es competir agregando más funciones, sino simplificando la experiencia.
+
+Queremos una aplicación donde grupos de amigos, gamers, creadores de contenido y pequeñas comunidades puedan comunicarse fácilmente mediante chat y voz sin tener que lidiar con configuraciones complejas.
+
+La propuesta central es:
+
+"Mensajería simple con comunidades y salas de voz permanentes."
+
+---
+
+## Problema Detectado
+
+WhatsApp es excelente para comunicación rápida, pero los grupos grandes se vuelven caóticos y no tiene una experiencia sólida para comunidades activas.
+
+Discord tiene herramientas muy potentes, pero para muchos usuarios resulta complejo debido a la cantidad de canales, roles, configuraciones y funciones avanzadas.
+
+Existe una oportunidad para crear una plataforma más sencilla que Discord pero más comunitaria que WhatsApp.
+
+---
+
+## Público Objetivo Inicial
+
+### Prioridad 1
+
+* Gamers.
+
+### Prioridad 2
+
+* Creadores de contenido.
+* Streamers.
+* Tiktokers.
+
+### Prioridad 3
+
+* Comunidades pequeñas.
+* Equipos de trabajo.
+* Grupos de estudio.
+
+---
+
+## Concepto de Comunidad
+
+Cada comunidad debe sentirse como un espacio propio y permanente.
+
+Elementos iniciales:
+
+* Chat principal.
+* Sala de voz permanente.
+* Compartir contenido.
+* Canal de anuncios para administradores.
+* Lista de miembros.
+
+No queremos múltiples configuraciones complejas ni una estructura similar a Discord con decenas de canales.
+
+La filosofía es simplicidad.
+
+---
+
+## MVP (Primera Versión)
+
+Objetivo: validar la idea con usuarios reales.
+
+Funciones:
+
+### Usuarios
+
+* Registro.
+* Inicio de sesión.
+* Perfil básico.
+* Lista de amigos.
+
+### Comunidades
+
+* Crear comunidad.
+* Unirse mediante enlace.
+* Gestión básica.
+
+### Chat
+
+* Mensajes en tiempo real.
+* Reacciones.
+* Envío de imágenes.
+
+### Voz
+
+* Sala de voz permanente por comunidad.
+* Entrada y salida instantánea.
+
+### Creadores
+
+* Canal de anuncios.
+* Publicaciones destacadas.
+* Notificaciones simples.
+
+---
+
+## Funciones Fuera del MVP
+
+No desarrollar inicialmente:
+
+* IA integrada.
+* Streaming propio.
+* Monetización avanzada.
+* Bots.
+* Marketplace.
+* Sistemas complejos de roles.
+* Decenas de canales.
+* Video llamadas avanzadas.
+
+Estas funciones podrían evaluarse posteriormente.
+
+---
+
+## Estrategia de Lanzamiento
+
+Lanzamiento cerrado.
+
+Meta inicial:
+
+* 200 usuarios.
+
+Objetivo:
+
+* Medir comportamiento real.
+* Detectar errores.
+* Validar uso diario.
+* Obtener retroalimentación.
+
+---
+
+## Métricas Importantes
+
+* Usuarios activos diarios.
+* Retención semanal.
+* Retención mensual.
+* Tiempo promedio en salas de voz.
+* Número de comunidades creadas.
+* Invitaciones generadas por usuarios.
+
+---
+
+## Propuesta para Creadores
+
+Los creadores podrán:
+
+* Reunir a su comunidad.
+* Enviar anuncios.
+* Compartir contenido.
+* Mantener contacto directo con seguidores.
+* Activar notificaciones para eventos y transmisiones.
+
+La idea es que Fénix Chat pueda convertirse en el hogar de una comunidad.
+
+---
+
+## Filosofía del Producto
+
+No queremos crear otra aplicación llena de funciones.
+
+Queremos construir:
+
+* Más simple que Discord.
+* Más comunitaria que WhatsApp.
+* Más enfocada en permanencia y comunidad.
+
+La experiencia debe ser tan sencilla que cualquier usuario pueda entenderla en pocos minutos.
+
+---
+
+## Objetivo a Largo Plazo
+
+Construir una plataforma de comunidades que combine:
+
+* Comunicación.
+* Presencia permanente.
+* Creadores de contenido.
+* Comunidades activas.
+
+Todo ello manteniendo una experiencia simple y accesible.
+
+Este documento resume el estado actual de la visión de Fénix Chat y sirve como contexto para futuras propuestas, análisis, arquitectura y diseño del producto.
