@@ -8,6 +8,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import AppLayout from './pages/AppLayout'
+import AdminPanel from './pages/AdminPanel'
 
 /**
  * Ruta protegida — redirige a /login si no está autenticado.
@@ -74,6 +75,7 @@ function App() {
       <Route path="/reset-password/:token" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
       <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>} />
       <Route path="/app/community/:id" element={<ProtectedRoute><AppLayout /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

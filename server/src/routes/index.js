@@ -23,4 +23,9 @@ router.get('/users/search', authenticate, searchUsers);
 // Conversation routes
 router.use('/conversations', conversationRoutes);
 
+// Admin routes
+import { listUsers, getStats } from '../controllers/admin.js';
+router.get('/admin/users', authenticate, listUsers);
+router.get('/admin/stats', authenticate, getStats);
+
 export default router;

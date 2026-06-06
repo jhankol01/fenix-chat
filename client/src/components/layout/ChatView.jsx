@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, MoreVertical, Send, Smile, Loader2
+  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User
 } from 'lucide-react'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
 import useChatStore from '../../stores/chatStore'
@@ -21,6 +21,7 @@ function ChatView({ onBack }) {
   const touchStartRef = useRef(null)
   const inputRef = useRef(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [showContactInfo, setShowContactInfo] = useState(false)
 
   const {
     activeConversation,
@@ -178,7 +179,7 @@ function ChatView({ onBack }) {
           )}
         </div>
 
-        <div className="chat-view__header-info">
+        <div className="chat-view__header-info" onClick={() => setShowContactInfo(true)} style={{ cursor: 'pointer' }}>
           <div className="chat-view__header-name">{otherName}</div>
           <div className={`chat-view__header-subtitle ${typingUser ? 'chat-view__header-subtitle--typing' : ''}`}>
             {typingUser
@@ -194,6 +195,102 @@ function ChatView({ onBack }) {
           </button>
         </div>
       </div>
+
+      {/* --- Contact Info Panel (Full screen) --- */}
+      {showContactInfo && (() => {
+        const other = activeConversation.participants?.find(p => p.id !== user?.id)
+        const memberSince = other?.created_at || activeConversation.created_at
+        const otherStatus = other?.status_text || activeConversation.other_status_text || ''
+        const otherEmoji = other?.status_emoji || activeConversation.other_status_emoji || ''
+        const otherEmail = other?.email || ''
+        const otherDisplay = other?.display_name || ''
+
+        return (
+          <div className="contact-profile" onClick={() => setShowContactInfo(false)}>
+            <div className="contact-profile__content" onClick={(e) => e.stopPropagation()}>
+              
+              {/* Header con foto grande */}
+              <div className="contact-profile__hero">
+                <button className="contact-profile__close" onClick={() => setShowContactInfo(false)}>
+                  <X size={22} />
+                </button>
+                
+                <div className="contact-profile__photo">
+                  {otherAvatar ? (
+                    <img src={otherAvatar} alt={otherName} className="contact-profile__photo-img" />
+                  ) : (
+                    <div className="contact-profile__photo-fallback">
+                      {getInitials(otherName)}
+                    </div>
+                  )}
+                  <div className="contact-profile__online-ring" />
+                </div>
+
+                <h2 className="contact-profile__name">{otherDisplay || otherName}</h2>
+                <div className="contact-profile__handle">@{activeConversation.other_username || otherName}</div>
+                <div className="contact-profile__online-text">
+                  <span className="contact-profile__online-dot" />
+                  En línea
+                </div>
+
+                {otherStatus && (
+                  <div className="contact-profile__status-badge">
+                    {otherEmoji} {otherStatus}
+                  </div>
+                )}
+              </div>
+
+              {/* Info cards */}
+              <div className="contact-profile__info">
+                <div className="contact-profile__card">
+                  <div className="contact-profile__card-icon" style={{ color: '#00F5FF' }}>
+                    <User size={18} />
+                  </div>
+                  <div className="contact-profile__card-text">
+                    <span className="contact-profile__card-label">Nombre de usuario</span>
+                    <span className="contact-profile__card-value">@{activeConversation.other_username || otherName}</span>
+                  </div>
+                </div>
+
+                {otherDisplay && (
+                  <div className="contact-profile__card">
+                    <div className="contact-profile__card-icon" style={{ color: '#FF2DAA' }}>
+                      <Smile size={18} />
+                    </div>
+                    <div className="contact-profile__card-text">
+                      <span className="contact-profile__card-label">Nombre</span>
+                      <span className="contact-profile__card-value">{otherDisplay}</span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="contact-profile__card">
+                  <div className="contact-profile__card-icon" style={{ color: '#6C63FF' }}>
+                    <Calendar size={18} />
+                  </div>
+                  <div className="contact-profile__card-text">
+                    <span className="contact-profile__card-label">Miembro desde</span>
+                    <span className="contact-profile__card-value">
+                      {new Date(memberSince).toLocaleDateString('es', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="contact-profile__card">
+                  <div className="contact-profile__card-icon" style={{ color: '#FFD93D' }}>
+                    <Mail size={18} />
+                  </div>
+                  <div className="contact-profile__card-text">
+                    <span className="contact-profile__card-label">Mensajes en esta conversación</span>
+                    <span className="contact-profile__card-value">{messages.length} mensajes</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )
+      })()}
 
       {/* --- Mensajes --- */}
       <div
