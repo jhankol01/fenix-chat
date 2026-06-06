@@ -9,7 +9,26 @@ const ICE_SERVERS = {
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
-  ]
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    // Free TURN servers for NAT traversal
+    {
+      urls: 'turn:openrelay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+    {
+      urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+      username: 'openrelayproject',
+      credential: 'openrelayproject',
+    },
+  ],
+  iceCandidatePoolSize: 10,
 }
 
 function CallOverlay() {
@@ -152,8 +171,29 @@ function CallOverlay() {
         setCallState('connected')
         if (durationTimerRef.current) clearInterval(durationTimerRef.current)
         durationTimerRef.current = setInterval(() => setDuration(d => d + 1), 1000)
+        // Clear any pending disconnect timer
+        if (pc._disconnectTimer) { clearTimeout(pc._disconnectTimer); pc._disconnectTimer = null }
       }
-      if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
+      if (pc.connectionState === 'disconnected') {
+        // Give 8 seconds grace period — connection often recovers
+        pc._disconnectTimer = setTimeout(() => {
+          if (pcRef.current && pcRef.current.connectionState === 'disconnected') {
+            console.log('📶 Connection did not recover, ending call')
+            cleanup()
+          }
+        }, 8000)
+      }
+      if (pc.connectionState === 'failed') {
+        // Try ICE restart once before giving up
+        if (!pc._iceRestarted) {
+          pc._iceRestarted = true
+          console.log('📶 Attempting ICE restart...')
+          pc.restartIce()
+        } else {
+          cleanup()
+        }
+      }
+      if (pc.connectionState === 'closed') {
         cleanup()
       }
     }
