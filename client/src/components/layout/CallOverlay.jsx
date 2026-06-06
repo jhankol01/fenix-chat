@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Phone, PhoneOff, Mic, MicOff, X } from 'lucide-react'
+import { Phone, PhoneOff, Mic, MicOff, Volume2, Volume1 } from 'lucide-react'
 import { getSocket } from '../../lib/socket'
 import useAuthStore from '../../stores/authStore'
 import './CallOverlay.css'
@@ -16,6 +16,7 @@ function CallOverlay() {
   const [callState, setCallState] = useState('idle')
   const [remoteUser, setRemoteUser] = useState(null)
   const [isMuted, setIsMuted] = useState(false)
+  const [isSpeaker, setIsSpeaker] = useState(false)
   const [duration, setDuration] = useState(0)
 
   const pcRef = useRef(null)
@@ -267,6 +268,14 @@ function CallOverlay() {
     }
   }
 
+  const toggleSpeaker = () => {
+    if (remoteAudioRef.current) {
+      const newSpeaker = !isSpeaker
+      setIsSpeaker(newSpeaker)
+      remoteAudioRef.current.volume = newSpeaker ? 1.0 : 0.25
+    }
+  }
+
   // --- Ringtone effect ---
   useEffect(() => {
     if (callState === 'calling') playOutgoingTone()
@@ -401,6 +410,13 @@ function CallOverlay() {
               </>
             ) : (
               <>
+                <button
+                  className={`call-overlay__btn call-overlay__btn--speaker ${isSpeaker ? 'call-overlay__btn--speaker-on' : ''}`}
+                  onClick={toggleSpeaker}
+                >
+                  {isSpeaker ? <Volume2 size={22} /> : <Volume1 size={22} />}
+                  <span>{isSpeaker ? 'Alta voz' : 'Normal'}</span>
+                </button>
                 <button
                   className={`call-overlay__btn call-overlay__btn--mute ${isMuted ? 'call-overlay__btn--muted' : ''}`}
                   onClick={toggleMute}
