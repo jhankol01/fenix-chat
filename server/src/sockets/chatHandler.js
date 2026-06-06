@@ -29,7 +29,7 @@ export default function chatHandler(io) {
   })
 
   // ─── Connection ─────────────────────────────────────────────────────────────
-  io.on('connection', (socket) => {
+  io.on('connection', async (socket) => {
     const { user } = socket
     logger.info(`Socket connected: ${user.username} (${socket.id})`)
 

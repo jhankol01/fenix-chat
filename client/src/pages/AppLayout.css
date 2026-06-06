@@ -11,6 +11,8 @@
   height: 100dvh;
   overflow: hidden;
   background: var(--color-bg-primary);
+  overscroll-behavior-x: none; /* Prevent iOS swipe-back navigation */
+  touch-action: pan-y pinch-zoom; /* Allow vertical scroll and zoom only */
 }
 
 /* ---------- Panel izquierdo (desktop) ---------- */

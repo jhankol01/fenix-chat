@@ -27,7 +27,7 @@ function LoginPage() {
     setLoading(true)
     try {
       await login({ email: form.email, password: form.password })
-      navigate('/app')
+      navigate('/app', { replace: true })
     } catch (err) {
       if (err.data?.code === 'EMAIL_NOT_VERIFIED') {
         setError('Verifica tu email primero. Revisa tu bandeja de entrada.')
