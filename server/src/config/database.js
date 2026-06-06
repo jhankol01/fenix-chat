@@ -4,11 +4,14 @@ import logger from '../utils/logger.js'
 
 const { Pool } = pg
 
+const isProduction = config.nodeEnv === 'production'
+
 const pool = new Pool({
   connectionString: config.databaseUrl,
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
+  ...(isProduction && { ssl: { rejectUnauthorized: false } }),
 })
 
 pool.on('error', (err) => {

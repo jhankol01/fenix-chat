@@ -8,7 +8,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 dotenv.config({ path: join(__dirname, '../../.env') })
 
 const { Pool } = pg
-const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+const isProduction = process.env.NODE_ENV === 'production'
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ...(isProduction && { ssl: { rejectUnauthorized: false } }),
+})
 
 async function runMigrations() {
   console.log('Running migrations...')
