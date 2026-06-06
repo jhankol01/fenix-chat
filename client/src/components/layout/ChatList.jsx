@@ -12,7 +12,7 @@ import './ChatList.css'
  *  - section (opcional): 'chats' | 'comunidades' — para mobile
  *  - onSelectConversation: callback cuando se selecciona una conversación
  */
-function ChatList({ section, onSelectConversation }) {
+function ChatList({ section, onSelectConversation, onOpenProfile }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
@@ -317,7 +317,7 @@ function ChatList({ section, onSelectConversation }) {
             <div className="chat-list__user-name">{user.username}</div>
             <div className="chat-list__user-status">En línea</div>
           </div>
-          <button className="chat-list__settings-btn" aria-label="Configuración">
+          <button className="chat-list__settings-btn" aria-label="Configuración" onClick={onOpenProfile}>
             <Settings size={18} />
           </button>
         </div>

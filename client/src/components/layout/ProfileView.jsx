@@ -31,7 +31,7 @@ function ProfileView() {
   // Notification settings (local)
   const [notifSettings, setNotifSettings] = useState({
     sound: true,
-    browserNotif: Notification.permission === 'granted',
+    browserNotif: typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted',
     messagePreview: true,
   })
 
@@ -141,6 +141,7 @@ function ProfileView() {
 
   // Toggle notification permission
   const handleToggleBrowserNotif = async () => {
+    if (!('Notification' in window)) return
     if (!notifSettings.browserNotif) {
       const result = await Notification.requestPermission()
       setNotifSettings(prev => ({ ...prev, browserNotif: result === 'granted' }))
@@ -248,6 +249,9 @@ function ProfileView() {
 
   // Notifications Panel
   if (activePanel === 'notifications') {
+    const notifAvailable = typeof window !== 'undefined' && 'Notification' in window
+    const notifDenied = notifAvailable && Notification.permission === 'denied'
+
     return (
       <div className="profile-view">
         <div className="profile-view__panel-header">
@@ -269,7 +273,13 @@ function ProfileView() {
           <ToggleItem
             icon={Globe}
             label="Notificaciones del navegador"
-            description="Mostrar notificaciones emergentes"
+            description={
+              !notifAvailable
+                ? '📱 Para activar, añade Fénix a tu pantalla de inicio'
+                : notifDenied
+                  ? '⛔ Bloqueadas. Ve a ajustes del navegador para permitir'
+                  : 'Mostrar notificaciones emergentes'
+            }
             value={notifSettings.browserNotif}
             onChange={handleToggleBrowserNotif}
           />
@@ -280,6 +290,21 @@ function ProfileView() {
             value={notifSettings.messagePreview}
             onChange={() => setNotifSettings(prev => ({ ...prev, messagePreview: !prev.messagePreview }))}
           />
+        </div>
+
+        {!notifAvailable && (
+          <div className="profile-view__notif-banner">
+            <div className="profile-view__notif-banner-icon">📱</div>
+            <div className="profile-view__notif-banner-text">
+              <strong>¿Quieres notificaciones push?</strong>
+              <p>En Safari iOS, abre el menú compartir (📤) y selecciona <strong>"Agregar a pantalla de inicio"</strong>. Luego abre la app desde ahí.</p>
+            </div>
+          </div>
+        )}
+
+        <div className="profile-view__notif-info">
+          <p>🔊 <strong>El sonido</strong> siempre funciona cuando recibes un mensaje nuevo y no estás en esa conversación.</p>
+          <p>💬 <strong>El título de la pestaña</strong> también cambia para avisarte.</p>
         </div>
       </div>
     )

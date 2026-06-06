@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { Flame } from 'lucide-react'
 import ChatList from '../components/layout/ChatList'
 import ChatView from '../components/layout/ChatView'
-import BottomNav from '../components/layout/BottomNav'
 import ProfileView from '../components/layout/ProfileView'
+import BottomNav from '../components/layout/BottomNav'
 import useAuthStore from '../stores/authStore'
 import useChatStore from '../stores/chatStore'
 import { connectSocket, disconnectSocket, getSocket } from '../lib/socket'
@@ -37,6 +37,7 @@ function useIsMobile(breakpoint = 768) {
 function AppLayout() {
   const [mobileSection, setMobileSection] = useState('chats')
   const [showMobileChat, setShowMobileChat] = useState(false)
+  const [showDesktopProfile, setShowDesktopProfile] = useState(false)
   const isMobile = useIsMobile()
 
   const accessToken = useAuthStore(state => state.accessToken)
@@ -92,9 +93,15 @@ function AppLayout() {
 
   /** Cuando se selecciona una conversación (desde ChatList) */
   const handleSelectConversation = () => {
+    setShowDesktopProfile(false)
     if (isMobile) {
       setShowMobileChat(true)
     }
+  }
+
+  /** Abrir perfil (desktop) */
+  const handleOpenProfile = () => {
+    setShowDesktopProfile(true)
   }
 
   /** Volver a la lista (mobile) */
@@ -118,12 +125,15 @@ function AppLayout() {
         <div className="app-layout__sidebar">
           <ChatList
             onSelectConversation={handleSelectConversation}
+            onOpenProfile={handleOpenProfile}
           />
         </div>
 
-        {/* Panel principal — Chat o Welcome */}
+        {/* Panel principal — Chat, Profile o Welcome */}
         <div className="app-layout__main">
-          {activeConversation ? (
+          {showDesktopProfile ? (
+            <ProfileView />
+          ) : activeConversation ? (
             <ChatView />
           ) : (
             <div className="welcome-screen">
