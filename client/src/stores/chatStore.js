@@ -173,7 +173,26 @@ const useChatStore = create((set, get) => ({
       console.error('Failed to search users:', err)
       return []
     }
-  }
+  },
+
+  deleteConversation: async (conversationId) => {
+    try {
+      await api.delete(`/conversations/${conversationId}`)
+      set(state => {
+        const conversations = state.conversations.filter(c => c.id !== conversationId)
+        const isActive = state.activeConversation?.id === conversationId
+        return {
+          conversations,
+          activeConversation: isActive ? null : state.activeConversation,
+          messages: isActive ? [] : state.messages,
+        }
+      })
+      return true
+    } catch (err) {
+      console.error('Delete conversation error:', err)
+      return false
+    }
+  },
 }))
 
 export default useChatStore

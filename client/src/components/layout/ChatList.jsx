@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Flame, Search, Plus, Settings, MessageCircle, User, X, Loader2 } from 'lucide-react'
+import { Flame, Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2 } from 'lucide-react'
 import useChatStore from '../../stores/chatStore'
 import useAuthStore from '../../stores/authStore'
 import './ChatList.css'
@@ -19,6 +19,7 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
   const [showNewChat, setShowNewChat] = useState(false)
   const [newChatQuery, setNewChatQuery] = useState('')
   const [isStartingDM, setIsStartingDM] = useState(false)
+  const [contextMenu, setContextMenu] = useState(null)
   const searchTimeoutRef = useRef(null)
   const newChatInputRef = useRef(null)
 
@@ -31,6 +32,7 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
     startDM,
     setActiveConversation,
     unreadCounts,
+    deleteConversation,
   } = useChatStore()
 
   const user = useAuthStore(state => state.user)
@@ -85,6 +87,30 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
     setActiveConversation(conv)
     if (onSelectConversation) onSelectConversation(conv)
   }
+
+  const handleContextMenu = useCallback((e, conv) => {
+    e.preventDefault()
+    setContextMenu({ x: e.clientX || e.touches?.[0]?.clientX || 0, y: e.clientY || e.touches?.[0]?.clientY || 0, conv })
+  }, [])
+
+  const longPressRef = useRef(null)
+  const handleTouchStart = useCallback((conv) => {
+    longPressRef.current = setTimeout(() => {
+      setContextMenu({ x: window.innerWidth / 2, y: window.innerHeight / 2, conv })
+    }, 500)
+  }, [])
+  const handleTouchEnd = useCallback(() => {
+    if (longPressRef.current) clearTimeout(longPressRef.current)
+  }, [])
+
+  const handleDeleteConversation = useCallback(async () => {
+    if (!contextMenu) return
+    const confirmed = window.confirm('¿Eliminar esta conversación? Se borrarán todos los mensajes.')
+    if (confirmed) {
+      await deleteConversation(contextMenu.conv.id)
+    }
+    setContextMenu(null)
+  }, [contextMenu, deleteConversation])
 
   // Filtrar conversaciones por búsqueda local
   const filteredConversations = (conversations || []).filter(conv => {
@@ -253,6 +279,10 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => e.key === 'Enter' && handleSelectConversation(conv)}
+                  onContextMenu={(e) => handleContextMenu(e, conv)}
+                  onTouchStart={() => handleTouchStart(conv)}
+                  onTouchEnd={handleTouchEnd}
+                  onTouchMove={handleTouchEnd}
                 >
                   {/* Avatar */}
                   <div className={`chat-list__avatar ${isTyping ? 'chat-list__avatar--typing' : ''}`}>
@@ -321,6 +351,18 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
             <Settings size={18} />
           </button>
         </div>
+      )}
+
+      {contextMenu && (
+        <>
+          <div className="chat-list__context-overlay" onClick={() => setContextMenu(null)} />
+          <div className="chat-list__context-menu" style={{ top: contextMenu.y, left: Math.min(contextMenu.x, window.innerWidth - 200) }}>
+            <button className="chat-list__context-item chat-list__context-item--danger" onClick={handleDeleteConversation}>
+              <Trash2 size={16} />
+              <span>Eliminar conversación</span>
+            </button>
+          </div>
+        </>
       )}
     </div>
   )

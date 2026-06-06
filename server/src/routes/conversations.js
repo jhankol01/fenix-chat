@@ -4,6 +4,7 @@ import {
   createConversation,
   getMessages,
   searchUsers,
+  deleteConversation,
 } from '../controllers/conversations.js'
 import authenticate from '../middleware/auth.js'
 
@@ -20,5 +21,8 @@ router.post('/', createConversation)
 
 // GET  /api/conversations/:id/messages - get messages for a conversation
 router.get('/:id/messages', getMessages)
+
+// DELETE /api/conversations/:id  - delete a conversation
+router.delete('/:id', deleteConversation)
 
 export default router

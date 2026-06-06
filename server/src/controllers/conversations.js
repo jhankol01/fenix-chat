@@ -97,3 +97,17 @@ export async function searchUsers(req, res, next) {
     next(err)
   }
 }
+
+// DELETE /api/conversations/:id
+export async function deleteConversation(req, res, next) {
+  try {
+    const { id } = req.params
+    const deleted = await Conversation.delete(id, req.user.id)
+    if (!deleted) {
+      return res.status(403).json({ error: 'No tienes acceso a esta conversación' })
+    }
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}

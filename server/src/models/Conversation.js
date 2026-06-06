@@ -127,6 +127,31 @@ const Conversation = {
     )
     return result.rows.length > 0
   },
+
+  async delete(conversationId, userId) {
+    // Verify user is member
+    const isMember = await query(
+      'SELECT 1 FROM conversation_members WHERE conversation_id = $1 AND user_id = $2',
+      [conversationId, userId]
+    )
+    if (isMember.rows.length === 0) return false
+    
+    // Delete messages first, then members, then conversation
+    const client = await getClient()
+    try {
+      await client.query('BEGIN')
+      await client.query('DELETE FROM messages WHERE conversation_id = $1', [conversationId])
+      await client.query('DELETE FROM conversation_members WHERE conversation_id = $1', [conversationId])
+      await client.query('DELETE FROM conversations WHERE id = $1', [conversationId])
+      await client.query('COMMIT')
+      return true
+    } catch (err) {
+      await client.query('ROLLBACK')
+      throw err
+    } finally {
+      client.release()
+    }
+  },
 }
 
 export default Conversation
