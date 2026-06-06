@@ -45,18 +45,19 @@ const useChatStore = create((set, get) => ({
     try {
       const params = before ? `?before=${before}&limit=50` : '?limit=50'
       const data = await api.get(`/conversations/${conversationId}/messages${params}`)
+      const msgs = data.messages || []
       if (before) {
         // Prepend mensajes más antiguos
         set(state => ({
-          messages: [...data.messages, ...state.messages],
+          messages: [...msgs, ...state.messages],
           isLoadingMessages: false,
-          hasMoreMessages: data.messages.length === 50
+          hasMoreMessages: msgs.length === 50
         }))
       } else {
         set({
-          messages: data.messages,
+          messages: msgs,
           isLoadingMessages: false,
-          hasMoreMessages: data.messages.length === 50
+          hasMoreMessages: msgs.length === 50
         })
       }
     } catch (err) {
@@ -150,7 +151,7 @@ const useChatStore = create((set, get) => ({
     if (!query || query.length < 2) return []
     try {
       const data = await api.get(`/users/search?q=${encodeURIComponent(query)}`)
-      return data.users
+      return data.users || []
     } catch (err) {
       console.error('Failed to search users:', err)
       return []
