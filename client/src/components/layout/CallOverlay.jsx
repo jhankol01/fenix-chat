@@ -23,6 +23,8 @@ function CallOverlay() {
   const durationTimerRef = useRef(null)
   const callerIdRef = useRef(null)
   const targetUserIdRef = useRef(null)
+  const ringtoneRef = useRef(null)
+  const pendingOfferRef = useRef(null)
 
   const user = useAuthStore(s => s.user)
 
@@ -37,13 +39,92 @@ function CallOverlay() {
       localStreamRef.current = null
     }
     if (durationTimerRef.current) clearInterval(durationTimerRef.current)
+    stopRingtone()
     setCallState('idle')
     setRemoteUser(null)
     setIsMuted(false)
     setDuration(0)
     callerIdRef.current = null
     targetUserIdRef.current = null
+    pendingOfferRef.current = null
   }, [])
+
+  // --- Ringtone functions (Web Audio API) ---
+  const stopRingtone = () => {
+    if (ringtoneRef.current) {
+      clearInterval(ringtoneRef.current.interval)
+      try { ringtoneRef.current.ctx.close() } catch(e) {}
+      ringtoneRef.current = null
+    }
+  }
+
+  // Outgoing call tone: "ring...ring..." (classic phone ringback)
+  const playOutgoingTone = () => {
+    stopRingtone()
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)()
+      const playBeep = () => {
+        // Two-tone beep (440Hz + 480Hz for 1s, pause 3s)
+        const osc1 = ctx.createOscillator()
+        const osc2 = ctx.createOscillator()
+        const gain = ctx.createGain()
+        osc1.frequency.value = 440
+        osc2.frequency.value = 480
+        osc1.type = 'sine'
+        osc2.type = 'sine'
+        gain.gain.value = 0.08
+        osc1.connect(gain)
+        osc2.connect(gain)
+        gain.connect(ctx.destination)
+        osc1.start()
+        osc2.start()
+        osc1.stop(ctx.currentTime + 1)
+        osc2.stop(ctx.currentTime + 1)
+      }
+      playBeep()
+      const interval = setInterval(playBeep, 4000)
+      ringtoneRef.current = { ctx, interval }
+    } catch(e) {}
+  }
+
+  // Incoming call ringtone: attention-grabbing ring pattern
+  const playIncomingRingtone = () => {
+    stopRingtone()
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)()
+      const playRing = () => {
+        // Double ring pattern
+        for (let i = 0; i < 2; i++) {
+          const osc = ctx.createOscillator()
+          const gain = ctx.createGain()
+          osc.frequency.value = i === 0 ? 800 : 640
+          osc.type = 'sine'
+          gain.gain.value = 0.12
+          gain.gain.setValueAtTime(0.12, ctx.currentTime + i * 0.25)
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.25 + 0.2)
+          osc.connect(gain)
+          gain.connect(ctx.destination)
+          osc.start(ctx.currentTime + i * 0.25)
+          osc.stop(ctx.currentTime + i * 0.25 + 0.2)
+        }
+      }
+      playRing()
+      const interval = setInterval(playRing, 2000)
+      ringtoneRef.current = { ctx, interval }
+    } catch(e) {}
+  }
+
+  // Auto-manage ringtones based on state
+  useEffect(() => {
+    if (callState === 'calling') {
+      playOutgoingTone()
+    } else if (callState === 'ringing') {
+      playIncomingRingtone()
+    } else {
+      stopRingtone()
+    }
+    return () => stopRingtone()
+  }, [callState])
 
   // Create peer connection
   const createPC = useCallback((targetUserId) => {
@@ -112,16 +193,20 @@ function CallOverlay() {
       localStreamRef.current = stream
 
       const callerId = callerIdRef.current
-      const pc = createPC(callerId)
+      const offer = pendingOfferRef.current
+      if (!offer) { cleanup(); return }
+
+      // Reuse existing PC or create new one
+      const pc = pcRef.current || createPC(callerId)
       stream.getTracks().forEach(t => pc.addTrack(t, stream))
 
-      const offer = pcRef.current._pendingOffer
       await pc.setRemoteDescription(new RTCSessionDescription(offer))
 
       const answer = await pc.createAnswer()
       await pc.setLocalDescription(answer)
 
       targetUserIdRef.current = callerId
+      pendingOfferRef.current = null
 
       const socket = getSocket()
       socket.emit('call_accepted', { callerId, answer })
@@ -172,12 +257,12 @@ function CallOverlay() {
         return
       }
       callerIdRef.current = callerId
+      pendingOfferRef.current = offer
       setRemoteUser({ name: callerName, avatar: callerAvatar })
       setCallState('ringing')
-      // Store offer for when user accepts
+      // Create PC to be ready for ICE candidates
       if (!pcRef.current) {
-        const pc = createPC(callerId)
-        pc._pendingOffer = offer
+        createPC(callerId)
       }
     }
 
