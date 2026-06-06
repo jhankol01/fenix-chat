@@ -375,6 +375,33 @@
   color: var(--color-text-secondary);
 }
 
+.chat-view__input-btn--active {
+  color: var(--color-brand);
+}
+
+/* ---------- Emoji Picker ---------- */
+.chat-view__emoji-picker {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border-subtle);
+  animation: slideUp 0.2s ease-out;
+  overflow: hidden;
+}
+
+.chat-view__emoji-picker .epr-main {
+  --epr-bg-color: var(--color-bg-secondary) !important;
+  --epr-category-label-bg-color: var(--color-bg-secondary) !important;
+  --epr-hover-bg-color: var(--color-surface-hover) !important;
+  --epr-search-border-color: var(--color-border-subtle) !important;
+  --epr-header-padding: 8px 12px !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+@keyframes slideUp {
+  from { max-height: 0; opacity: 0; }
+  to { max-height: 400px; opacity: 1; }
+}
+
 /* Botón de enviar */
 .chat-view__send-btn {
   width: 40px;

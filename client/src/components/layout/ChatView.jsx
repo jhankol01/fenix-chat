@@ -2,6 +2,7 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import {
   ArrowLeft, MoreVertical, Send, Smile, Loader2
 } from 'lucide-react'
+import EmojiPicker, { Theme } from 'emoji-picker-react'
 import useChatStore from '../../stores/chatStore'
 import useAuthStore from '../../stores/authStore'
 import './ChatView.css'
@@ -18,6 +19,8 @@ function ChatView({ onBack }) {
   const messagesContainerRef = useRef(null)
   const typingTimeoutRef = useRef(null)
   const touchStartRef = useRef(null)
+  const inputRef = useRef(null)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
 
   const {
     activeConversation,
@@ -65,6 +68,7 @@ function ChatView({ onBack }) {
     if (!inputValue.trim()) return
     sendMessage(inputValue)
     setInputValue('')
+    setShowEmojiPicker(false)
     handleStopTyping()
   }
 
@@ -128,7 +132,7 @@ function ChatView({ onBack }) {
   const typingUser = typingUsers[activeConversation.id]
 
   // Agrupar mensajes consecutivos del mismo usuario
-  const groupedMessages = groupMessages(messages)
+  const groupedMessages = groupMessages(messages, user)
 
   // Formatear hora del mensaje
   const formatMessageTime = (dateString) => {
@@ -270,19 +274,44 @@ function ChatView({ onBack }) {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* --- Emoji Picker --- */}
+      {showEmojiPicker && (
+        <div className="chat-view__emoji-picker">
+          <EmojiPicker
+            theme={Theme.DARK}
+            onEmojiClick={(emojiData) => {
+              setInputValue(prev => prev + emojiData.emoji)
+              inputRef.current?.focus()
+            }}
+            width="100%"
+            height={350}
+            searchPlaceHolder="Buscar emoji..."
+            previewConfig={{ showPreview: false }}
+            skinTonesDisabled
+            lazyLoadEmojis
+          />
+        </div>
+      )}
+
       {/* --- Input bar --- */}
       <div className="chat-view__input-bar">
         <div className="chat-view__input-wrapper">
-          <button className="chat-view__input-btn" aria-label="Emoji">
+          <button
+            className={`chat-view__input-btn ${showEmojiPicker ? 'chat-view__input-btn--active' : ''}`}
+            aria-label="Emoji"
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+          >
             <Smile size={20} />
           </button>
           <input
+            ref={inputRef}
             type="text"
             className="chat-view__input"
             placeholder="Escribe un mensaje..."
             value={inputValue}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
+            onFocus={() => setShowEmojiPicker(false)}
           />
         </div>
         <button
@@ -329,7 +358,7 @@ function getInitials(name) {
  * Agrupar mensajes consecutivos del mismo usuario
  * con separadores de fecha entre días distintos
  */
-function groupMessages(messages) {
+function groupMessages(messages, currentUser) {
   const groups = []
   let currentGroup = null
   let lastDate = null
@@ -357,7 +386,7 @@ function groupMessages(messages) {
         senderId,
         username: senderName,
         avatar: senderAvatar,
-        isOwn: msg.is_own || false,
+        isOwn: senderId === currentUser?.id,
         showDateSeparator,
         messages: [msg],
       }

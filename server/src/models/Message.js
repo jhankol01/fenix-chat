@@ -62,7 +62,8 @@ const Message = {
       params
     )
 
-    return result.rows
+    // Reverse to get chronological order (query uses DESC for cursor pagination)
+    return result.rows.reverse()
   },
 }
 
