@@ -86,7 +86,7 @@ function ChatList({ section, onSelectConversation }) {
   }
 
   // Filtrar conversaciones por búsqueda local
-  const filteredConversations = conversations.filter(conv => {
+  const filteredConversations = (conversations || []).filter(conv => {
     if (!searchQuery) return true
     const otherName = getConversationName(conv, user)
     return otherName.toLowerCase().includes(searchQuery.toLowerCase())

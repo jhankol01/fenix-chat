@@ -20,7 +20,7 @@ const useChatStore = create((set, get) => ({
     set({ isLoadingConversations: true })
     try {
       const data = await api.get('/conversations')
-      set({ conversations: data.conversations, isLoadingConversations: false })
+      set({ conversations: data.conversations || [], isLoadingConversations: false })
     } catch (err) {
       console.error('Failed to load conversations:', err)
       set({ isLoadingConversations: false })
@@ -88,7 +88,7 @@ const useChatStore = create((set, get) => ({
         : state.messages
       
       // Actualizar el último mensaje de la conversación en la lista
-      const conversations = state.conversations.map(c => 
+      const conversations = (state.conversations || []).map(c => 
         c.id === message.conversation_id
           ? { ...c, last_message: message.content, last_message_at: message.created_at, last_sender: message.sender_username }
           : c
