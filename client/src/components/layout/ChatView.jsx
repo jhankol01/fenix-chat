@@ -1,8 +1,9 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone
+  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Trash2
 } from 'lucide-react'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
+import { getSocket } from '../../lib/socket'
 import useChatStore from '../../stores/chatStore'
 import useAuthStore from '../../stores/authStore'
 import './ChatView.css'
@@ -22,6 +23,8 @@ function ChatView({ onBack }) {
   const inputRef = useRef(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showContactInfo, setShowContactInfo] = useState(false)
+  const [msgContextMenu, setMsgContextMenu] = useState(null)
+  const msgLongPressRef = useRef(null)
 
   // Voice note state
   const [isRecording, setIsRecording] = useState(false)
@@ -57,6 +60,38 @@ function ChatView({ onBack }) {
       messagesEndRef.current.scrollIntoView({ behavior: 'instant' })
     }
   }, [activeConversation?.id])
+
+  // Listen for deleted messages
+  useEffect(() => {
+    const socket = getSocket()
+    if (!socket) return
+    const onMsgDeleted = ({ messageId }) => {
+      useChatStore.setState(state => ({
+        messages: state.messages.filter(m => m.id !== messageId)
+      }))
+    }
+    socket.on('message_deleted', onMsgDeleted)
+    return () => socket.off('message_deleted', onMsgDeleted)
+  }, [])
+
+  // Delete a message
+  const handleDeleteMessage = useCallback(() => {
+    if (!msgContextMenu) return
+    const { msg } = msgContextMenu
+    if (msg.sender_id !== user?.id) {
+      setMsgContextMenu(null)
+      return
+    }
+    const socket = getSocket()
+    if (socket) {
+      socket.emit('delete_message', { messageId: msg.id, conversationId: activeConversation?.id })
+      // Optimistic remove
+      useChatStore.setState(state => ({
+        messages: state.messages.filter(m => m.id !== msg.id)
+      }))
+    }
+    setMsgContextMenu(null)
+  }, [msgContextMenu, user, activeConversation])
 
   // Cargar más mensajes al hacer scroll arriba
   const handleScroll = useCallback(() => {
@@ -431,9 +466,25 @@ function ChatView({ onBack }) {
                 </div>
 
                 {group.messages.map((msg) => (
-                  <div key={msg.id} className="chat-view__msg-text">
+                  <div
+                    key={msg.id}
+                    className="chat-view__msg-text"
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      setMsgContextMenu({ x: e.clientX, y: e.clientY, msg })
+                    }}
+                    onTouchStart={() => {
+                      msgLongPressRef.current = setTimeout(() => {
+                        setMsgContextMenu({ x: window.innerWidth / 2, y: window.innerHeight / 2, msg })
+                      }, 500)
+                    }}
+                    onTouchEnd={() => { if (msgLongPressRef.current) clearTimeout(msgLongPressRef.current) }}
+                    onTouchMove={() => { if (msgLongPressRef.current) clearTimeout(msgLongPressRef.current) }}
+                  >
                     {msg.type === 'audio' ? (
                       <AudioMessage src={msg.content} />
+                    ) : msg.type === 'system' ? (
+                      <span className="chat-view__msg-system">{msg.content}</span>
                     ) : (
                       msg.content
                     )}
@@ -465,6 +516,25 @@ function ChatView({ onBack }) {
         {/* Ancla para auto-scroll */}
         <div ref={messagesEndRef} />
       </div>
+
+      {/* --- Message Context Menu --- */}
+      {msgContextMenu && (
+        <>
+          <div className="chat-list__context-overlay" onClick={() => setMsgContextMenu(null)} />
+          <div className="chat-list__context-menu" style={{ top: Math.min(msgContextMenu.y, window.innerHeight - 60), left: Math.min(msgContextMenu.x, window.innerWidth - 200) }}>
+            {msgContextMenu.msg.sender_id === user?.id ? (
+              <button className="chat-list__context-item chat-list__context-item--danger" onClick={handleDeleteMessage}>
+                <Trash2 size={16} />
+                <span>Eliminar mensaje</span>
+              </button>
+            ) : (
+              <button className="chat-list__context-item" onClick={() => setMsgContextMenu(null)}>
+                <span>No puedes eliminar este mensaje</span>
+              </button>
+            )}
+          </div>
+        </>
+      )}
 
       {/* --- Emoji Picker --- */}
       {showEmojiPicker && (

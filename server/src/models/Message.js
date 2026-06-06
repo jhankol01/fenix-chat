@@ -65,6 +65,17 @@ const Message = {
     // Reverse to get chronological order (query uses DESC for cursor pagination)
     return result.rows.reverse()
   },
+
+  /**
+   * Delete a message. Only the sender can delete their own message.
+   */
+  async delete(messageId, userId) {
+    const result = await query(
+      'DELETE FROM messages WHERE id = $1 AND sender_id = $2 RETURNING id, conversation_id',
+      [messageId, userId]
+    )
+    return result.rows[0] || null
+  },
 }
 
 export default Message

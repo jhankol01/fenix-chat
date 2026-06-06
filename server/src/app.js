@@ -65,6 +65,11 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
+// ─── Health Check ───────────────────────────────────────────────────────────────
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', version: '2026-06-06-v7-calls', features: ['chat', 'voice_notes', 'calls', 'delete_conv'] });
+});
+
 // ─── API Routes ─────────────────────────────────────────────────────────────────
 app.use('/api', routes);
 

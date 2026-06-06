@@ -140,6 +140,19 @@ export default function chatHandler(io) {
       })
     })
 
+    // ─── Delete Message ──────────────────────────────────────────────────────
+    socket.on('delete_message', async ({ messageId, conversationId }) => {
+      try {
+        const deleted = await Message.delete(messageId, user.id)
+        if (deleted) {
+          io.to(conversationId).emit('message_deleted', { messageId, conversationId })
+          logger.info(`🗑️ ${user.username} deleted message ${messageId}`)
+        }
+      } catch (err) {
+        logger.error('Error deleting message:', err.message)
+      }
+    })
+
     // ─── WebRTC Call Signaling ─────────────────────────────────────────────────
 
     // Helper: send a call notification message to the conversation
