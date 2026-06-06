@@ -269,10 +269,13 @@ function ChatView({ onBack }) {
             className="chat-view__header-btn"
             aria-label="Llamar"
             onClick={() => {
-              const other = activeConversation.participants?.find(p => p.id !== user?.id)
-              const otherId = other?.id || activeConversation.other_user_id
+              const otherId = activeConversation.other_user_id
+                || activeConversation.participants?.find(p => p.id !== user?.id)?.id
+              console.log('📞 Calling user:', otherId, otherName)
               if (otherId && window.__fenixStartCall) {
                 window.__fenixStartCall(otherId, otherName, otherAvatar)
+              } else {
+                console.warn('❌ No user ID found:', JSON.stringify(activeConversation))
               }
             }}
           >

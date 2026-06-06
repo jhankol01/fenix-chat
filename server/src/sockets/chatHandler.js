@@ -144,8 +144,11 @@ export default function chatHandler(io) {
 
     // Initiate a call
     socket.on('call_user', ({ targetUserId, offer, callerName, callerAvatar }) => {
+      logger.info(`📞 Call attempt: ${user.username} (${user.id}) → target: ${targetUserId}`)
+      logger.info(`📞 Online users: ${JSON.stringify([...onlineUsers.keys()])}`)
+      
       const targetSockets = onlineUsers.get(targetUserId)
-      if (targetSockets) {
+      if (targetSockets && targetSockets.size > 0) {
         for (const sid of targetSockets) {
           io.to(sid).emit('incoming_call', {
             callerId: user.id,
@@ -153,9 +156,11 @@ export default function chatHandler(io) {
             callerAvatar,
             offer,
           })
+          logger.info(`📞 Sent incoming_call to socket ${sid}`)
         }
-        logger.info(`📞 ${user.username} calling user ${targetUserId}`)
+        logger.info(`📞 ${user.username} calling user ${targetUserId} (${targetSockets.size} sockets)`)
       } else {
+        logger.info(`📞 User ${targetUserId} NOT online`)
         socket.emit('call_unavailable', { reason: 'El usuario no está en línea' })
       }
     })
