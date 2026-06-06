@@ -19,19 +19,24 @@ function ProtectedRoute({ children }) {
     return (
       <div style={{
         display: 'flex',
+        flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
         height: '100vh',
-        background: 'var(--color-bg-primary)',
+        background: '#0a0f1c',
+        gap: '16px',
       }}>
         <div style={{
-          width: 32,
-          height: 32,
-          border: '3px solid var(--color-brand)',
+          width: 48,
+          height: 48,
+          border: '3px solid #00F5FF',
           borderTopColor: 'transparent',
           borderRadius: '50%',
           animation: 'spin 1s linear infinite',
         }} />
+        <p style={{ color: '#8899aa', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
+          Cargando Fénix Chat...
+        </p>
       </div>
     )
   }
