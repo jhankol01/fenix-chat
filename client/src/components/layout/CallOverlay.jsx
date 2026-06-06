@@ -252,9 +252,10 @@ function CallOverlay() {
   const endCall = useCallback(() => {
     const socket = getSocket()
     const target = targetUserIdRef.current
-    if (target) socket.emit('end_call', { targetUserId: target })
+    const dur = duration
+    if (target) socket.emit('end_call', { targetUserId: target, duration: dur })
     cleanup()
-  }, [cleanup])
+  }, [cleanup, duration])
 
   const toggleMute = () => {
     if (localStreamRef.current) {

@@ -142,10 +142,25 @@ export default function chatHandler(io) {
 
     // ─── WebRTC Call Signaling ─────────────────────────────────────────────────
 
+    // Helper: send a call notification message to the conversation
+    const sendCallMsg = async (userId1, userId2, content) => {
+      try {
+        const convId = await Conversation.getOrCreateDM(userId1, userId2)
+        const message = await Message.create({
+          conversationId: convId,
+          senderId: userId1,
+          content,
+          type: 'system',
+        })
+        io.to(convId).emit('new_message', message)
+      } catch (err) {
+        logger.error('Error sending call message:', err.message)
+      }
+    }
+
     // Initiate a call
     socket.on('call_user', ({ targetUserId, offer, callerName, callerAvatar }) => {
       logger.info(`📞 Call attempt: ${user.username} (${user.id}) → target: ${targetUserId}`)
-      logger.info(`📞 Online users: ${JSON.stringify([...onlineUsers.keys()])}`)
       
       const targetSockets = onlineUsers.get(targetUserId)
       if (targetSockets && targetSockets.size > 0) {
@@ -156,11 +171,11 @@ export default function chatHandler(io) {
             callerAvatar,
             offer,
           })
-          logger.info(`📞 Sent incoming_call to socket ${sid}`)
         }
         logger.info(`📞 ${user.username} calling user ${targetUserId} (${targetSockets.size} sockets)`)
       } else {
-        logger.info(`📞 User ${targetUserId} NOT online`)
+        // User not online → missed call
+        sendCallMsg(user.id, targetUserId, `📞 Llamada perdida de ${user.username}`)
         socket.emit('call_unavailable', { reason: 'El usuario no está en línea' })
       }
     })
@@ -175,7 +190,7 @@ export default function chatHandler(io) {
       }
     })
 
-    // Reject call
+    // Reject call → missed call notification
     socket.on('call_rejected', ({ callerId }) => {
       const callerSockets = onlineUsers.get(callerId)
       if (callerSockets) {
@@ -183,6 +198,7 @@ export default function chatHandler(io) {
           io.to(sid).emit('call_rejected_response', { reason: 'Llamada rechazada' })
         }
       }
+      sendCallMsg(callerId, user.id, `📞 Llamada perdida`)
     })
 
     // ICE candidate relay
@@ -195,13 +211,21 @@ export default function chatHandler(io) {
       }
     })
 
-    // End call
-    socket.on('end_call', ({ targetUserId }) => {
+    // End call → notification
+    socket.on('end_call', ({ targetUserId, duration }) => {
       const targetSockets = onlineUsers.get(targetUserId)
       if (targetSockets) {
         for (const sid of targetSockets) {
           io.to(sid).emit('call_ended', { userId: user.id })
         }
+      }
+      // Send call ended message
+      if (duration && duration > 0) {
+        const m = Math.floor(duration / 60)
+        const s = duration % 60
+        sendCallMsg(user.id, targetUserId, `📞 Llamada · ${m}:${s.toString().padStart(2, '0')}`)
+      } else {
+        sendCallMsg(user.id, targetUserId, `📞 Llamada perdida`)
       }
     })
 
