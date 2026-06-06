@@ -26,6 +26,7 @@ const io = new SocketIOServer(server, {
     origin: config.corsOrigin,
     credentials: true,
   },
+  maxHttpBufferSize: 10 * 1024 * 1024, // 10MB for audio messages
 });
 
 // Register socket event handlers
@@ -72,11 +73,21 @@ app.use(notFound);
 app.use(errorHandler);
 
 // ─── Start Server ───────────────────────────────────────────────────────────────
-server.listen(config.port, () => {
+server.listen(config.port, async () => {
   logger.info(`🔥 Fénix Chat server running on port ${config.port}`);
   logger.info(`📡 Environment: ${config.nodeEnv}`);
   logger.info(`🌐 CORS origin: ${config.corsOrigin}`);
   logger.info(`🔌 Socket.IO ready`);
+
+  // Run pending migrations
+  try {
+    const { query } = await import('./config/database.js');
+    await query(`ALTER TABLE messages DROP CONSTRAINT IF EXISTS messages_type_check`);
+    await query(`ALTER TABLE messages ADD CONSTRAINT messages_type_check CHECK (type IN ('text', 'image', 'system', 'audio'))`);
+    logger.info('✅ Audio message type migration applied');
+  } catch (err) {
+    logger.warn('Migration note:', err.message);
+  }
 });
 
 // ─── Graceful Shutdown ──────────────────────────────────────────────────────────

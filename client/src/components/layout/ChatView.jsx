@@ -116,23 +116,39 @@ function ChatView({ onBack }) {
   const handleStartRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-          ? 'audio/webm;codecs=opus'
-          : 'audio/webm'
-      })
+      
+      // Check supported mime types
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+          ? 'audio/webm'
+          : MediaRecorder.isTypeSupported('audio/mp4')
+            ? 'audio/mp4'
+            : ''
+      
+      const options = mimeType ? { mimeType } : {}
+      const mediaRecorder = new MediaRecorder(stream, options)
       mediaRecorderRef.current = mediaRecorder
       audioChunksRef.current = []
 
-      mediaRecorder.ondataavailable = (e) => {
+      mediaRecorder.addEventListener('dataavailable', (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data)
-      }
+      })
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.addEventListener('stop', () => {
         stream.getTracks().forEach(t => t.stop())
-      }
+        const blob = new Blob(audioChunksRef.current, { type: mimeType || 'audio/webm' })
+        if (blob.size > 0 && !mediaRecorderRef.current._cancelled) {
+          const reader = new FileReader()
+          reader.onload = () => {
+            sendMessage(reader.result, 'audio')
+          }
+          reader.readAsDataURL(blob)
+        }
+        audioChunksRef.current = []
+      })
 
-      mediaRecorder.start()
+      mediaRecorder.start(100) // timeslice 100ms for collecting chunks progressively
       setIsRecording(true)
       setRecordingDuration(0)
 
@@ -141,38 +157,21 @@ function ChatView({ onBack }) {
       }, 1000)
     } catch (err) {
       console.error('Microphone error:', err)
-      alert('No se pudo acceder al micrófono')
     }
   }
 
   const handleStopRecording = () => {
-    if (!mediaRecorderRef.current) return
-
-    const recorder = mediaRecorderRef.current
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) audioChunksRef.current.push(e.data)
-    }
-
-    recorder.onstop = () => {
-      recorder.stream.getTracks().forEach(t => t.stop())
-      const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
-      const reader = new FileReader()
-      reader.onload = () => {
-        const base64 = reader.result
-        sendMessage(base64, 'audio')
-      }
-      reader.readAsDataURL(blob)
-    }
-
-    recorder.stop()
+    if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') return
+    mediaRecorderRef.current._cancelled = false
+    mediaRecorderRef.current.stop()
     clearInterval(recordingTimerRef.current)
     setIsRecording(false)
     setRecordingDuration(0)
   }
 
   const handleCancelRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop())
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current._cancelled = true
       mediaRecorderRef.current.stop()
     }
     clearInterval(recordingTimerRef.current)
