@@ -39,6 +39,18 @@ export default function chatHandler(io) {
     }
     onlineUsers.get(user.id).add(socket.id)
 
+    // Auto-join ALL conversation rooms for this user
+    try {
+      const conversations = await Conversation.getByUser(user.id)
+      const convList = Array.isArray(conversations) ? conversations : []
+      for (const conv of convList) {
+        socket.join(conv.id)
+      }
+      logger.info(`${user.username} auto-joined ${convList.length} conversation rooms`)
+    } catch (err) {
+      logger.error('Error auto-joining conversations:', err.message)
+    }
+
     // Broadcast that user is online
     socket.broadcast.emit('user_online', { userId: user.id, username: user.username })
 
@@ -93,6 +105,18 @@ export default function chatHandler(io) {
         // Broadcast to all members in the conversation room (including sender)
         io.to(conversationId).emit('new_message', message)
 
+        // Also ensure both users are in the room (for new conversations)
+        const members = await Conversation.getMembers(conversationId)
+        for (const member of members) {
+          const memberSockets = onlineUsers.get(member.id)
+          if (memberSockets) {
+            for (const socketId of memberSockets) {
+              const memberSocket = io.sockets.sockets.get(socketId)
+              if (memberSocket) memberSocket.join(conversationId)
+            }
+          }
+        }
+
         logger.debug(`Message from ${user.username} in ${conversationId}: ${content.substring(0, 50)}`)
       } catch (err) {
         logger.error('Error sending message:', err.message)
@@ -101,7 +125,7 @@ export default function chatHandler(io) {
     })
 
     // ─── Typing Indicators ────────────────────────────────────────────────────
-    socket.on('typing', (conversationId) => {
+    socket.on('typing', ({ conversationId }) => {
       socket.to(conversationId).emit('user_typing', {
         conversationId,
         userId: user.id,
@@ -109,7 +133,7 @@ export default function chatHandler(io) {
       })
     })
 
-    socket.on('stop_typing', (conversationId) => {
+    socket.on('stop_typing', ({ conversationId }) => {
       socket.to(conversationId).emit('user_stop_typing', {
         conversationId,
         userId: user.id,
