@@ -389,6 +389,37 @@
   line-height: var(--leading-normal);
 }
 
+/* Unread badge with fire emoji */
+.chat-list__unread-badge {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  color: var(--color-accent-warm);
+  background: rgba(255, 107, 53, 0.12);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+  animation: unreadPulse 2s ease-in-out infinite;
+  white-space: nowrap;
+}
+
+.chat-list__item--unread .chat-list__item-name {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-bold);
+}
+
+.chat-list__item--unread .chat-list__item-preview {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+}
+
+@keyframes unreadPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
 /* Typing indicator text */
 .chat-list__item-typing {
   font-size: var(--text-sm);

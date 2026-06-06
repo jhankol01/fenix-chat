@@ -11,6 +11,7 @@ const useChatStore = create((set, get) => ({
   activeConversation: null,
   messages: [],
   typingUsers: {},
+  unreadCounts: {},  // { conversationId: count }
   isLoadingConversations: false,
   isLoadingMessages: false,
   hasMoreMessages: true,
@@ -29,7 +30,16 @@ const useChatStore = create((set, get) => ({
 
   // Establecer la conversación activa y cargar sus mensajes
   setActiveConversation: async (conversation) => {
-    set({ activeConversation: conversation, messages: [], hasMoreMessages: true })
+    // Clear unread count for this conversation
+    if (conversation) {
+      set(state => {
+        const unreadCounts = { ...state.unreadCounts }
+        delete unreadCounts[conversation.id]
+        return { activeConversation: conversation, messages: [], hasMoreMessages: true, unreadCounts }
+      })
+    } else {
+      set({ activeConversation: conversation, messages: [], hasMoreMessages: true })
+    }
     const socket = getSocket()
     if (socket && conversation) {
       socket.emit('join_conversation', conversation.id)
@@ -95,7 +105,13 @@ const useChatStore = create((set, get) => ({
           : c
       ).sort((a, b) => new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0))
 
-      return { messages: newMessages, conversations }
+      // Increment unread count if NOT the active conversation
+      const unreadCounts = { ...state.unreadCounts }
+      if (activeConversation?.id !== message.conversation_id) {
+        unreadCounts[message.conversation_id] = (unreadCounts[message.conversation_id] || 0) + 1
+      }
+
+      return { messages: newMessages, conversations, unreadCounts }
     })
   },
 

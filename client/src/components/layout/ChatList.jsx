@@ -30,6 +30,7 @@ function ChatList({ section, onSelectConversation }) {
     searchUsers,
     startDM,
     setActiveConversation,
+    unreadCounts,
   } = useChatStore()
 
   const user = useAuthStore(state => state.user)
@@ -235,7 +236,8 @@ function ChatList({ section, onSelectConversation }) {
             const otherName = getConversationName(conv, user)
             const otherAvatar = getConversationAvatar(conv, user)
             const isTyping = typingUsers[conv.id]
-            const hasUnread = false // TODO: implementar conteo de no leídos
+            const unreadCount = unreadCounts[conv.id] || 0
+            const hasUnread = unreadCount > 0
 
             const itemClasses = [
               'chat-list__item',
@@ -284,6 +286,11 @@ function ChatList({ section, onSelectConversation }) {
                             ? `Tú: ${conv.last_message || ''}`
                             : conv.last_message || 'Conversación nueva'
                           }
+                        </span>
+                      )}
+                      {hasUnread && (
+                        <span className="chat-list__unread-badge">
+                          🔥 {unreadCount}
                         </span>
                       )}
                     </div>
