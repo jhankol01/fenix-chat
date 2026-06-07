@@ -346,6 +346,59 @@
   margin-left: 8px;
 }
 
+/* Lightbox — visor de imagen fullscreen */
+.chat-view__lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: lightbox-in 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+@keyframes lightbox-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.chat-view__lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s;
+}
+
+.chat-view__lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.chat-view__lightbox-img {
+  max-width: 92vw;
+  max-height: 88vh;
+  object-fit: contain;
+  border-radius: 8px;
+  animation: lightbox-zoom 0.25s ease;
+}
+
+@keyframes lightbox-zoom {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
 /* 🔥 Flame read receipt */
 .chat-view__flame-receipt {
   display: inline-flex;

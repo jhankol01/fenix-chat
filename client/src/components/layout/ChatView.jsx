@@ -30,7 +30,8 @@ function ChatView({ onBack }) {
   const msgLongPressRef = useRef(null)
   const fileInputRef = useRef(null)
   const [isUploading, setIsUploading] = useState(false)
-  const [mediaPreview, setMediaPreview] = useState(null) // { file, url, type }
+  const [mediaPreview, setMediaPreview] = useState(null)
+  const [lightboxUrl, setLightboxUrl] = useState(null)
 
   // Voice note state
   const [isRecording, setIsRecording] = useState(false)
@@ -567,7 +568,7 @@ function ChatView({ onBack }) {
                         src={msg.content}
                         alt="Foto"
                         className="chat-view__msg-image"
-                        onClick={() => window.open(msg.content, '_blank')}
+                        onClick={() => setLightboxUrl(msg.content)}
                       />
                     ) : msg.type === 'video' ? (
                       <video
@@ -758,6 +759,21 @@ function ChatView({ onBack }) {
           </div>
         )}
       </div>
+
+      {/* Lightbox — visor de imagen fullscreen */}
+      {lightboxUrl && (
+        <div className="chat-view__lightbox" onClick={() => setLightboxUrl(null)}>
+          <button className="chat-view__lightbox-close" onClick={() => setLightboxUrl(null)}>
+            <X size={24} />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Imagen"
+            className="chat-view__lightbox-img"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   )
 }
