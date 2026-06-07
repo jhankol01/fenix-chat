@@ -85,7 +85,7 @@ function ChatView({ onBack }) {
     api.get('/preferences').then(data => {
       const bg = data?.preferences?.chat_bg
       if (!bg || bg === 'default') {
-        setChatBgStyle({})
+        setChatBgStyle({})  // CSS already has fenix-dark as default
       } else if (PATTERN_MAP[bg]) {
         setChatBgStyle({
           backgroundImage: `url(${PATTERN_MAP[bg]})`,
