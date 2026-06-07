@@ -6,6 +6,7 @@ import logger from '../utils/logger.js'
 
 // Track online users: Map<userId, Set<socketId>>
 const onlineUsers = new Map()
+export { onlineUsers }
 
 /**
  * Register socket.io event handlers.

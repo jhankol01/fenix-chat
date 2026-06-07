@@ -67,7 +67,17 @@ app.use(limiter);
 
 // ─── Health Check ───────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', version: '2026-06-06-v7-calls', features: ['chat', 'voice_notes', 'calls', 'delete_conv'] });
+  res.json({ status: 'ok', version: 'v8-avatar-calls-fix', features: ['chat', 'voice_notes', 'calls', 'delete_conv', 'delete_msg', 'avatars'] });
+});
+
+// ─── Debug: online users ────────────────────────────────────────────────────────
+import { onlineUsers } from './sockets/chatHandler.js';
+app.get('/api/debug/online', (req, res) => {
+  const users = []
+  for (const [userId, sockets] of onlineUsers.entries()) {
+    users.push({ userId, socketCount: sockets.size, socketIds: Array.from(sockets) })
+  }
+  res.json({ onlineCount: users.length, users })
 });
 
 // ─── API Routes ─────────────────────────────────────────────────────────────────
