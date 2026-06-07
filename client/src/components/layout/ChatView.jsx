@@ -514,8 +514,8 @@ function ChatView({ onBack }) {
                     ) : (
                       msg.content
                     )}
-                    {/* 🔥 Flame read receipt — solo en mensajes propios, último del grupo */}
-                    {group.isOwn && msgIdx === group.messages.length - 1 && msg.type !== 'system' && (
+                    {/* 🔥 Flame read receipt — en cada mensaje propio */}
+                    {group.isOwn && msg.type !== 'system' && (
                       <span className={`chat-view__flame-receipt ${msg.seen_at ? 'chat-view__flame-receipt--seen' : ''}`}>
                         <img src="/icons/fenix-flame.png" alt="" className="chat-view__flame-img" />
                       </span>
