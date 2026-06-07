@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Phone, PhoneOff, Mic, MicOff, Volume2, Volume1, Video, VideoOff, CameraOff } from 'lucide-react'
+import { Phone, PhoneOff, Mic, MicOff, Volume2, Volume1, Video, VideoOff, CameraOff, ArrowLeft, Maximize2 } from 'lucide-react'
 import { getSocket } from '../../lib/socket'
 import useAuthStore from '../../stores/authStore'
 import './CallOverlay.css'
@@ -21,6 +21,7 @@ function CallOverlay() {
   const [isCameraOff, setIsCameraOff] = useState(false)
   const [duration, setDuration] = useState(0)
   const [endReason, setEndReason] = useState('')
+  const [isMinimized, setIsMinimized] = useState(false)
 
   // Refs
   const pcRef = useRef(null)
@@ -507,8 +508,29 @@ function CallOverlay() {
 
   if (callState === 'idle') return null
 
+  // Minimized floating pill
+  if (isMinimized) {
+    return (
+      <div className="call-mini" onClick={() => setIsMinimized(false)}>
+        <div className="call-mini__pulse" />
+        <div className="call-mini__info">
+          {isVideoCall ? <Video size={14} /> : <Phone size={14} />}
+          <span className="call-mini__name">{remoteUser?.name || 'Llamada'}</span>
+          <span className="call-mini__time">{fmt(duration)}</span>
+        </div>
+        <Maximize2 size={14} className="call-mini__expand" />
+      </div>
+    )
+  }
+
   return (
     <div className={`call-overlay ${isVideoCall ? 'call-overlay--video' : ''}`}>
+      {/* Back/minimize button */}
+      {(callState === 'calling' || callState === 'connected') && (
+        <button className="call-overlay__back" onClick={() => setIsMinimized(true)}>
+          <ArrowLeft size={22} />
+        </button>
+      )}
       {/* Video elements */}
       {isVideoCall && (
         <>
