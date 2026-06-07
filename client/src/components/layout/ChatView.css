@@ -111,6 +111,32 @@
   background: var(--color-bg-hover);
 }
 
+/* Add contact button */
+.chat-view__header-btn--add-contact {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 8px;
+  width: auto;
+  padding: 0 8px;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.chat-view__header-btn--add-contact:hover {
+  background: rgba(34, 197, 94, 0.2);
+}
+
+.chat-view__contact-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--color-brand);
+  opacity: 0.5;
+}
+
 /* ---------- Messages area ---------- */
 .chat-view__messages {
   flex: 1;

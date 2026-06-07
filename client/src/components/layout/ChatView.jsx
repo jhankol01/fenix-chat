@@ -1,11 +1,12 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Video, Trash2
+  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Video, Trash2, UserPlus, UserCheck
 } from 'lucide-react'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
 import { getSocket } from '../../lib/socket'
 import useChatStore from '../../stores/chatStore'
 import useAuthStore from '../../stores/authStore'
+import api from '../../lib/api'
 import './ChatView.css'
 
 /**
@@ -23,6 +24,8 @@ function ChatView({ onBack }) {
   const inputRef = useRef(null)
   const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [showContactInfo, setShowContactInfo] = useState(false)
+  const [isContact, setIsContact] = useState(null) // null=loading, true/false
+  const [addingContact, setAddingContact] = useState(false)
   const [msgContextMenu, setMsgContextMenu] = useState(null)
   const msgLongPressRef = useRef(null)
 
@@ -89,6 +92,34 @@ function ChatView({ onBack }) {
       useChatStore.getState().markSeen(activeConversation.id)
     }
   }, [activeConversation?.id, messages.length])
+
+  // Check if other user is in contacts
+  useEffect(() => {
+    const otherId = activeConversation?.other_user_id
+      || activeConversation?.participants?.find(p => p.id !== user?.id)?.id
+    if (!otherId) return
+    setIsContact(null)
+    api.get('/contacts').then(data => {
+      const found = (data.contacts || []).some(c => c.contact_id === otherId)
+      setIsContact(found)
+    }).catch(() => setIsContact(false))
+  }, [activeConversation?.id, user?.id])
+
+  // Add contact from chat
+  const handleAddContact = async () => {
+    const otherId = activeConversation?.other_user_id
+      || activeConversation?.participants?.find(p => p.id !== user?.id)?.id
+    if (!otherId) return
+    setAddingContact(true)
+    try {
+      await api.post('/contacts', { contactId: otherId })
+      setIsContact(true)
+    } catch (err) {
+      console.error('Add contact error:', err)
+    } finally {
+      setAddingContact(false)
+    }
+  }
 
   // Delete a message
   const handleDeleteMessage = useCallback(() => {
@@ -316,6 +347,22 @@ function ChatView({ onBack }) {
         </div>
 
         <div className="chat-view__header-actions">
+          {/* Add contact button */}
+          {isContact === false && (
+            <button
+              className="chat-view__header-btn chat-view__header-btn--add-contact"
+              onClick={handleAddContact}
+              disabled={addingContact}
+              aria-label="Agregar contacto"
+            >
+              {addingContact ? <Loader2 size={16} className="spin" /> : <UserPlus size={16} />}
+            </button>
+          )}
+          {isContact === true && (
+            <span className="chat-view__contact-badge">
+              <UserCheck size={14} />
+            </span>
+          )}
           <button
             className="chat-view__header-btn"
             aria-label="Llamar"
