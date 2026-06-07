@@ -1,24 +1,22 @@
-import { MessageCircle, Users, Bell, User } from 'lucide-react'
 import PhoenixIcon from '../ui/PhoenixIcon'
 import './BottomNav.css'
 
 /**
- * BottomNav — Navegación inferior premium con fénix central
- * 5 tabs: Inicio, Comunidades, 🔥Fénix, Notificaciones, Perfil
+ * BottomNav — Navegación inferior premium con íconos Fénix Brand Pack
+ * 5 tabs: Inicio(Chats), Comunidades, 🔥Fénix, Alertas(Voz), Perfil(Eventos)
  */
 function BottomNav({ activeSection, onSectionChange }) {
   const tabs = [
-    { id: 'chats', label: 'Inicio', icon: MessageCircle },
-    { id: 'comunidades', label: 'Comunidades', icon: Users },
+    { id: 'chats', label: 'Inicio', icon: '/icons/Chats.png' },
+    { id: 'comunidades', label: 'Comunidades', icon: '/icons/Comunidades.png' },
     { id: 'fenix', label: '', icon: null, isCenter: true },
-    { id: 'notificaciones', label: 'Alertas', icon: Bell },
-    { id: 'perfil', label: 'Perfil', icon: User },
+    { id: 'notificaciones', label: 'Alertas', icon: '/icons/Anuncios.png' },
+    { id: 'perfil', label: 'Perfil', icon: '/icons/Voz.png' },
   ]
 
   return (
     <nav className="bottom-nav" role="tablist" aria-label="Navegación principal">
       {tabs.map((tab) => {
-        const Icon = tab.icon
         const isActive = activeSection === tab.id
         
         if (tab.isCenter) {
@@ -30,7 +28,7 @@ function BottomNav({ activeSection, onSectionChange }) {
               aria-label="Fénix"
             >
               <div className="bottom-nav__center-ring">
-              <PhoenixIcon size={26} variant="fire" glow />
+                <PhoenixIcon size={26} variant="logo" glow />
               </div>
             </button>
           )
@@ -46,7 +44,7 @@ function BottomNav({ activeSection, onSectionChange }) {
             aria-label={tab.label}
           >
             <span className="bottom-nav__icon">
-              <Icon size={20} />
+              <img src={tab.icon} alt={tab.label} className="bottom-nav__icon-img" />
             </span>
             <span className="bottom-nav__label">{tab.label}</span>
           </button>

@@ -1,65 +1,31 @@
 /**
- * PhoenixIcon — Logo Fénix Chat exacto
- * Llama con gradiente azul → violeta → rosa/magenta
- * Variantes: 'logo' (el principal), 'fire', 'brand'
+ * PhoenixIcon — Logo Fénix Chat 
+ * Llama estilizada con gradiente azul → violeta → rosa
  */
 function PhoenixIcon({ size = 24, variant = 'logo', className = '', glow = false }) {
-  const id = `phoenix-${variant}-${Math.random().toString(36).slice(2, 7)}`
-  
-  const gradients = {
-    logo: [
-      { offset: '0%', color: '#3B82F6' },
-      { offset: '40%', color: '#7C3AED' },
-      { offset: '70%', color: '#A855F7' },
-      { offset: '100%', color: '#EC4899' },
-    ],
-    fire: [
-      { offset: '0%', color: '#3B82F6' },
-      { offset: '40%', color: '#7C3AED' },
-      { offset: '70%', color: '#A855F7' },
-      { offset: '100%', color: '#EC4899' },
-    ],
-    brand: [
-      { offset: '0%', color: '#7C3AED' },
-      { offset: '50%', color: '#A855F7' },
-      { offset: '100%', color: '#C084FC' },
-    ],
-  }
-
-  const stops = gradients[variant] || gradients.logo
+  const id = `ph-${Math.random().toString(36).slice(2, 7)}`
 
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 64 64"
+      viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      style={glow ? { filter: `drop-shadow(0 0 ${size * 0.25}px rgba(124, 58, 237, 0.5))` } : undefined}
+      style={glow ? { filter: `drop-shadow(0 0 ${size * 0.3}px rgba(124, 58, 237, 0.6))` } : undefined}
     >
       <defs>
-        <linearGradient id={`${id}-main`} x1="32" y1="56" x2="32" y2="4" gradientUnits="userSpaceOnUse">
-          {stops.map((s, i) => (
-            <stop key={i} offset={s.offset} stopColor={s.color} />
-          ))}
-        </linearGradient>
-        <linearGradient id={`${id}-inner`} x1="32" y1="56" x2="32" y2="20" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#60A5FA" />
-          <stop offset="50%" stopColor="#A78BFA" />
-          <stop offset="100%" stopColor="#F472B6" />
+        <linearGradient id={`${id}-g`} x1="12" y1="22" x2="12" y2="1" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#3B82F6" />
+          <stop offset="35%" stopColor="#7C3AED" />
+          <stop offset="65%" stopColor="#A855F7" />
+          <stop offset="100%" stopColor="#EC4899" />
         </linearGradient>
       </defs>
-      {/* Outer flame */}
       <path
-        d="M32 4C32 4 18 16 18 30C18 38 22 44 28 48C28 48 24 42 26 36C28 30 32 26 32 26C32 26 36 30 38 36C40 42 36 48 36 48C42 44 46 38 46 30C46 16 32 4 32 4Z"
-        fill={`url(#${id}-main)`}
-      />
-      {/* Inner flame */}
-      <path
-        d="M32 56C32 56 24 50 24 44C24 38 28 34 32 30C36 34 40 38 40 44C40 50 32 56 32 56Z"
-        fill={`url(#${id}-inner)`}
-        opacity="0.85"
+        d="M12 1C12 1 8.5 5.5 8.5 8.5C8.5 10.5 9.5 11.5 10 12C9 10 10 8 12 6C14 8 15 10 14 12C14.5 11.5 15.5 10.5 15.5 8.5C15.5 5.5 12 1 12 1ZM7 13C7 13 5 15.5 5 17.5C5 20 7.5 22 10 22C8 21 7 19.5 7 17.5C7 16 8 14.5 9 13.5C8 14.5 7.5 13.5 7 13ZM12 11C12 11 8 15 8 18C8 20.2 9.8 22 12 22C14.2 22 16 20.2 16 18C16 15 12 11 12 11ZM12 20C10.9 20 10 19.1 10 18C10 16.5 12 14 12 14C12 14 14 16.5 14 18C14 19.1 13.1 20 12 20Z"
+        fill={`url(#${id}-g)`}
       />
     </svg>
   )
