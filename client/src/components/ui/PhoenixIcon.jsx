@@ -1,8 +1,8 @@
 /**
- * PhoenixIcon — Logo Fénix Chat 
- * Llama estilizada con gradiente azul → violeta → rosa
+ * PhoenixIcon — Llama Fénix con gradiente azul → violeta → rosa
+ * Usa el path de Material Design "whatshot" — forma de fuego reconocible
  */
-function PhoenixIcon({ size = 24, variant = 'logo', className = '', glow = false }) {
+function PhoenixIcon({ size = 24, className = '', glow = false }) {
   const id = `ph-${Math.random().toString(36).slice(2, 7)}`
 
   return (
@@ -13,19 +13,26 @@ function PhoenixIcon({ size = 24, variant = 'logo', className = '', glow = false
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      style={glow ? { filter: `drop-shadow(0 0 ${size * 0.3}px rgba(124, 58, 237, 0.6))` } : undefined}
+      style={glow ? { filter: `drop-shadow(0 0 ${size * 0.3}px rgba(124, 58, 237, 0.5))` } : undefined}
     >
       <defs>
         <linearGradient id={`${id}-g`} x1="12" y1="22" x2="12" y2="1" gradientUnits="userSpaceOnUse">
           <stop offset="0%" stopColor="#3B82F6" />
-          <stop offset="35%" stopColor="#7C3AED" />
-          <stop offset="65%" stopColor="#A855F7" />
+          <stop offset="40%" stopColor="#7C3AED" />
+          <stop offset="70%" stopColor="#A855F7" />
           <stop offset="100%" stopColor="#EC4899" />
         </linearGradient>
       </defs>
+      {/* Outer flame */}
       <path
-        d="M12 1C12 1 8.5 5.5 8.5 8.5C8.5 10.5 9.5 11.5 10 12C9 10 10 8 12 6C14 8 15 10 14 12C14.5 11.5 15.5 10.5 15.5 8.5C15.5 5.5 12 1 12 1ZM7 13C7 13 5 15.5 5 17.5C5 20 7.5 22 10 22C8 21 7 19.5 7 17.5C7 16 8 14.5 9 13.5C8 14.5 7.5 13.5 7 13ZM12 11C12 11 8 15 8 18C8 20.2 9.8 22 12 22C14.2 22 16 20.2 16 18C16 15 12 11 12 11ZM12 20C10.9 20 10 19.1 10 18C10 16.5 12 14 12 14C12 14 14 16.5 14 18C14 19.1 13.1 20 12 20Z"
+        d="M13.5 0.67s0.74 2.65 0.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l0.03-0.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5 0.67z"
         fill={`url(#${id}-g)`}
+      />
+      {/* Inner flame */}
+      <path
+        d="M11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-0.36 3.6-1.21 4.62-2.58 0.39 1.29 0.59 2.65 0.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"
+        fill={`url(#${id}-g)`}
+        opacity="0.5"
       />
     </svg>
   )
