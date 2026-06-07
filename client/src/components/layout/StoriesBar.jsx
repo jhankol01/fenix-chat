@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, X, ChevronLeft, ChevronRight, Eye, Trash2, Send } from 'lucide-react'
+import { Plus, X, ChevronLeft, ChevronRight, Eye, Trash2, Send, ImagePlus, Type } from 'lucide-react'
 import api from '../../lib/api'
 import useAuthStore from '../../stores/authStore'
 import './StoriesBar.css'
@@ -12,13 +12,18 @@ const STORY_COLORS = [
 function StoriesBar() {
   const [storyGroups, setStoryGroups] = useState([])
   const [showCreate, setShowCreate] = useState(false)
+  const [createMode, setCreateMode] = useState(null) // null | 'text' | 'photo'
   const [showViewer, setShowViewer] = useState(null) // { groupIndex, storyIndex }
   const [newStoryText, setNewStoryText] = useState('')
   const [selectedColor, setSelectedColor] = useState('#7C3AED')
   const [isCreating, setIsCreating] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState(null)
+  const [photoFile, setPhotoFile] = useState(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const scrollRef = useRef(null)
   const progressRef = useRef(null)
   const timerRef = useRef(null)
+  const fileInputRef = useRef(null)
   const user = useAuthStore(s => s.user)
 
   const loadStories = async () => {
@@ -34,9 +39,50 @@ function StoriesBar() {
     return () => clearInterval(interval)
   }, [])
 
-  // Create story
+  // Handle photo selection
+  const handlePhotoSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPhotoFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setPhotoPreview(ev.target.result)
+    reader.readAsDataURL(file)
+    setCreateMode('photo')
+  }
+
+  // Create story (text or photo)
   const handleCreate = async () => {
-    if (!newStoryText.trim() || isCreating) return
+    if (isCreating) return
+
+    if (createMode === 'photo' && photoFile) {
+      setIsCreating(true)
+      setUploadProgress(10)
+      try {
+        // Upload photo to B2
+        const formData = new FormData()
+        formData.append('media', photoFile)
+        setUploadProgress(30)
+        const uploadRes = await api.upload('/upload/media', formData)
+        setUploadProgress(80)
+
+        // Create story with image URL
+        await api.post('/stories', {
+          content: uploadRes.url,
+          type: 'image',
+          backgroundColor: selectedColor,
+        })
+        setUploadProgress(100)
+        resetCreate()
+        loadStories()
+      } catch (_) {
+        setUploadProgress(0)
+      }
+      setIsCreating(false)
+      return
+    }
+
+    // Text story
+    if (!newStoryText.trim()) return
     setIsCreating(true)
     try {
       await api.post('/stories', {
@@ -44,11 +90,19 @@ function StoriesBar() {
         type: 'text',
         backgroundColor: selectedColor,
       })
-      setNewStoryText('')
-      setShowCreate(false)
+      resetCreate()
       loadStories()
     } catch (_) {}
     setIsCreating(false)
+  }
+
+  const resetCreate = () => {
+    setNewStoryText('')
+    setPhotoPreview(null)
+    setPhotoFile(null)
+    setUploadProgress(0)
+    setShowCreate(false)
+    setCreateMode(null)
   }
 
   // View story
@@ -146,35 +200,106 @@ function StoriesBar() {
       {/* Create story modal */}
       {showCreate && (
         <div className="stories-create-overlay">
-          <div className="stories-create" style={{ background: selectedColor }}>
-            <div className="stories-create__header">
-              <button onClick={() => setShowCreate(false)}><X size={22} color="white" /></button>
-              <span>Nueva historia</span>
-              <button onClick={handleCreate} disabled={!newStoryText.trim() || isCreating}>
-                <Send size={20} color="white" />
+          {/* Mode picker (if no mode selected) */}
+          {!createMode && (
+            <div className="stories-create-picker">
+              <button className="stories-create-picker__close" onClick={() => setShowCreate(false)}>
+                <X size={22} color="white" />
               </button>
+              <h3 className="stories-create-picker__title">Nueva historia</h3>
+              <div className="stories-create-picker__options">
+                <button className="stories-create-picker__option" onClick={() => setCreateMode('text')}>
+                  <div className="stories-create-picker__icon" style={{ background: 'linear-gradient(135deg, #7C3AED, #EC4899)' }}>
+                    <Type size={28} color="white" />
+                  </div>
+                  <span>Texto</span>
+                </button>
+                <button className="stories-create-picker__option" onClick={() => fileInputRef.current?.click()}>
+                  <div className="stories-create-picker__icon" style={{ background: 'linear-gradient(135deg, #0ea5e9, #10b981)' }}>
+                    <ImagePlus size={28} color="white" />
+                  </div>
+                  <span>Foto</span>
+                </button>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handlePhotoSelect}
+              />
             </div>
+          )}
 
-            <textarea
-              className="stories-create__input"
-              placeholder="Escribe tu historia..."
-              value={newStoryText}
-              onChange={(e) => setNewStoryText(e.target.value)}
-              autoFocus
-              maxLength={500}
-            />
+          {/* Text creator */}
+          {createMode === 'text' && (
+            <div className="stories-create" style={{ background: selectedColor }}>
+              <div className="stories-create__header">
+                <button onClick={() => setCreateMode(null)}><X size={22} color="white" /></button>
+                <span>Historia de texto</span>
+                <button onClick={handleCreate} disabled={!newStoryText.trim() || isCreating}>
+                  <Send size={20} color="white" />
+                </button>
+              </div>
 
-            <div className="stories-create__colors">
-              {STORY_COLORS.map(color => (
-                <button
-                  key={color}
-                  className={`stories-create__color ${selectedColor === color ? 'stories-create__color--active' : ''}`}
-                  style={{ background: color }}
-                  onClick={() => setSelectedColor(color)}
-                />
-              ))}
+              <textarea
+                className="stories-create__input"
+                placeholder="Escribe tu historia..."
+                value={newStoryText}
+                onChange={(e) => setNewStoryText(e.target.value)}
+                autoFocus
+                maxLength={500}
+              />
+
+              <div className="stories-create__colors">
+                {STORY_COLORS.map(color => (
+                  <button
+                    key={color}
+                    className={`stories-create__color ${selectedColor === color ? 'stories-create__color--active' : ''}`}
+                    style={{ background: color }}
+                    onClick={() => setSelectedColor(color)}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Photo creator */}
+          {createMode === 'photo' && photoPreview && (
+            <div className="stories-create stories-create--photo">
+              <div className="stories-create__header">
+                <button onClick={() => { setCreateMode(null); setPhotoPreview(null); setPhotoFile(null) }}>
+                  <X size={22} color="white" />
+                </button>
+                <span>Historia con foto</span>
+                <button onClick={handleCreate} disabled={isCreating}>
+                  {isCreating ? (
+                    <div className="stories-create__spinner" />
+                  ) : (
+                    <Send size={20} color="white" />
+                  )}
+                </button>
+              </div>
+
+              <div className="stories-create__photo-preview">
+                <img src={photoPreview} alt="Preview" />
+              </div>
+
+              {uploadProgress > 0 && (
+                <div className="stories-create__progress">
+                  <div className="stories-create__progress-fill" style={{ width: `${uploadProgress}%` }} />
+                </div>
+              )}
+
+              <textarea
+                className="stories-create__caption"
+                placeholder="Agregar texto (opcional)..."
+                value={newStoryText}
+                onChange={(e) => setNewStoryText(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+          )}
         </div>
       )}
 

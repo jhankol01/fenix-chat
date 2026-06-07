@@ -340,6 +340,133 @@
 .stories-viewer__nav-left { left: 0; }
 .stories-viewer__nav-right { right: 0; }
 
+/* ========== Mode Picker ========== */
+.stories-create-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  position: relative;
+}
+
+.stories-create-picker__close {
+  position: absolute;
+  top: -120px;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.stories-create-picker__title {
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.stories-create-picker__options {
+  display: flex;
+  gap: 32px;
+}
+
+.stories-create-picker__option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.stories-create-picker__option:hover {
+  transform: scale(1.08);
+}
+
+.stories-create-picker__icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* ========== Photo Creator ========== */
+.stories-create--photo {
+  background: #111 !important;
+}
+
+.stories-create__photo-preview {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  min-height: 0;
+}
+
+.stories-create__photo-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.stories-create__progress {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 16px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.stories-create__progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7C3AED, #EC4899);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.stories-create__caption {
+  background: none;
+  border: none;
+  outline: none;
+  color: white;
+  font-size: 0.9rem;
+  padding: 12px 16px;
+  resize: none;
+  font-family: inherit;
+  height: 48px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stories-create__caption::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.stories-create__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .stories-create,
