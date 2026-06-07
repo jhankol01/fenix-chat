@@ -4,6 +4,7 @@ import ChatList from '../components/layout/ChatList'
 import ChatView from '../components/layout/ChatView'
 import ProfileView from '../components/layout/ProfileView'
 import OnlineUsers from '../components/layout/OnlineUsers'
+import ContactsView from '../components/layout/ContactsView'
 import CallOverlay from '../components/layout/CallOverlay'
 import BottomNav from '../components/layout/BottomNav'
 import useAuthStore from '../stores/authStore'
@@ -178,14 +179,7 @@ function AppLayout() {
           currentUser?.email === ADMIN_EMAIL ? (
             <OnlineUsers onSelectConversation={handleSelectConversation} />
           ) : (
-            <div className="section-placeholder">
-              <div className="section-placeholder__icon">🎮</div>
-              <h2 className="section-placeholder__title">Comunidades</h2>
-              <p className="section-placeholder__desc">
-                Crea y únete a comunidades gaming. Canales de texto, voz y más.
-              </p>
-              <span className="section-placeholder__badge">🚀 Próximamente</span>
-            </div>
+            <ContactsView onSelectConversation={handleSelectConversation} />
           )
         )}
         {mobileSection === 'fenix' && (

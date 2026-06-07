@@ -9,7 +9,7 @@ import './BottomNav.css'
 function BottomNav({ activeSection, onSectionChange }) {
   const tabs = [
     { id: 'chats', label: 'Inicio', Icon: Home },
-    { id: 'comunidades', label: 'Comunidades', Icon: Users },
+    { id: 'comunidades', label: 'Contactos', Icon: Users },
     { id: 'fenix', label: '', Icon: null, isCenter: true },
     { id: 'notificaciones', label: 'Notificaciones', Icon: Bell },
     { id: 'perfil', label: 'Perfil', Icon: User },

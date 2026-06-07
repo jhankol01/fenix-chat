@@ -4,6 +4,7 @@ import authRoutes from './auth.js';
 import userRoutes from './users.js';
 import conversationRoutes from './conversations.js';
 import uploadRoutes from './upload.js';
+import contactRoutes from './contactRoutes.js';
 import { searchUsers } from '../controllers/conversations.js';
 import authenticate from '../middleware/auth.js';
 
@@ -26,6 +27,9 @@ router.use('/conversations', conversationRoutes);
 
 // Upload routes (avatars)
 router.use('/upload', uploadRoutes);
+
+// Contact routes
+router.use('/contacts', contactRoutes);
 
 // Admin routes
 import { listUsers, getStats } from '../controllers/admin.js';

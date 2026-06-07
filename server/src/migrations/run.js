@@ -23,6 +23,7 @@ async function runMigrations() {
       '003_add_reset_token.sql',
       '004_add_audio_type.sql',
       '005_add_seen_at.sql',
+      '006_create_contacts.sql',
     ]
 
     for (const file of migrations) {
