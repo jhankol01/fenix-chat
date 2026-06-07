@@ -74,7 +74,8 @@ function StoriesBar() {
         setUploadProgress(100)
         resetCreate()
         loadStories()
-      } catch (_) {
+      } catch (err) {
+        console.error('Story photo upload error:', err)
         setUploadProgress(0)
       }
       setIsCreating(false)

@@ -1,11 +1,11 @@
 import { Router } from 'express'
 import Story from '../models/Story.js'
-import { authenticateToken } from '../middleware/auth.js'
+import authenticate from '../middleware/auth.js'
 
 const router = Router()
 
 // GET /api/stories — Get all active stories
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticate, async (req, res) => {
   try {
     const stories = await Story.getAll(req.user.id)
     
@@ -43,7 +43,7 @@ router.get('/', authenticateToken, async (req, res) => {
 })
 
 // POST /api/stories — Create a new story
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
     const { content, type, backgroundColor, fontSize } = req.body
     if (!content) return res.status(400).json({ error: 'El contenido es requerido' })
@@ -64,7 +64,7 @@ router.post('/', authenticateToken, async (req, res) => {
 })
 
 // POST /api/stories/:id/view — Mark story as viewed
-router.post('/:id/view', authenticateToken, async (req, res) => {
+router.post('/:id/view', authenticate, async (req, res) => {
   try {
     await Story.markViewed(req.params.id, req.user.id)
     res.json({ success: true })
@@ -75,7 +75,7 @@ router.post('/:id/view', authenticateToken, async (req, res) => {
 })
 
 // DELETE /api/stories/:id — Delete own story
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
   try {
     const deleted = await Story.delete(req.params.id, req.user.id)
     if (!deleted) return res.status(404).json({ error: 'Historia no encontrada' })
