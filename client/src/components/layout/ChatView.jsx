@@ -630,9 +630,6 @@ function ChatView({ onBack }) {
           >
             <Video size={18} />
           </button>
-          <button className="chat-view__header-btn" aria-label="Más opciones">
-            <MoreVertical size={18} />
-          </button>
         </div>
       </div>
 
