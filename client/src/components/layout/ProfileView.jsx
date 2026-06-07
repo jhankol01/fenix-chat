@@ -88,11 +88,20 @@ function ProfileView() {
   }, [])
 
   // Notification settings (local)
-  const [notifSettings, setNotifSettings] = useState({
-    sound: true,
-    browserNotif: typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted',
-    messagePreview: true,
+  const [notifSettings, setNotifSettings] = useState(() => {
+    const saved = localStorage.getItem('fenix_notif_settings')
+    if (saved) try { return JSON.parse(saved) } catch(_) {}
+    return {
+      sound: true,
+      browserNotif: typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted',
+      messagePreview: true,
+    }
   })
+
+  // Persist notif settings changes
+  useEffect(() => {
+    localStorage.setItem('fenix_notif_settings', JSON.stringify(notifSettings))
+  }, [notifSettings])
 
   const menuItems = [
     { id: 'editProfile', icon: User, label: 'Editar perfil', color: '#00F5FF' },
