@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Video, Trash2, UserPlus, UserCheck, Paperclip, Image
+  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Video, Trash2, UserPlus, UserCheck, Paperclip, Image, Camera
 } from 'lucide-react'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
 import { getSocket } from '../../lib/socket'
@@ -29,6 +29,7 @@ function ChatView({ onBack }) {
   const [msgContextMenu, setMsgContextMenu] = useState(null)
   const msgLongPressRef = useRef(null)
   const fileInputRef = useRef(null)
+  const cameraInputRef = useRef(null)
   const [isUploading, setIsUploading] = useState(false)
   const [mediaPreview, setMediaPreview] = useState(null)
   const [lightboxUrl, setLightboxUrl] = useState(null)
@@ -672,6 +673,13 @@ function ChatView({ onBack }) {
           >
             <Paperclip size={20} />
           </button>
+          <button
+            className="chat-view__input-btn"
+            aria-label="Cámara"
+            onClick={() => cameraInputRef.current?.click()}
+          >
+            <Camera size={20} />
+          </button>
           <input
             ref={fileInputRef}
             type="file"
@@ -681,8 +689,30 @@ function ChatView({ onBack }) {
               const file = e.target.files?.[0]
               if (!file) return
               e.target.value = ''
-              const type = file.type.startsWith('image/') ? 'image' : 'video'
-              // Upload to B2
+              setIsUploading(true)
+              try {
+                const formData = new FormData()
+                formData.append('media', file)
+                const data = await api.upload('/upload/media', formData)
+                sendMessage(data.url, data.type)
+              } catch (err) {
+                console.error('Upload error:', err)
+                alert('Error al subir archivo')
+              } finally {
+                setIsUploading(false)
+              }
+            }}
+          />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            style={{ display: 'none' }}
+            onChange={async (e) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              e.target.value = ''
               setIsUploading(true)
               try {
                 const formData = new FormData()
