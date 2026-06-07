@@ -14,6 +14,8 @@ import './ProfileView.css'
 // Preset background options
 const CHAT_BG_PRESETS = [
   { id: 'default', label: 'Predeterminado', value: 'default', css: 'var(--color-bg-primary)' },
+  { id: 'fenix-dark', label: 'Fénix Oscuro', value: 'fenix-dark', css: 'url(/backgrounds/fenix-dark.png) center/cover' },
+  { id: 'fenix-light', label: 'Fénix Claro', value: 'fenix-light', css: 'url(/backgrounds/fenix-light.png) center/cover' },
   { id: 'gradient-1', label: 'Púrpura profundo', value: 'gradient-1', css: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' },
   { id: 'gradient-2', label: 'Azul medianoche', value: 'gradient-2', css: 'linear-gradient(135deg, #141E30, #243B55)' },
   { id: 'gradient-3', label: 'Océano oscuro', value: 'gradient-3', css: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)' },

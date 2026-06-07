@@ -75,12 +75,23 @@ function ChatView({ onBack }) {
     'gradient-6': 'linear-gradient(135deg, #0a0a0a, #1a1a1a)',
   }
 
+  const PATTERN_MAP = {
+    'fenix-dark': '/backgrounds/fenix-dark.png',
+    'fenix-light': '/backgrounds/fenix-light.png',
+  }
+
   // Fetch chat background preference
   useEffect(() => {
     api.get('/preferences').then(data => {
       const bg = data?.preferences?.chat_bg
       if (!bg || bg === 'default') {
         setChatBgStyle({})
+      } else if (PATTERN_MAP[bg]) {
+        setChatBgStyle({
+          backgroundImage: `url(${PATTERN_MAP[bg]})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        })
       } else if (bg.startsWith('gradient-') && GRADIENT_MAP[bg]) {
         setChatBgStyle({ background: GRADIENT_MAP[bg] })
       } else if (bg.startsWith('http')) {
@@ -88,7 +99,6 @@ function ChatView({ onBack }) {
           backgroundImage: `url(${bg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
         })
       }
     }).catch(() => {})
