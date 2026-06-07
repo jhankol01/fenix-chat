@@ -298,11 +298,13 @@ function AppLayout() {
         </div>
       )}
 
-      {/* Barra de navegación inferior */}
-      <BottomNav
-        activeSection={mobileSection}
-        onSectionChange={handleSectionChange}
-      />
+      {/* Barra de navegación inferior (oculta dentro del chat) */}
+      {!showMobileChat && (
+        <BottomNav
+          activeSection={mobileSection}
+          onSectionChange={handleSectionChange}
+        />
+      )}
     </div>
     </>
   )
