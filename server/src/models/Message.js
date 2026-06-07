@@ -4,17 +4,16 @@ const Message = {
   /**
    * Create a new message and return it with sender info.
    */
-  async create({ conversationId, senderId, content, type = 'text' }) {
+  async create({ conversationId, senderId, content, type = 'text', replyToId = null, forwarded = false }) {
     const result = await query(
-      `INSERT INTO messages (conversation_id, sender_id, content, type)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, conversation_id, sender_id, content, type, created_at, seen_at`,
-      [conversationId, senderId, content, type]
+      `INSERT INTO messages (conversation_id, sender_id, content, type, reply_to_id, forwarded)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, conversation_id, sender_id, content, type, created_at, seen_at, reply_to_id, forwarded`,
+      [conversationId, senderId, content, type, replyToId, forwarded]
     )
 
     const message = result.rows[0]
 
-    // Fetch sender info
     const senderResult = await query(
       'SELECT username, display_name, avatar_url FROM users WHERE id = $1',
       [senderId]
@@ -27,6 +26,16 @@ const Message = {
       sender_display_name: sender?.display_name || null,
       sender_avatar_url: sender?.avatar_url || null,
     }
+  },
+
+  async findById(messageId) {
+    const result = await query(
+      `SELECT m.*, u.username as sender_username, u.display_name as sender_display_name
+       FROM messages m LEFT JOIN users u ON u.id = m.sender_id
+       WHERE m.id = $1`,
+      [messageId]
+    )
+    return result.rows[0] || null
   },
 
   /**
@@ -52,18 +61,25 @@ const Message = {
         m.type,
         m.created_at,
         m.seen_at,
+        m.reply_to_id,
+        m.forwarded,
+        m.deleted_at,
         u.username AS sender_username,
         u.display_name AS sender_display_name,
-        u.avatar_url AS sender_avatar_url
+        u.avatar_url AS sender_avatar_url,
+        rm.content AS reply_content,
+        rm.type AS reply_type,
+        ru.username AS reply_username
        FROM messages m
        LEFT JOIN users u ON u.id = m.sender_id
+       LEFT JOIN messages rm ON rm.id = m.reply_to_id
+       LEFT JOIN users ru ON ru.id = rm.sender_id
        ${whereClause}
        ORDER BY m.created_at DESC
        LIMIT $2`,
       params
     )
 
-    // Reverse to get chronological order (query uses DESC for cursor pagination)
     return result.rows.reverse()
   },
 

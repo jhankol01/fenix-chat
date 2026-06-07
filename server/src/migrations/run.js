@@ -25,6 +25,9 @@ async function runMigrations() {
       '005_add_seen_at.sql',
       '006_create_contacts.sql',
       '007_add_video_type.sql',
+      '008_add_reply_forward_delete.sql',
+      '009_create_reactions.sql',
+      '010_preferences_presence.sql',
     ]
 
     for (const file of migrations) {

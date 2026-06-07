@@ -2,6 +2,8 @@ import jwt from 'jsonwebtoken'
 import config from '../config/index.js'
 import Message from '../models/Message.js'
 import Conversation from '../models/Conversation.js'
+import Reaction from '../models/Reaction.js'
+import { query } from '../config/database.js'
 import logger from '../utils/logger.js'
 
 // Track online users: Map<userId, Set<socketId>>
@@ -54,6 +56,8 @@ export default function chatHandler(io) {
 
     // Broadcast that user is online
     socket.broadcast.emit('user_online', { userId: user.id, username: user.username })
+    // Update DB presence
+    query('UPDATE users SET is_online = TRUE, last_seen = NOW() WHERE id = $1', [user.id]).catch(() => {})
 
     // Send current online user list to the newly connected socket
     const onlineUserIds = Array.from(onlineUsers.keys())
@@ -83,25 +87,32 @@ export default function chatHandler(io) {
     })
 
     // ─── Send Message ─────────────────────────────────────────────────────────
-    socket.on('send_message', async ({ conversationId, content, type = 'text' }) => {
+    socket.on('send_message', async ({ conversationId, content, type = 'text', replyToId = null, forwarded = false }) => {
       try {
         if (!conversationId || !content) {
           return socket.emit('error_message', { error: 'conversationId y content son requeridos' })
         }
 
-        // Verify membership
         const isMember = await Conversation.isMember(conversationId, user.id)
         if (!isMember) {
           return socket.emit('error_message', { error: 'No tienes acceso a esta conversación' })
         }
 
-        // Save message to database
         const message = await Message.create({
           conversationId,
           senderId: user.id,
           content: type === 'text' ? content.trim() : content,
           type,
+          replyToId: replyToId || null,
+          forwarded: forwarded || false,
         })
+
+        // If replying, attach the replied-to message
+        if (replyToId) {
+          const repliedTo = await Message.findById(replyToId)
+          if (repliedTo) message.reply_to = repliedTo
+        }
+        if (forwarded) message.forwarded = true
 
         // Broadcast to all members in the conversation room (including sender)
         io.to(conversationId).emit('new_message', message)
@@ -151,6 +162,54 @@ export default function chatHandler(io) {
         }
       } catch (err) {
         logger.error('Error deleting message:', err.message)
+      }
+    })
+
+    // ─── Delete for Everyone ──────────────────────────────────────────────────
+    socket.on('delete_for_all', async ({ messageId, conversationId }) => {
+      try {
+        await query(
+          `UPDATE messages SET deleted_at = NOW(), content = '' WHERE id = $1 AND sender_id = $2`,
+          [messageId, user.id]
+        )
+        io.to(conversationId).emit('message_deleted_for_all', { messageId, conversationId })
+        logger.info(`🗑️ ${user.username} deleted message ${messageId} for everyone`)
+      } catch (err) {
+        logger.error('Error deleting for all:', err.message)
+      }
+    })
+
+    // ─── Reactions ────────────────────────────────────────────────────────────
+    socket.on('add_reaction', async ({ messageId, conversationId, emoji }) => {
+      try {
+        await Reaction.add(messageId, user.id, emoji)
+        const reactions = await Reaction.getGroupedByMessage(messageId)
+        io.to(conversationId).emit('reactions_updated', { messageId, reactions })
+      } catch (err) {
+        logger.error('Error adding reaction:', err.message)
+      }
+    })
+
+    socket.on('remove_reaction', async ({ messageId, conversationId, emoji }) => {
+      try {
+        await Reaction.remove(messageId, user.id, emoji)
+        const reactions = await Reaction.getGroupedByMessage(messageId)
+        io.to(conversationId).emit('reactions_updated', { messageId, reactions })
+      } catch (err) {
+        logger.error('Error removing reaction:', err.message)
+      }
+    })
+
+    // ─── Search Messages ─────────────────────────────────────────────────────
+    socket.on('search_messages', async ({ conversationId, searchQuery }) => {
+      try {
+        const result = await query(
+          `SELECT * FROM messages WHERE conversation_id = $1 AND content ILIKE $2 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 50`,
+          [conversationId, `%${searchQuery}%`]
+        )
+        socket.emit('search_results', { conversationId, results: result.rows })
+      } catch (err) {
+        logger.error('Error searching messages:', err.message)
       }
     })
 
@@ -277,6 +336,7 @@ export default function chatHandler(io) {
         // If user has no more active sockets, they're offline
         if (userSockets.size === 0) {
           onlineUsers.delete(user.id)
+          query('UPDATE users SET is_online = FALSE, last_seen = NOW() WHERE id = $1', [user.id]).catch(() => {})
           socket.broadcast.emit('user_offline', { userId: user.id, username: user.username })
         }
       }

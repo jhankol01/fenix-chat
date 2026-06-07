@@ -31,6 +31,10 @@ router.use('/upload', uploadRoutes);
 // Contact routes
 router.use('/contacts', contactRoutes);
 
+// Preferences routes
+import preferencesRoutes from './preferencesRoutes.js';
+router.use('/preferences', preferencesRoutes);
+
 // Admin routes
 import { listUsers, getStats } from '../controllers/admin.js';
 router.get('/admin/users', authenticate, listUsers);
