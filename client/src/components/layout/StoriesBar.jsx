@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
-import { Plus, X, ChevronLeft, ChevronRight, Eye, Trash2, Send, ImagePlus, Type } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Plus, X, Send, ImagePlus, Type, Trash2, Heart } from 'lucide-react'
 import api from '../../lib/api'
 import useAuthStore from '../../stores/authStore'
+import { getSocket } from '../../lib/socket'
 import './StoriesBar.css'
 
 const STORY_COLORS = [
@@ -9,23 +10,35 @@ const STORY_COLORS = [
   '#6366f1', '#ec4899', '#14b8a6', '#8b5cf6', '#ef4444',
 ]
 
+const QUICK_EMOJIS = ['🔥', '❤️', '😂', '😍', '👏', '😮']
+
 function StoriesBar() {
   const [storyGroups, setStoryGroups] = useState([])
   const [showCreate, setShowCreate] = useState(false)
-  const [createMode, setCreateMode] = useState(null) // null | 'text' | 'photo'
-  const [showViewer, setShowViewer] = useState(null) // { groupIndex, storyIndex }
+  const [createMode, setCreateMode] = useState(null)
+  const [showViewer, setShowViewer] = useState(null)
   const [newStoryText, setNewStoryText] = useState('')
   const [selectedColor, setSelectedColor] = useState('#7C3AED')
   const [isCreating, setIsCreating] = useState(false)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [photoFile, setPhotoFile] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
+
+  // Viewer state
+  const [showHeart, setShowHeart] = useState(false)
+  const [replyText, setReplyText] = useState('')
+  const [isPaused, setIsPaused] = useState(false)
+
   const scrollRef = useRef(null)
-  const progressRef = useRef(null)
   const timerRef = useRef(null)
   const fileInputRef = useRef(null)
+  const lastTapRef = useRef(0)
+  const touchStartRef = useRef(null)
+  const replyInputRef = useRef(null)
+
   const user = useAuthStore(s => s.user)
 
+  // ─── Load stories ───────────────────────────────────────────────
   const loadStories = async () => {
     try {
       const data = await api.get('/stories')
@@ -37,11 +50,11 @@ function StoriesBar() {
 
   useEffect(() => {
     loadStories()
-    const interval = setInterval(loadStories, 30000) // refresh every 30s
+    const interval = setInterval(loadStories, 30000)
     return () => clearInterval(interval)
   }, [])
 
-  // Handle photo selection
+  // ─── Photo handling ─────────────────────────────────────────────
   const handlePhotoSelect = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -52,7 +65,7 @@ function StoriesBar() {
     setCreateMode('photo')
   }
 
-  // Create story (text or photo)
+  // ─── Create story ──────────────────────────────────────────────
   const handleCreate = async () => {
     if (isCreating) return
 
@@ -60,14 +73,11 @@ function StoriesBar() {
       setIsCreating(true)
       setUploadProgress(10)
       try {
-        // Upload photo to B2
         const formData = new FormData()
         formData.append('media', photoFile)
         setUploadProgress(30)
         const uploadRes = await api.upload('/upload/media', formData)
         setUploadProgress(80)
-
-        // Create story with image URL
         await api.post('/stories', {
           content: uploadRes.url,
           type: 'image',
@@ -84,7 +94,6 @@ function StoriesBar() {
       return
     }
 
-    // Text story
     if (!newStoryText.trim()) return
     setIsCreating(true)
     try {
@@ -108,49 +117,161 @@ function StoriesBar() {
     setCreateMode(null)
   }
 
-  // View story
+  // ─── Story navigation ─────────────────────────────────────────
   const openStory = (groupIndex) => {
     setShowViewer({ groupIndex, storyIndex: 0 })
+    setReplyText('')
+    setShowHeart(false)
+    setIsPaused(false)
   }
 
-  // Navigate stories
-  const nextStory = () => {
+  const nextStory = useCallback(() => {
     if (!showViewer) return
     const group = storyGroups[showViewer.groupIndex]
+    if (!group) return
     if (showViewer.storyIndex < group.stories.length - 1) {
-      setShowViewer({ ...showViewer, storyIndex: showViewer.storyIndex + 1 })
+      setShowViewer(prev => ({ ...prev, storyIndex: prev.storyIndex + 1 }))
     } else if (showViewer.groupIndex < storyGroups.length - 1) {
       setShowViewer({ groupIndex: showViewer.groupIndex + 1, storyIndex: 0 })
     } else {
       setShowViewer(null)
     }
-  }
+  }, [showViewer, storyGroups])
 
-  const prevStory = () => {
+  const prevStory = useCallback(() => {
     if (!showViewer) return
     if (showViewer.storyIndex > 0) {
-      setShowViewer({ ...showViewer, storyIndex: showViewer.storyIndex - 1 })
+      setShowViewer(prev => ({ ...prev, storyIndex: prev.storyIndex - 1 }))
     } else if (showViewer.groupIndex > 0) {
       const prevGroup = storyGroups[showViewer.groupIndex - 1]
       setShowViewer({ groupIndex: showViewer.groupIndex - 1, storyIndex: prevGroup.stories.length - 1 })
     }
-  }
+  }, [showViewer, storyGroups])
 
-  // Auto-advance timer + mark as viewed
-  useEffect(() => {
+  const nextGroup = useCallback(() => {
     if (!showViewer) return
+    if (showViewer.groupIndex < storyGroups.length - 1) {
+      setShowViewer({ groupIndex: showViewer.groupIndex + 1, storyIndex: 0 })
+    } else {
+      setShowViewer(null)
+    }
+  }, [showViewer, storyGroups])
+
+  // ─── Auto-advance timer + mark as viewed ──────────────────────
+  useEffect(() => {
+    if (!showViewer || isPaused) return
     const group = storyGroups[showViewer.groupIndex]
     if (!group) return
     const story = group.stories[showViewer.storyIndex]
     if (!story) return
 
-    // Mark as viewed
     api.post(`/stories/${story.id}/view`).catch(() => {})
 
-    // Auto-advance after 5 seconds
     timerRef.current = setTimeout(nextStory, 5000)
     return () => clearTimeout(timerRef.current)
-  }, [showViewer])
+  }, [showViewer, isPaused, nextStory])
+
+  // ─── Double-tap heart ─────────────────────────────────────────
+  const handleContentTap = (e) => {
+    const now = Date.now()
+    const timeSince = now - lastTapRef.current
+    lastTapRef.current = now
+
+    if (timeSince < 300) {
+      // Double-tap → heart animation
+      e.preventDefault()
+      e.stopPropagation()
+      triggerHeart()
+      return
+    }
+
+    // Single tap → wait a bit then advance (so double-tap doesn't also advance)
+    setTimeout(() => {
+      if (Date.now() - lastTapRef.current >= 280) {
+        // Determine tap zone
+        const rect = e.currentTarget.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const width = rect.width
+        if (x < width * 0.3) {
+          prevStory()
+        } else {
+          nextStory()
+        }
+      }
+    }, 300)
+  }
+
+  const triggerHeart = () => {
+    setShowHeart(true)
+    // Send heart reaction as DM
+    const group = storyGroups[showViewer?.groupIndex]
+    if (group && group.userId !== user?.id) {
+      sendStoryReply('❤️', group.userId)
+    }
+    setTimeout(() => setShowHeart(false), 1200)
+  }
+
+  // ─── Swipe up → next person ───────────────────────────────────
+  const handleTouchStart = (e) => {
+    touchStartRef.current = {
+      y: e.touches[0].clientY,
+      x: e.touches[0].clientX,
+      time: Date.now(),
+    }
+  }
+
+  const handleTouchEnd = (e) => {
+    if (!touchStartRef.current) return
+    const dy = touchStartRef.current.y - e.changedTouches[0].clientY
+    const dx = Math.abs(touchStartRef.current.x - e.changedTouches[0].clientX)
+    const dt = Date.now() - touchStartRef.current.time
+
+    // Swipe up: dy > 80px, mostly vertical, quick
+    if (dy > 80 && dx < 100 && dt < 500) {
+      e.preventDefault()
+      nextGroup()
+    }
+    touchStartRef.current = null
+  }
+
+  // ─── Reply (emoji or text) → sends DM ─────────────────────────
+  const sendStoryReply = async (content, targetUserId) => {
+    try {
+      const socket = getSocket()
+      if (!socket) return
+
+      // Get or create DM conversation
+      const res = await api.post('/conversations', { targetUserId })
+      const conversationId = res.conversation?.id
+
+      if (conversationId) {
+        socket.emit('send_message', {
+          conversationId,
+          content: `📸 Respondió a tu historia: ${content}`,
+          type: 'text',
+        })
+      }
+    } catch (err) {
+      console.error('Story reply error:', err)
+    }
+  }
+
+  const handleEmojiReply = (emoji) => {
+    const group = storyGroups[showViewer?.groupIndex]
+    if (!group || group.userId === user?.id) return
+    sendStoryReply(emoji, group.userId)
+    // Brief visual feedback
+    setReplyText(emoji)
+    setTimeout(() => setReplyText(''), 1500)
+  }
+
+  const handleTextReply = () => {
+    if (!replyText.trim()) return
+    const group = storyGroups[showViewer?.groupIndex]
+    if (!group || group.userId === user?.id) return
+    sendStoryReply(replyText.trim(), group.userId)
+    setReplyText('')
+  }
 
   const handleDeleteStory = async (storyId) => {
     try {
@@ -160,17 +281,26 @@ function StoriesBar() {
     } catch (_) {}
   }
 
+  // ─── Computed ─────────────────────────────────────────────────
   const currentGroup = showViewer ? storyGroups[showViewer.groupIndex] : null
   const currentStory = currentGroup ? currentGroup.stories[showViewer.storyIndex] : null
   const myStories = storyGroups.find(g => g.userId === user?.id)
+  const isOwnStory = currentGroup?.userId === user?.id
+
+  // ─── Time ago helper ──────────────────────────────────────────
+  const timeAgo = (date) => {
+    const diff = (Date.now() - new Date(date).getTime()) / 1000
+    if (diff < 60) return 'ahora'
+    if (diff < 3600) return `${Math.floor(diff / 60)}m`
+    return `${Math.floor(diff / 3600)}h`
+  }
 
   return (
     <>
-      {/* Stories horizontal bar */}
+      {/* ═══════ Stories horizontal bar ═══════ */}
       <div className="stories-bar" ref={scrollRef}>
         {/* Add story button */}
         <button className="stories-bar__add" onClick={() => {
-          // If I have stories, open viewer; otherwise open creator
           const myIdx = storyGroups.findIndex(g => g.userId === user?.id)
           if (myIdx >= 0 && storyGroups[myIdx].stories.length > 0) {
             openStory(myIdx)
@@ -186,7 +316,7 @@ function StoriesBar() {
                 {user?.username?.slice(0, 2).toUpperCase() || '?'}
               </div>
             )}
-            <div className="stories-bar__add-icon"><Plus size={12} /></div>
+            <div className="stories-bar__add-icon"><Plus size={14} /></div>
           </div>
           <span className="stories-bar__name">Mi historia</span>
         </button>
@@ -208,10 +338,9 @@ function StoriesBar() {
         ))}
       </div>
 
-      {/* Create story modal */}
+      {/* ═══════ Create story modal ═══════ */}
       {showCreate && (
         <div className="stories-create-overlay">
-          {/* Mode picker (if no mode selected) */}
           {!createMode && (
             <div className="stories-create-picker">
               <button className="stories-create-picker__close" onClick={() => setShowCreate(false)}>
@@ -232,17 +361,10 @@ function StoriesBar() {
                   <span>Foto</span>
                 </button>
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={handlePhotoSelect}
-              />
+              <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoSelect} />
             </div>
           )}
 
-          {/* Text creator */}
           {createMode === 'text' && (
             <div className="stories-create" style={{ background: selectedColor }}>
               <div className="stories-create__header">
@@ -252,7 +374,6 @@ function StoriesBar() {
                   <Send size={20} color="white" />
                 </button>
               </div>
-
               <textarea
                 className="stories-create__input"
                 placeholder="Escribe tu historia..."
@@ -261,7 +382,6 @@ function StoriesBar() {
                 autoFocus
                 maxLength={500}
               />
-
               <div className="stories-create__colors">
                 {STORY_COLORS.map(color => (
                   <button
@@ -275,7 +395,6 @@ function StoriesBar() {
             </div>
           )}
 
-          {/* Photo creator */}
           {createMode === 'photo' && photoPreview && (
             <div className="stories-create stories-create--photo">
               <div className="stories-create__header">
@@ -284,24 +403,17 @@ function StoriesBar() {
                 </button>
                 <span>Historia con foto</span>
                 <button onClick={handleCreate} disabled={isCreating}>
-                  {isCreating ? (
-                    <div className="stories-create__spinner" />
-                  ) : (
-                    <Send size={20} color="white" />
-                  )}
+                  {isCreating ? <div className="stories-create__spinner" /> : <Send size={20} color="white" />}
                 </button>
               </div>
-
               <div className="stories-create__photo-preview">
                 <img src={photoPreview} alt="Preview" />
               </div>
-
               {uploadProgress > 0 && (
                 <div className="stories-create__progress">
                   <div className="stories-create__progress-fill" style={{ width: `${uploadProgress}%` }} />
                 </div>
               )}
-
               <textarea
                 className="stories-create__caption"
                 placeholder="Agregar texto (opcional)..."
@@ -314,10 +426,17 @@ function StoriesBar() {
         </div>
       )}
 
-      {/* Story viewer fullscreen */}
+      {/* ═══════ Story Viewer — Full-Screen Instagram-Style ═══════ */}
       {showViewer && currentStory && (
-        <div className="stories-viewer" onClick={nextStory}>
-          <div className="stories-viewer__content" style={{ background: currentStory.background_color || '#7C3AED' }}>
+        <div
+          className="stories-viewer"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          <div
+            className="stories-viewer__content"
+            style={{ background: currentStory.type === 'text' ? (currentStory.background_color || '#7C3AED') : '#000' }}
+          >
             {/* Progress bars */}
             <div className="stories-viewer__progress">
               {currentGroup.stories.map((_, i) => (
@@ -325,7 +444,7 @@ function StoriesBar() {
                   <div
                     className={`stories-viewer__progress-fill ${
                       i < showViewer.storyIndex ? 'stories-viewer__progress-fill--done' :
-                      i === showViewer.storyIndex ? 'stories-viewer__progress-fill--active' : ''
+                      i === showViewer.storyIndex ? (isPaused ? 'stories-viewer__progress-fill--paused' : 'stories-viewer__progress-fill--active') : ''
                     }`}
                   />
                 </div>
@@ -333,10 +452,10 @@ function StoriesBar() {
             </div>
 
             {/* Header */}
-            <div className="stories-viewer__header" onClick={e => e.stopPropagation()}>
+            <div className="stories-viewer__header">
               <div className="stories-viewer__user">
                 {currentGroup.avatarUrl ? (
-                  <img src={currentGroup.avatarUrl} className="stories-viewer__avatar" />
+                  <img src={currentGroup.avatarUrl} className="stories-viewer__avatar" alt="" />
                 ) : (
                   <div className="stories-viewer__avatar-text">
                     {currentGroup.username?.slice(0, 2).toUpperCase()}
@@ -344,35 +463,81 @@ function StoriesBar() {
                 )}
                 <div>
                   <span className="stories-viewer__username">{currentGroup.username}</span>
-                  <span className="stories-viewer__time">
-                    {new Date(currentStory.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                  <span className="stories-viewer__time">{timeAgo(currentStory.created_at)}</span>
                 </div>
               </div>
               <div className="stories-viewer__actions">
-                {currentGroup.userId === user?.id && (
+                {isOwnStory && (
                   <button onClick={() => handleDeleteStory(currentStory.id)}>
                     <Trash2 size={18} color="white" />
                   </button>
                 )}
-                <button onClick={(e) => { e.stopPropagation(); setShowViewer(null) }}>
+                <button onClick={() => setShowViewer(null)}>
                   <X size={22} color="white" />
                 </button>
               </div>
             </div>
 
-            {/* Story content */}
-            {currentStory.type === 'text' ? (
-              <div className="stories-viewer__text">
-                {currentStory.content}
+            {/* Story content — tap zones */}
+            <div className="stories-viewer__body" onClick={handleContentTap}>
+              {currentStory.type === 'text' ? (
+                <div className="stories-viewer__text">
+                  {currentStory.content}
+                </div>
+              ) : (
+                <img src={currentStory.content} className="stories-viewer__image" alt="Story" />
+              )}
+
+              {/* Heart animation (double-tap) */}
+              {showHeart && (
+                <div className="stories-viewer__heart">
+                  <Heart size={80} fill="white" color="white" />
+                </div>
+              )}
+            </div>
+
+            {/* Swipe up indicator */}
+            {showViewer.groupIndex < storyGroups.length - 1 && (
+              <div className="stories-viewer__swipe-hint">
+                <div className="stories-viewer__swipe-arrow" />
+                <span>Desliza para siguiente</span>
               </div>
-            ) : (
-              <img src={currentStory.content} className="stories-viewer__image" alt="Story" />
             )}
 
-            {/* Navigation zones */}
-            <div className="stories-viewer__nav-left" onClick={(e) => { e.stopPropagation(); prevStory() }} />
-            <div className="stories-viewer__nav-right" onClick={(e) => { e.stopPropagation(); nextStory() }} />
+            {/* Reply bar (only for other people's stories) */}
+            {!isOwnStory && (
+              <div className="stories-viewer__reply-bar" onClick={e => e.stopPropagation()}>
+                <div className="stories-viewer__reply-emojis">
+                  {QUICK_EMOJIS.map(emoji => (
+                    <button
+                      key={emoji}
+                      className="stories-viewer__reply-emoji"
+                      onClick={() => handleEmojiReply(emoji)}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+                <div className="stories-viewer__reply-input-row">
+                  <input
+                    ref={replyInputRef}
+                    type="text"
+                    className="stories-viewer__reply-input"
+                    placeholder="Responder..."
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    onFocus={() => setIsPaused(true)}
+                    onBlur={() => setIsPaused(false)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleTextReply() }}
+                  />
+                  {replyText.trim() && (
+                    <button className="stories-viewer__reply-send" onClick={handleTextReply}>
+                      <Send size={18} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
