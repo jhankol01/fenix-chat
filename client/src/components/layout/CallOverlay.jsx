@@ -485,6 +485,24 @@ function CallOverlay() {
     return () => { delete window.__fenixStartCall }
   }, [startCall])
 
+  // Bind local video stream to video element AFTER render
+  useEffect(() => {
+    if (isVideoCall && localStreamRef.current && localVideoRef.current) {
+      localVideoRef.current.srcObject = localStreamRef.current
+    }
+  }, [isVideoCall, callState])
+
+  // Bind remote video when track arrives (re-check after render)
+  useEffect(() => {
+    if (isVideoCall && remoteVideoRef.current && pcRef.current) {
+      const receivers = pcRef.current.getReceivers()
+      const videoReceiver = receivers.find(r => r.track?.kind === 'video')
+      if (videoReceiver?.track) {
+        remoteVideoRef.current.srcObject = new MediaStream([videoReceiver.track])
+      }
+    }
+  }, [isVideoCall, callState])
+
   const fmt = (s) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`
 
   if (callState === 'idle') return null
