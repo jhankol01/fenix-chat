@@ -1105,156 +1105,61 @@ function ChatView({ onBack }) {
         </div>
       )}
 
-      {/* --- Input bar --- */}
+      {/* --- Input bar (iMessage style) --- */}
       <div className="chat-view__input-bar">
-        {/* Action icons row */}
-        <div className="chat-view__actions-row">
-          <button
-            className={`chat-view__action-btn ${showEmojiPicker ? 'chat-view__action-btn--active' : ''}`}
-            aria-label="Emoji"
-            onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowGifPicker(false) }}
-          >
-            <Smile size={20} />
-            <span className="chat-view__action-label">Emoji</span>
-          </button>
-          <button
-            className={`chat-view__action-btn ${showGifPicker ? 'chat-view__action-btn--active' : ''}`}
-            aria-label="GIF"
-            onClick={() => { setShowGifPicker(!showGifPicker); setShowEmojiPicker(false) }}
-          >
-            <span className="chat-view__gif-icon">GIF</span>
-            <span className="chat-view__action-label">GIF</span>
-          </button>
-          <button
-            className="chat-view__action-btn"
-            aria-label="Adjuntar"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip size={20} />
-            <span className="chat-view__action-label">Archivo</span>
-          </button>
-          <button
-            className="chat-view__action-btn"
-            aria-label="Cámara"
-            onClick={() => cameraInputRef.current?.click()}
-          >
-            <Camera size={20} />
-            <span className="chat-view__action-label">Cámara</span>
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*,video/*"
-            style={{ display: 'none' }}
-            onChange={async (e) => {
-              const file = e.target.files?.[0]
-              if (!file) return
-              e.target.value = ''
-              setIsUploading(true)
-              try {
-                const formData = new FormData()
-                formData.append('media', file)
-                const data = await api.upload('/upload/media', formData)
-                sendMessage(data.url, data.type)
-              } catch (err) {
-                console.error('Upload error:', err)
-                alert('Error al subir archivo')
-              } finally {
-                setIsUploading(false)
-              }
-            }}
+        {/* + button */}
+        <button className="chat-view__plus-btn" aria-label="Adjuntar" onClick={() => fileInputRef.current?.click()}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <input ref={fileInputRef} type="file" accept="image/*,video/*" style={{ display: 'none' }} onChange={async (e) => {
+          const file = e.target.files?.[0]; if (!file) return; e.target.value = ''
+          setIsUploading(true)
+          try { const fd = new FormData(); fd.append('media', file); const data = await api.upload('/upload/media', fd); sendMessage(data.url, data.type) }
+          catch (err) { console.error('Upload error:', err); alert('Error al subir archivo') }
+          finally { setIsUploading(false) }
+        }} />
+        <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={async (e) => {
+          const file = e.target.files?.[0]; if (!file) return; e.target.value = ''
+          setIsUploading(true)
+          try { const fd = new FormData(); fd.append('media', file); const data = await api.upload('/upload/media', fd); sendMessage(data.url, data.type) }
+          catch (err) { console.error('Upload error:', err); alert('Error al subir archivo') }
+          finally { setIsUploading(false) }
+        }} />
+
+        {/* Text bubble */}
+        <div className="chat-view__input-wrapper">
+          <input ref={inputRef} type="text" className="chat-view__input" placeholder="Escribe un mensaje..."
+            value={inputValue} onChange={handleInputChange} onKeyDown={handleKeyDown}
+            onFocus={() => { setShowEmojiPicker(false); setShowGifPicker(false) }}
           />
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            style={{ display: 'none' }}
-            onChange={async (e) => {
-              const file = e.target.files?.[0]
-              if (!file) return
-              e.target.value = ''
-              setIsUploading(true)
-              try {
-                const formData = new FormData()
-                formData.append('media', file)
-                const data = await api.upload('/upload/media', formData)
-                sendMessage(data.url, data.type)
-              } catch (err) {
-                console.error('Upload error:', err)
-                alert('Error al subir archivo')
-              } finally {
-                setIsUploading(false)
-              }
-            }}
-          />
+          <button className={`chat-view__emoji-inside ${showEmojiPicker ? 'chat-view__emoji-inside--active' : ''}`}
+            aria-label="Emoji" onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowGifPicker(false) }}>
+            <Smile size={22} />
+          </button>
         </div>
 
-        {/* Clean text input row */}
-        <div className="chat-view__text-row">
-          <div className="chat-view__input-wrapper">
-            <input
-              ref={inputRef}
-              type="text"
-              className="chat-view__input"
-              placeholder="Escribe un mensaje..."
-              value={inputValue}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              onFocus={() => { setShowEmojiPicker(false); setShowGifPicker(false) }}
-            />
-          </div>
+        {/* Camera */}
+        <button className="chat-view__cam-btn" aria-label="Cámara" onClick={() => cameraInputRef.current?.click()}>
+          <Camera size={22} />
+        </button>
 
-          {/* Recording UI */}
-          {isRecording ? (
-            <div className="chat-view__recording">
-              <div className="chat-view__recording-indicator">
-                <span className="chat-view__recording-dot" />
-                <span className="chat-view__recording-time">
-                  {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
-                </span>
-              </div>
-              <button
-                className="chat-view__recording-cancel"
-                onClick={handleCancelRecording}
-                aria-label="Cancelar"
-              >
-                <X size={18} />
-              </button>
-              <button
-                className="chat-view__recording-stop"
-                onClick={handleStopRecording}
-                aria-label="Enviar nota de voz"
-              >
-                <Send size={18} />
-              </button>
+        {/* Mic / Send / Recording */}
+        {isRecording ? (
+          <div className="chat-view__recording">
+            <div className="chat-view__recording-indicator">
+              <span className="chat-view__recording-dot" />
+              <span className="chat-view__recording-time">{Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}</span>
             </div>
-          ) : inputValue.trim() ? (
-            <button
-              className="chat-view__send-btn chat-view__send-btn--active"
-              aria-label="Enviar"
-              onClick={handleSend}
-            >
-              <Send size={18} />
-            </button>
-          ) : (
-            <button
-              className="chat-view__mic-btn"
-              aria-label="Nota de voz"
-              onClick={handleStartRecording}
-            >
-              <Mic size={20} />
-            </button>
-          )}
-        </div>
-
-        {/* Uploading indicator */}
-        {isUploading && (
-          <div className="chat-view__uploading">
-            <Loader2 size={18} className="spin" />
-            <span>Subiendo...</span>
+            <button className="chat-view__recording-cancel" onClick={handleCancelRecording} aria-label="Cancelar"><X size={18} /></button>
+            <button className="chat-view__recording-stop" onClick={handleStopRecording} aria-label="Enviar"><Send size={18} /></button>
           </div>
+        ) : inputValue.trim() ? (
+          <button className="chat-view__send-btn chat-view__send-btn--active" aria-label="Enviar" onClick={handleSend}><Send size={18} /></button>
+        ) : (
+          <button className="chat-view__mic-btn" aria-label="Nota de voz" onClick={handleStartRecording}><Mic size={22} /></button>
         )}
+
+        {isUploading && (<div className="chat-view__uploading"><Loader2 size={18} className="spin" /><span>Subiendo...</span></div>)}
       </div>
 
       {/* Lightbox — visor de imagen fullscreen */}
