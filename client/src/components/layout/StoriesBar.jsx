@@ -125,37 +125,49 @@ function StoriesBar() {
     setIsPaused(false)
   }
 
+  // Keep refs in sync for use inside timeouts/closures
+  const showViewerRef = useRef(showViewer)
+  const storyGroupsRef = useRef(storyGroups)
+  useEffect(() => { showViewerRef.current = showViewer }, [showViewer])
+  useEffect(() => { storyGroupsRef.current = storyGroups }, [storyGroups])
+
   const nextStory = useCallback(() => {
-    if (!showViewer) return
-    const group = storyGroups[showViewer.groupIndex]
+    const sv = showViewerRef.current
+    const groups = storyGroupsRef.current
+    if (!sv) return
+    const group = groups[sv.groupIndex]
     if (!group) return
-    if (showViewer.storyIndex < group.stories.length - 1) {
-      setShowViewer(prev => ({ ...prev, storyIndex: prev.storyIndex + 1 }))
-    } else if (showViewer.groupIndex < storyGroups.length - 1) {
-      setShowViewer({ groupIndex: showViewer.groupIndex + 1, storyIndex: 0 })
+    if (sv.storyIndex < group.stories.length - 1) {
+      setShowViewer({ groupIndex: sv.groupIndex, storyIndex: sv.storyIndex + 1 })
+    } else if (sv.groupIndex < groups.length - 1) {
+      setShowViewer({ groupIndex: sv.groupIndex + 1, storyIndex: 0 })
     } else {
       setShowViewer(null)
     }
-  }, [showViewer, storyGroups])
+  }, [])
 
   const prevStory = useCallback(() => {
-    if (!showViewer) return
-    if (showViewer.storyIndex > 0) {
-      setShowViewer(prev => ({ ...prev, storyIndex: prev.storyIndex - 1 }))
-    } else if (showViewer.groupIndex > 0) {
-      const prevGroup = storyGroups[showViewer.groupIndex - 1]
-      setShowViewer({ groupIndex: showViewer.groupIndex - 1, storyIndex: prevGroup.stories.length - 1 })
+    const sv = showViewerRef.current
+    const groups = storyGroupsRef.current
+    if (!sv) return
+    if (sv.storyIndex > 0) {
+      setShowViewer({ groupIndex: sv.groupIndex, storyIndex: sv.storyIndex - 1 })
+    } else if (sv.groupIndex > 0) {
+      const prevGroup = groups[sv.groupIndex - 1]
+      setShowViewer({ groupIndex: sv.groupIndex - 1, storyIndex: prevGroup.stories.length - 1 })
     }
-  }, [showViewer, storyGroups])
+  }, [])
 
   const nextGroup = useCallback(() => {
-    if (!showViewer) return
-    if (showViewer.groupIndex < storyGroups.length - 1) {
-      setShowViewer({ groupIndex: showViewer.groupIndex + 1, storyIndex: 0 })
+    const sv = showViewerRef.current
+    const groups = storyGroupsRef.current
+    if (!sv) return
+    if (sv.groupIndex < groups.length - 1) {
+      setShowViewer({ groupIndex: sv.groupIndex + 1, storyIndex: 0 })
     } else {
       setShowViewer(null)
     }
-  }, [showViewer, storyGroups])
+  }, [])
 
   // ─── Auto-advance timer + mark as viewed ──────────────────────
   useEffect(() => {
@@ -185,14 +197,15 @@ function StoriesBar() {
       return
     }
 
-    // Single tap → wait a bit then advance (so double-tap doesn't also advance)
+    // Capture coordinates NOW (React recycles synthetic events)
+    const rect = e.currentTarget.getBoundingClientRect()
+    const tapX = e.clientX - rect.left
+    const tapWidth = rect.width
+
+    // Single tap → wait to see if it's a double-tap
     setTimeout(() => {
       if (Date.now() - lastTapRef.current >= 280) {
-        // Determine tap zone
-        const rect = e.currentTarget.getBoundingClientRect()
-        const x = e.clientX - rect.left
-        const width = rect.width
-        if (x < width * 0.3) {
+        if (tapX < tapWidth * 0.3) {
           prevStory()
         } else {
           nextStory()

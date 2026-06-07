@@ -231,19 +231,12 @@ function AppLayout() {
           )
         )}
         {mobileSection === 'fenix' && (
-          <div className="section-placeholder section-placeholder--fenix">
-            <div className="section-placeholder__icon section-placeholder__icon--fire">🔥</div>
-            <h2 className="section-placeholder__title">Fenix Hub</h2>
-            <p className="section-placeholder__desc">
-              Tu centro de actividad. Comparte historias y descubre lo que está pasando.
-            </p>
-
-            {/* Inline stories */}
-            <div style={{ width: '100%', marginTop: 12 }}>
-              <StoriesBar />
+          <div className="fenix-hub">
+            <div className="fenix-hub__header">
+              <span className="fenix-hub__title">🔥 Historias</span>
             </div>
-
-            <div className="section-placeholder__cards">
+            <StoriesBar />
+            <div className="section-placeholder__cards" style={{ padding: '12px 16px' }}>
               <div className="section-placeholder__card" onClick={() => {
                 setMobileSection('chats')
               }}>
