@@ -1,6 +1,7 @@
 /**
  * PhoenixIcon — Logo Fénix Chat (PNG generado)
  * Llama con fénix interior, gradiente azul → violeta → rojo
+ * mix-blend-mode: lighten elimina el fondo negro
  */
 function PhoenixIcon({ size = 24, className = '' }) {
   return (
@@ -10,7 +11,10 @@ function PhoenixIcon({ size = 24, className = '' }) {
       width={size}
       height={size}
       className={className}
-      style={{ objectFit: 'contain' }}
+      style={{
+        objectFit: 'contain',
+        mixBlendMode: 'lighten',
+      }}
       draggable={false}
     />
   )
