@@ -103,29 +103,23 @@ function ProfileView() {
       setSaveMsg('❌ La imagen debe ser menor a 5MB')
       return
     }
-    
-    // For now, convert to base64 and store as data URL
-    // TODO: Integrate with Backblaze B2 for proper storage
-    const reader = new FileReader()
-    reader.onload = async () => {
-      const dataUrl = reader.result
-      try {
-        setSaving(true)
-        // Resize image before sending
-        const resized = await resizeImage(dataUrl, 200)
-        const data = await api.patch('/users/me', { avatarUrl: resized })
-        if (setUser) {
-          setUser({ ...user, avatar_url: resized, avatarUrl: resized })
-        }
-        setSaveMsg('✅ Foto actualizada')
-        setTimeout(() => setSaveMsg(''), 2000)
-      } catch (err) {
-        setSaveMsg('❌ Error al subir foto')
-      } finally {
-        setSaving(false)
+
+    try {
+      setSaving(true)
+      setSaveMsg('Subiendo foto...')
+      const formData = new FormData()
+      formData.append('avatar', file)
+      const data = await api.upload('/upload/avatar', formData)
+      if (setUser) {
+        setUser({ ...user, avatar_url: data.avatarUrl, avatarUrl: data.avatarUrl })
       }
+      setSaveMsg('✅ Foto actualizada')
+      setTimeout(() => setSaveMsg(''), 2000)
+    } catch (err) {
+      setSaveMsg('❌ Error al subir foto')
+    } finally {
+      setSaving(false)
     }
-    reader.readAsDataURL(file)
   }
 
   // Handle logout

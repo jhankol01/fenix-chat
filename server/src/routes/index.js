@@ -3,6 +3,7 @@ import { getHealth } from '../controllers/health.js';
 import authRoutes from './auth.js';
 import userRoutes from './users.js';
 import conversationRoutes from './conversations.js';
+import uploadRoutes from './upload.js';
 import { searchUsers } from '../controllers/conversations.js';
 import authenticate from '../middleware/auth.js';
 
@@ -22,6 +23,9 @@ router.get('/users/search', authenticate, searchUsers);
 
 // Conversation routes
 router.use('/conversations', conversationRoutes);
+
+// Upload routes (avatars)
+router.use('/upload', uploadRoutes);
 
 // Admin routes
 import { listUsers, getStats } from '../controllers/admin.js';

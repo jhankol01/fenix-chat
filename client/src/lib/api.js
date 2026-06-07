@@ -68,6 +68,19 @@ export const api = {
     body: JSON.stringify(body),
   }),
   delete: (endpoint) => request(endpoint, { method: 'DELETE' }),
+  upload: async (endpoint, formData) => {
+    const url = `${API_BASE}${endpoint}`
+    const token = getAccessToken()
+    const headers = {}
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    // Don't set Content-Type — browser sets it with boundary for FormData
+    const res = await fetch(url, { method: 'POST', headers, body: formData })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: 'Error del servidor' }))
+      throw new ApiError(res.status, data)
+    }
+    return res.json()
+  },
 }
 
 export default api
