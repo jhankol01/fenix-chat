@@ -137,19 +137,44 @@ export default function chatHandler(io) {
     })
 
     // ─── Typing Indicators ────────────────────────────────────────────────────
-    socket.on('typing', ({ conversationId }) => {
-      socket.to(conversationId).emit('user_typing', {
+    socket.on('typing', async ({ conversationId }) => {
+      const payload = {
         conversationId,
         userId: user.id,
         username: user.username,
-      })
+      }
+      // Broadcast to room
+      socket.to(conversationId).emit('user_typing', payload)
+      // Also send directly to each member's sockets (fallback if room join failed)
+      try {
+        const members = await Conversation.getMembers(conversationId)
+        for (const member of members) {
+          if (member.id === user.id) continue
+          const memberSockets = onlineUsers.get(member.id)
+          if (memberSockets) {
+            for (const sid of memberSockets) {
+              io.to(sid).emit('user_typing', payload)
+            }
+          }
+        }
+      } catch (_) {}
     })
 
-    socket.on('stop_typing', ({ conversationId }) => {
-      socket.to(conversationId).emit('user_stop_typing', {
-        conversationId,
-        userId: user.id,
-      })
+    socket.on('stop_typing', async ({ conversationId }) => {
+      const payload = { conversationId, userId: user.id }
+      socket.to(conversationId).emit('user_stop_typing', payload)
+      try {
+        const members = await Conversation.getMembers(conversationId)
+        for (const member of members) {
+          if (member.id === user.id) continue
+          const memberSockets = onlineUsers.get(member.id)
+          if (memberSockets) {
+            for (const sid of memberSockets) {
+              io.to(sid).emit('user_stop_typing', payload)
+            }
+          }
+        }
+      } catch (_) {}
     })
 
     // ─── Delete Message ──────────────────────────────────────────────────────
