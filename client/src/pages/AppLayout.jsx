@@ -85,6 +85,12 @@ function AppLayout() {
       clearTyping(conversationId)
     })
 
+    // Presence: online users
+    const { setOnlineUsers, addOnlineUser, removeOnlineUser } = useChatStore.getState()
+    socket.on('online_users', (userIds) => setOnlineUsers(userIds))
+    socket.on('user_online', ({ userId }) => addOnlineUser(userId))
+    socket.on('user_offline', ({ userId }) => removeOnlineUser(userId))
+
     // Cargar conversaciones al montar
     loadConversations()
 
@@ -93,6 +99,9 @@ function AppLayout() {
       socket.off('new_message')
       socket.off('user_typing')
       socket.off('user_stop_typing')
+      socket.off('online_users')
+      socket.off('user_online')
+      socket.off('user_offline')
       disconnectSocket()
     }
   }, [accessToken]) // eslint-disable-line react-hooks/exhaustive-deps

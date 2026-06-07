@@ -94,6 +94,17 @@
   color: var(--color-online);
 }
 
+.chat-view__online-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  margin-right: 4px;
+  vertical-align: middle;
+  box-shadow: 0 0 4px rgba(34, 197, 94, 0.5);
+}
+
 .chat-view__header-actions {
   display: flex;
   align-items: center;
@@ -947,4 +958,195 @@
   font-size: 0.7rem;
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* ========== Message wrapper (holds bubble + reactions) ========== */
+.chat-view__msg-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.chat-view__msg-group--own .chat-view__msg-wrapper {
+  align-items: flex-end;
+}
+
+/* ========== Reaction Picker (floating bar above message) ========== */
+.chat-view__reaction-picker {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  width: fit-content;
+  margin-bottom: 4px;
+  animation: scaleIn 0.15s ease;
+  z-index: 5;
+}
+
+.chat-view__reaction-picker--own {
+  align-self: flex-end;
+}
+
+.chat-view__reaction-picker-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  border-radius: 50%;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+
+.chat-view__reaction-picker-btn:hover {
+  background: rgba(124, 58, 237, 0.15);
+  transform: scale(1.25);
+}
+
+/* ========== Reaction Pills (below message bubble) ========== */
+.chat-view__reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+  padding: 0 2px;
+}
+
+.chat-view__reactions--own {
+  justify-content: flex-end;
+}
+
+.chat-view__reaction-pill {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  border-radius: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1.4;
+}
+
+.chat-view__reaction-pill:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-brand);
+}
+
+.chat-view__reaction-pill--active {
+  background: rgba(124, 58, 237, 0.15);
+  border-color: var(--color-brand);
+  color: var(--color-text-primary);
+}
+
+/* ========== Reply Preview Bar (above input) ========== */
+.chat-view__reply-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 8px 16px;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border-subtle);
+  border-left: 3px solid var(--color-brand);
+  animation: fadeIn 0.15s ease;
+  flex-shrink: 0;
+}
+
+.chat-view__reply-preview-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.chat-view__reply-preview-icon {
+  font-size: 1rem;
+  color: var(--color-brand);
+  flex-shrink: 0;
+}
+
+.chat-view__reply-preview-text {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-view__reply-preview-text strong {
+  color: var(--color-brand);
+  font-weight: 600;
+}
+
+.chat-view__reply-preview-close {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.chat-view__reply-preview-close:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-hover);
+}
+
+/* ========== Reply Quoted Block (inside message bubble) ========== */
+.chat-view__reply-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  border-left: 2px solid var(--color-brand);
+  border-radius: 0 4px 4px 0;
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.chat-view__reply-quote-user {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-brand);
+}
+
+.chat-view__reply-quote-text {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+/* ========== Deleted Message ========== */
+.chat-view__msg-deleted {
+  font-style: italic;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+/* ========== Forwarded Label ========== */
+.chat-view__forwarded-label {
+  font-size: 0.7rem;
+  font-style: italic;
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+  opacity: 0.8;
 }

@@ -35,6 +35,7 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
     startDM,
     setActiveConversation,
     unreadCounts,
+    onlineUsers,
     deleteConversation,
   } = useChatStore()
 
@@ -266,6 +267,8 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
                 const isTyping = typingUsers[conv.id]
                 const unreadCount = unreadCounts[conv.id] || 0
                 const hasUnread = unreadCount > 0
+                const otherId = conv.other_user_id
+                const isOnline = otherId ? onlineUsers.has(otherId) : false
 
                 const itemClasses = [
                   'chat-list__item',
@@ -293,7 +296,8 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
                         ) : (
                           getInitials(otherName)
                         )}
-                        {/* Estado online — TODO: implementar presencia real */}
+                        {/* Online indicator dot */}
+                        {isOnline && <span className="chat-list__online-dot" />}
                       </div>
 
                       {/* Contenido */}

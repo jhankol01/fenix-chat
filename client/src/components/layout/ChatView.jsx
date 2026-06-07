@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Video, Trash2, UserPlus, UserCheck, Paperclip, Image, Camera
+  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Video, Trash2, UserPlus, UserCheck, Paperclip, Image, Camera, Reply, Ban
 } from 'lucide-react'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
 import { getSocket } from '../../lib/socket'
@@ -33,6 +33,16 @@ function ChatView({ onBack }) {
   const [isUploading, setIsUploading] = useState(false)
   const [mediaPreview, setMediaPreview] = useState(null)
   const [lightboxUrl, setLightboxUrl] = useState(null)
+  const [chatBgStyle, setChatBgStyle] = useState({})
+
+  // Reactions state
+  const [reactionsMap, setReactionsMap] = useState({})
+  const [reactionPickerMsgId, setReactionPickerMsgId] = useState(null)
+  const reactionEmojis = ['👍', '🔥', '😂', '😍', '😢', '🙏']
+
+  // Reply state
+  const [replyingTo, setReplyingTo] = useState(null)
+
 
   // Voice note state
   const [isRecording, setIsRecording] = useState(false)
@@ -54,6 +64,35 @@ function ChatView({ onBack }) {
   } = useChatStore()
 
   const user = useAuthStore(state => state.user)
+
+  // Gradient presets map
+  const GRADIENT_MAP = {
+    'gradient-1': 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
+    'gradient-2': 'linear-gradient(135deg, #141E30, #243B55)',
+    'gradient-3': 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
+    'gradient-4': 'linear-gradient(135deg, #2d1b69, #11001c)',
+    'gradient-5': 'linear-gradient(135deg, #1f1c2c, #928DAB)',
+    'gradient-6': 'linear-gradient(135deg, #0a0a0a, #1a1a1a)',
+  }
+
+  // Fetch chat background preference
+  useEffect(() => {
+    api.get('/preferences').then(data => {
+      const bg = data?.preferences?.chat_bg
+      if (!bg || bg === 'default') {
+        setChatBgStyle({})
+      } else if (bg.startsWith('gradient-') && GRADIENT_MAP[bg]) {
+        setChatBgStyle({ background: GRADIENT_MAP[bg] })
+      } else if (bg.startsWith('http')) {
+        setChatBgStyle({
+          backgroundImage: `url(${bg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        })
+      }
+    }).catch(() => {})
+  }, [])
 
   // Auto-scroll al fondo cuando llegan nuevos mensajes
   useEffect(() => {
@@ -80,6 +119,32 @@ function ChatView({ onBack }) {
     }
     socket.on('message_deleted', onMsgDeleted)
     return () => socket.off('message_deleted', onMsgDeleted)
+  }, [])
+
+  // Listen for reactions_updated
+  useEffect(() => {
+    const socket = getSocket()
+    if (!socket) return
+    const onReactionsUpdated = ({ messageId, reactions }) => {
+      setReactionsMap(prev => ({ ...prev, [messageId]: reactions }))
+    }
+    socket.on('reactions_updated', onReactionsUpdated)
+    return () => socket.off('reactions_updated', onReactionsUpdated)
+  }, [])
+
+  // Listen for delete_for_all
+  useEffect(() => {
+    const socket = getSocket()
+    if (!socket) return
+    const onDeletedForAll = ({ messageId }) => {
+      useChatStore.setState(state => ({
+        messages: state.messages.map(m =>
+          m.id === messageId ? { ...m, deleted_at: new Date().toISOString() } : m
+        )
+      }))
+    }
+    socket.on('message_deleted_for_all', onDeletedForAll)
+    return () => socket.off('message_deleted_for_all', onDeletedForAll)
   }, [])
 
   // Listen for read receipts (messages_seen)
@@ -145,6 +210,51 @@ function ChatView({ onBack }) {
     setMsgContextMenu(null)
   }, [msgContextMenu, user, activeConversation])
 
+  // Delete for all
+  const handleDeleteForAll = useCallback(() => {
+    if (!msgContextMenu) return
+    const { msg } = msgContextMenu
+    if (msg.sender_id !== user?.id) {
+      setMsgContextMenu(null)
+      return
+    }
+    const socket = getSocket()
+    if (socket) {
+      socket.emit('delete_for_all', { messageId: msg.id, conversationId: activeConversation?.id })
+      // Optimistic: mark as deleted
+      useChatStore.setState(state => ({
+        messages: state.messages.map(m =>
+          m.id === msg.id ? { ...m, deleted_at: new Date().toISOString() } : m
+        )
+      }))
+    }
+    setMsgContextMenu(null)
+  }, [msgContextMenu, user, activeConversation])
+
+  // Handle reaction tap
+  const handleAddReaction = useCallback((messageId, emoji) => {
+    const socket = getSocket()
+    if (!socket || !activeConversation) return
+    // Check if user already reacted with this emoji
+    const reactions = reactionsMap[messageId] || []
+    const existing = reactions.find(r => r.emoji === emoji)
+    const alreadyReacted = existing && existing.user_ids?.includes(user?.id)
+    if (alreadyReacted) {
+      socket.emit('remove_reaction', { messageId, conversationId: activeConversation.id, emoji })
+    } else {
+      socket.emit('add_reaction', { messageId, conversationId: activeConversation.id, emoji })
+    }
+    setReactionPickerMsgId(null)
+  }, [activeConversation, reactionsMap, user])
+
+  // Handle reply
+  const handleReply = useCallback(() => {
+    if (!msgContextMenu) return
+    setReplyingTo(msgContextMenu.msg)
+    setMsgContextMenu(null)
+    inputRef.current?.focus()
+  }, [msgContextMenu])
+
   // Cargar más mensajes al hacer scroll arriba
   const handleScroll = useCallback(() => {
     const container = messagesContainerRef.current
@@ -161,9 +271,10 @@ function ChatView({ onBack }) {
   // Manejar envío de mensaje
   const handleSend = () => {
     if (!inputValue.trim()) return
-    sendMessage(inputValue)
+    sendMessage(inputValue, 'text', replyingTo?.id || null)
     setInputValue('')
     setShowEmojiPicker(false)
+    setReplyingTo(null)
     handleStopTyping()
   }
 
@@ -296,6 +407,9 @@ function ChatView({ onBack }) {
   const otherName = getConversationName(activeConversation, user)
   const otherAvatar = getConversationAvatar(activeConversation, user)
   const typingUser = typingUsers[activeConversation.id]
+  const otherId = activeConversation.other_user_id
+  const onlineUsers = useChatStore(s => s.onlineUsers)
+  const isOtherOnline = otherId ? onlineUsers.has(otherId) : false
 
   // Agrupar mensajes consecutivos del mismo usuario
   const groupedMessages = groupMessages(messages, user)
@@ -349,7 +463,9 @@ function ChatView({ onBack }) {
           <div className={`chat-view__header-subtitle ${typingUser ? 'chat-view__header-subtitle--typing' : ''}`}>
             {typingUser
               ? 'escribiendo...'
-              : 'En línea' /* TODO: estado real de presencia */
+              : isOtherOnline
+                ? <><span className="chat-view__online-dot" /> En línea</>
+                : 'Desconectado'
             }
           </div>
         </div>
@@ -504,6 +620,7 @@ function ChatView({ onBack }) {
         className="chat-view__messages"
         ref={messagesContainerRef}
         onScroll={handleScroll}
+        style={chatBgStyle}
       >
         {/* Indicador de carga de más mensajes */}
         {isLoadingMessages && (
@@ -547,47 +664,101 @@ function ChatView({ onBack }) {
                 </div>
 
                 {group.messages.map((msg, msgIdx) => (
-                  <div
-                    key={msg.id}
-                    className="chat-view__msg-text"
-                    onContextMenu={(e) => {
-                      e.preventDefault()
-                      setMsgContextMenu({ x: e.clientX, y: e.clientY, msg })
-                    }}
-                    onTouchStart={() => {
-                      msgLongPressRef.current = setTimeout(() => {
-                        setMsgContextMenu({ x: window.innerWidth / 2, y: window.innerHeight / 2, msg })
-                      }, 500)
-                    }}
-                    onTouchEnd={() => { if (msgLongPressRef.current) clearTimeout(msgLongPressRef.current) }}
-                    onTouchMove={() => { if (msgLongPressRef.current) clearTimeout(msgLongPressRef.current) }}
-                  >
-                    {msg.type === 'audio' ? (
-                      <AudioMessage src={msg.content} />
-                    ) : msg.type === 'image' ? (
-                      <img
-                        src={msg.content}
-                        alt="Foto"
-                        className="chat-view__msg-image"
-                        onClick={() => setLightboxUrl(msg.content)}
-                      />
-                    ) : msg.type === 'video' ? (
-                      <video
-                        src={msg.content}
-                        controls
-                        className="chat-view__msg-video"
-                        preload="metadata"
-                      />
-                    ) : msg.type === 'system' ? (
-                      <span className="chat-view__msg-system">{msg.content}</span>
-                    ) : (
-                      msg.content
+                  <div key={msg.id} className="chat-view__msg-wrapper">
+                    {/* Reaction picker floating bar */}
+                    {reactionPickerMsgId === msg.id && (
+                      <div className={`chat-view__reaction-picker ${group.isOwn ? 'chat-view__reaction-picker--own' : ''}`}>
+                        {reactionEmojis.map(emoji => (
+                          <button
+                            key={emoji}
+                            className="chat-view__reaction-picker-btn"
+                            onClick={() => handleAddReaction(msg.id, emoji)}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
                     )}
-                    {/* 🔥 Flame read receipt — en cada mensaje propio */}
-                    {group.isOwn && msg.type !== 'system' && (
-                      <span className={`chat-view__flame-receipt ${msg.seen_at ? 'chat-view__flame-receipt--seen' : ''}`}>
-                        <img src="/icons/fenix-flame.png" alt="" className="chat-view__flame-img" />
-                      </span>
+                    <div
+                      className="chat-view__msg-text"
+                      onContextMenu={(e) => {
+                        e.preventDefault()
+                        setMsgContextMenu({ x: e.clientX, y: e.clientY, msg })
+                      }}
+                      onTouchStart={() => {
+                        msgLongPressRef.current = setTimeout(() => {
+                          setMsgContextMenu({ x: window.innerWidth / 2, y: window.innerHeight / 2, msg })
+                        }, 500)
+                      }}
+                      onTouchEnd={() => { if (msgLongPressRef.current) clearTimeout(msgLongPressRef.current) }}
+                      onTouchMove={() => { if (msgLongPressRef.current) clearTimeout(msgLongPressRef.current) }}
+                      onDoubleClick={() => {
+                        if (!msg.deleted_at) setReactionPickerMsgId(prev => prev === msg.id ? null : msg.id)
+                      }}
+                    >
+                      {/* Forwarded label */}
+                      {msg.forwarded && (
+                        <div className="chat-view__forwarded-label">↗ Reenviado</div>
+                      )}
+
+                      {/* Reply quoted block */}
+                      {msg.reply_to_id && msg.reply_username && (
+                        <div className="chat-view__reply-quote">
+                          <span className="chat-view__reply-quote-user">@{msg.reply_username}</span>
+                          <span className="chat-view__reply-quote-text">
+                            {msg.reply_type === 'image' ? '📷 Foto'
+                              : msg.reply_type === 'video' ? '🎥 Video'
+                              : msg.reply_type === 'audio' ? '🎤 Nota de voz'
+                              : (msg.reply_content || '').slice(0, 80)}{(msg.reply_content || '').length > 80 ? '…' : ''}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Deleted message */}
+                      {msg.deleted_at ? (
+                        <span className="chat-view__msg-deleted">🚫 Mensaje eliminado</span>
+                      ) : msg.type === 'audio' ? (
+                        <AudioMessage src={msg.content} />
+                      ) : msg.type === 'image' ? (
+                        <img
+                          src={msg.content}
+                          alt="Foto"
+                          className="chat-view__msg-image"
+                          onClick={() => setLightboxUrl(msg.content)}
+                        />
+                      ) : msg.type === 'video' ? (
+                        <video
+                          src={msg.content}
+                          controls
+                          className="chat-view__msg-video"
+                          preload="metadata"
+                        />
+                      ) : msg.type === 'system' ? (
+                        <span className="chat-view__msg-system">{msg.content}</span>
+                      ) : (
+                        msg.content
+                      )}
+                      {/* 🔥 Flame read receipt — en cada mensaje propio */}
+                      {group.isOwn && msg.type !== 'system' && !msg.deleted_at && (
+                        <span className={`chat-view__flame-receipt ${msg.seen_at ? 'chat-view__flame-receipt--seen' : ''}`}>
+                          <img src="/icons/fenix-flame.png" alt="" className="chat-view__flame-img" />
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Reaction pills */}
+                    {(reactionsMap[msg.id] || []).length > 0 && (
+                      <div className={`chat-view__reactions ${group.isOwn ? 'chat-view__reactions--own' : ''}`}>
+                        {reactionsMap[msg.id].map(r => (
+                          <button
+                            key={r.emoji}
+                            className={`chat-view__reaction-pill ${r.user_ids?.includes(user?.id) ? 'chat-view__reaction-pill--active' : ''}`}
+                            onClick={() => handleAddReaction(msg.id, r.emoji)}
+                          >
+                            {r.emoji} {r.count}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                 ))}
@@ -622,16 +793,35 @@ function ChatView({ onBack }) {
       {msgContextMenu && (
         <>
           <div className="chat-list__context-overlay" onClick={() => setMsgContextMenu(null)} />
-          <div className="chat-list__context-menu" style={{ top: Math.min(msgContextMenu.y, window.innerHeight - 60), left: Math.min(msgContextMenu.x, window.innerWidth - 200) }}>
-            {msgContextMenu.msg.sender_id === user?.id ? (
-              <button className="chat-list__context-item chat-list__context-item--danger" onClick={handleDeleteMessage}>
-                <Trash2 size={16} />
-                <span>Eliminar mensaje</span>
+          <div className="chat-list__context-menu" style={{ top: Math.min(msgContextMenu.y, window.innerHeight - 120), left: Math.min(msgContextMenu.x, window.innerWidth - 200) }}>
+            {/* Reply option — available for all messages */}
+            {!msgContextMenu.msg.deleted_at && (
+              <button className="chat-list__context-item" onClick={handleReply}>
+                <Reply size={16} />
+                <span>Responder</span>
               </button>
-            ) : (
-              <button className="chat-list__context-item" onClick={() => setMsgContextMenu(null)}>
-                <span>No puedes eliminar este mensaje</span>
+            )}
+            {/* Reaction shortcut */}
+            {!msgContextMenu.msg.deleted_at && (
+              <button className="chat-list__context-item" onClick={() => {
+                setReactionPickerMsgId(msgContextMenu.msg.id)
+                setMsgContextMenu(null)
+              }}>
+                <Smile size={16} />
+                <span>Reaccionar</span>
               </button>
+            )}
+            {msgContextMenu.msg.sender_id === user?.id && !msgContextMenu.msg.deleted_at && (
+              <>
+                <button className="chat-list__context-item chat-list__context-item--danger" onClick={handleDeleteMessage}>
+                  <Trash2 size={16} />
+                  <span>Eliminar mensaje</span>
+                </button>
+                <button className="chat-list__context-item chat-list__context-item--danger" onClick={handleDeleteForAll}>
+                  <Ban size={16} />
+                  <span>Eliminar para todos</span>
+                </button>
+              </>
             )}
           </div>
         </>
@@ -653,6 +843,25 @@ function ChatView({ onBack }) {
             skinTonesDisabled
             lazyLoadEmojis
           />
+        </div>
+      )}
+
+      {/* --- Reply preview bar --- */}
+      {replyingTo && (
+        <div className="chat-view__reply-preview">
+          <div className="chat-view__reply-preview-content">
+            <span className="chat-view__reply-preview-icon">↩</span>
+            <span className="chat-view__reply-preview-text">
+              Respondiendo a <strong>@{replyingTo.sender_username || replyingTo.username || 'Usuario'}</strong>:{' '}
+              {replyingTo.type === 'image' ? '📷 Foto'
+                : replyingTo.type === 'video' ? '🎥 Video'
+                : replyingTo.type === 'audio' ? '🎤 Nota de voz'
+                : (replyingTo.content || '').slice(0, 60)}{(replyingTo.content || '').length > 60 ? '…' : ''}
+            </span>
+          </div>
+          <button className="chat-view__reply-preview-close" onClick={() => setReplyingTo(null)}>
+            <X size={16} />
+          </button>
         </div>
       )}
 

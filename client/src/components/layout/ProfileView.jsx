@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   User, Bell, Lock, Settings, ChevronRight, Camera, LogOut,
-  ArrowLeft, Check, X, Moon, Globe, Trash2, Info, Palette
+  ArrowLeft, Check, X, Moon, Globe, Trash2, Info, Palette, ImageIcon, Upload
 } from 'lucide-react'
 import useAuthStore from '../../stores/authStore'
 import api from '../../lib/api'
@@ -11,11 +11,32 @@ import './ProfileView.css'
  * ProfileView — Pantalla de perfil del usuario (tab "Yo")
  * Muestra avatar, nombre, estado, y opciones de menú con subpantallas
  */
+// Preset background options
+const CHAT_BG_PRESETS = [
+  { id: 'default', label: 'Predeterminado', value: 'default', css: 'var(--color-bg-primary)' },
+  { id: 'gradient-1', label: 'Púrpura profundo', value: 'gradient-1', css: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' },
+  { id: 'gradient-2', label: 'Azul medianoche', value: 'gradient-2', css: 'linear-gradient(135deg, #141E30, #243B55)' },
+  { id: 'gradient-3', label: 'Océano oscuro', value: 'gradient-3', css: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)' },
+  { id: 'gradient-4', label: 'Fénix púrpura', value: 'gradient-4', css: 'linear-gradient(135deg, #2d1b69, #11001c)' },
+  { id: 'gradient-5', label: 'Ahumado', value: 'gradient-5', css: 'linear-gradient(135deg, #1f1c2c, #928DAB)' },
+  { id: 'gradient-6', label: 'Oscuro puro', value: 'gradient-6', css: 'linear-gradient(135deg, #0a0a0a, #1a1a1a)' },
+]
+
+function getBackgroundCSS(chatBg) {
+  if (!chatBg || chatBg === 'default') return null
+  const preset = CHAT_BG_PRESETS.find(p => p.id === chatBg)
+  if (preset) return preset.css
+  // Custom URL
+  if (chatBg.startsWith('http')) return chatBg
+  return null
+}
+
 function ProfileView() {
-  const [activePanel, setActivePanel] = useState(null) // null | 'editProfile' | 'notifications' | 'privacy' | 'settings'
+  const [activePanel, setActivePanel] = useState(null) // null | 'editProfile' | 'notifications' | 'privacy' | 'settings' | 'chatBackground'
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
   const fileInputRef = useRef(null)
+  const bgFileInputRef = useRef(null)
 
   const user = useAuthStore(state => state.user)
   const logout = useAuthStore(state => state.logout)
@@ -28,6 +49,20 @@ function ProfileView() {
     statusEmoji: '',
   })
 
+  // Chat background state
+  const [selectedBg, setSelectedBg] = useState('default')
+  const [savedBg, setSavedBg] = useState('default')
+  const [bgUploading, setBgUploading] = useState(false)
+
+  // Load saved background preference
+  useEffect(() => {
+    api.get('/preferences').then(data => {
+      const bg = data?.preferences?.chat_bg || 'default'
+      setSelectedBg(bg)
+      setSavedBg(bg)
+    }).catch(() => {})
+  }, [])
+
   // Notification settings (local)
   const [notifSettings, setNotifSettings] = useState({
     sound: true,
@@ -37,6 +72,7 @@ function ProfileView() {
 
   const menuItems = [
     { id: 'editProfile', icon: User, label: 'Editar perfil', color: '#00F5FF' },
+    { id: 'chatBackground', icon: ImageIcon, label: 'Fondo de chat', color: '#A855F7' },
     { id: 'notifications', icon: Bell, label: 'Notificaciones', color: '#FFD93D' },
     { id: 'privacy', icon: Lock, label: 'Privacidad', color: '#6C63FF' },
     { id: 'settings', icon: Settings, label: 'Configuración', color: '#FF6B6B' },
@@ -144,7 +180,156 @@ function ProfileView() {
     }
   }
 
+  // Save chat background preference
+  const handleSaveBg = async () => {
+    setSaving(true)
+    setSaveMsg('')
+    try {
+      await api.patch('/preferences', { chat_bg: selectedBg })
+      setSavedBg(selectedBg)
+      setSaveMsg('✅ Fondo guardado')
+      setTimeout(() => setSaveMsg(''), 2000)
+    } catch (err) {
+      setSaveMsg('❌ Error al guardar')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Handle custom background image upload
+  const handleBgImageUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      setSaveMsg('❌ La imagen debe ser menor a 10MB')
+      return
+    }
+    try {
+      setBgUploading(true)
+      setSaveMsg('Subiendo imagen...')
+      const formData = new FormData()
+      formData.append('media', file)
+      const data = await api.upload('/upload/media', formData)
+      setSelectedBg(data.url)
+      setSaveMsg('✅ Imagen subida. Guarda para aplicar.')
+      setTimeout(() => setSaveMsg(''), 3000)
+    } catch (err) {
+      setSaveMsg('❌ Error al subir imagen')
+    } finally {
+      setBgUploading(false)
+    }
+  }
+
   // --- SUB PANELS ---
+
+  // Chat Background Picker Panel
+  if (activePanel === 'chatBackground') {
+    const previewBgCSS = getBackgroundCSS(selectedBg)
+    const isCustomUrl = selectedBg && selectedBg.startsWith('http')
+
+    return (
+      <div className="profile-view">
+        <div className="profile-view__panel-header">
+          <button className="profile-view__back-btn" onClick={() => { setSelectedBg(savedBg); setActivePanel(null) }}>
+            <ArrowLeft size={20} />
+          </button>
+          <span className="profile-view__panel-title">Fondo de chat</span>
+          <button className="profile-view__save-btn" onClick={handleSaveBg} disabled={saving || selectedBg === savedBg}>
+            {saving ? '...' : <Check size={20} />}
+          </button>
+        </div>
+
+        <div className="profile-view__bg-content">
+          {/* Preview */}
+          <div className="profile-view__bg-preview-section">
+            <label className="profile-view__field-label">Vista previa</label>
+            <div
+              className="profile-view__bg-preview"
+              style={
+                isCustomUrl
+                  ? { backgroundImage: `url(${selectedBg})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                  : previewBgCSS
+                    ? { background: previewBgCSS }
+                    : {}
+              }
+            >
+              {/* Fake chat bubbles for preview */}
+              <div className="profile-view__bg-preview-bubble profile-view__bg-preview-bubble--other">
+                Hola, ¿cómo estás? 👋
+              </div>
+              <div className="profile-view__bg-preview-bubble profile-view__bg-preview-bubble--own">
+                ¡Todo bien! 🔥
+              </div>
+              <div className="profile-view__bg-preview-bubble profile-view__bg-preview-bubble--other">
+                Qué bueno 😊
+              </div>
+            </div>
+          </div>
+
+          {/* Preset grid */}
+          <div className="profile-view__bg-section">
+            <label className="profile-view__field-label">Fondos predeterminados</label>
+            <div className="profile-view__bg-grid">
+              {CHAT_BG_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  className={`profile-view__bg-swatch ${selectedBg === preset.id ? 'profile-view__bg-swatch--active' : ''}`}
+                  style={{ background: preset.css }}
+                  onClick={() => setSelectedBg(preset.id)}
+                  title={preset.label}
+                >
+                  {selectedBg === preset.id && (
+                    <span className="profile-view__bg-swatch-check">
+                      <Check size={16} />
+                    </span>
+                  )}
+                  {preset.id === 'default' && (
+                    <span className="profile-view__bg-swatch-label">Sin fondo</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom upload */}
+          <div className="profile-view__bg-section">
+            <label className="profile-view__field-label">Imagen personalizada</label>
+            <button
+              className="profile-view__bg-upload-btn"
+              onClick={() => bgFileInputRef.current?.click()}
+              disabled={bgUploading}
+            >
+              <Upload size={18} />
+              <span>{bgUploading ? 'Subiendo...' : 'Subir imagen'}</span>
+            </button>
+            <input
+              ref={bgFileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleBgImageUpload}
+              style={{ display: 'none' }}
+            />
+            {isCustomUrl && (
+              <div className="profile-view__bg-custom-preview">
+                <img src={selectedBg} alt="Fondo personalizado" className="profile-view__bg-custom-thumb" />
+                <button
+                  className="profile-view__bg-custom-remove"
+                  onClick={() => setSelectedBg('default')}
+                >
+                  <X size={14} />
+                  <span>Quitar</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {saveMsg && (
+            <div className="profile-view__save-msg">{saveMsg}</div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   // Edit Profile Panel
   if (activePanel === 'editProfile') {
@@ -444,7 +629,10 @@ function ProfileView() {
             <button
               key={item.id}
               className="profile-view__menu-item"
-              onClick={() => item.id === 'editProfile' ? handleOpenEdit() : setActivePanel(item.id)}
+              onClick={() => {
+                if (item.id === 'editProfile') handleOpenEdit()
+                else setActivePanel(item.id)
+              }}
               aria-label={item.label}
             >
               <span className="profile-view__menu-icon" style={{ color: item.color }}>

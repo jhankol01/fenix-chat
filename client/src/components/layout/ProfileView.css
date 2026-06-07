@@ -537,3 +537,178 @@
 .profile-view__notif-info strong {
   color: var(--color-text-primary);
 }
+
+/* ---------- Chat Background Picker ---------- */
+.profile-view__bg-content {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  overflow-y: auto;
+}
+
+.profile-view__bg-preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.profile-view__bg-preview {
+  width: 100%;
+  height: 200px;
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-subtle);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--space-4) var(--space-5);
+  overflow: hidden;
+  transition: background 0.3s ease;
+}
+
+.profile-view__bg-preview-bubble {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  max-width: 70%;
+  line-height: 1.4;
+}
+
+.profile-view__bg-preview-bubble--other {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-primary);
+  align-self: flex-start;
+  border-radius: 4px 12px 12px 12px;
+}
+
+.profile-view__bg-preview-bubble--own {
+  background: linear-gradient(135deg, #1E1B4B, #312E81);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  color: white;
+  align-self: flex-end;
+  border-radius: 12px 4px 12px 12px;
+}
+
+.profile-view__bg-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.profile-view__bg-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+}
+
+.profile-view__bg-swatch {
+  aspect-ratio: 1;
+  border-radius: var(--radius-lg);
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  min-height: 60px;
+}
+
+.profile-view__bg-swatch:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.profile-view__bg-swatch--active {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.profile-view__bg-swatch-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.profile-view__bg-swatch-label {
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.profile-view__bg-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-border-subtle);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-view__bg-upload-btn:hover {
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+  background: rgba(124, 58, 237, 0.05);
+}
+
+.profile-view__bg-upload-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.profile-view__bg-custom-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.profile-view__bg-custom-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.profile-view__bg-custom-remove {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  color: #FF6B6B;
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.15);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-view__bg-custom-remove:hover {
+  background: rgba(255, 107, 107, 0.15);
+}

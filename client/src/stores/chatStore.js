@@ -12,9 +12,23 @@ const useChatStore = create((set, get) => ({
   messages: [],
   typingUsers: {},
   unreadCounts: {},  // { conversationId: count }
+  onlineUsers: new Set(),
   isLoadingConversations: false,
   isLoadingMessages: false,
   hasMoreMessages: true,
+
+  // Online presence actions
+  setOnlineUsers: (userIds) => set({ onlineUsers: new Set(userIds) }),
+  addOnlineUser: (userId) => set(state => {
+    const next = new Set(state.onlineUsers)
+    next.add(userId)
+    return { onlineUsers: next }
+  }),
+  removeOnlineUser: (userId) => set(state => {
+    const next = new Set(state.onlineUsers)
+    next.delete(userId)
+    return { onlineUsers: next }
+  }),
 
   // Cargar conversaciones desde la API
   loadConversations: async () => {
@@ -77,15 +91,17 @@ const useChatStore = create((set, get) => ({
   },
 
   // Enviar un mensaje vía socket
-  sendMessage: (content, type = 'text') => {
+  sendMessage: (content, type = 'text', replyToId = null) => {
     const socket = getSocket()
     const { activeConversation } = get()
     if (socket && activeConversation && content) {
-      socket.emit('send_message', {
+      const payload = {
         conversationId: activeConversation.id,
         content: type === 'text' ? content.trim() : content,
         type
-      })
+      }
+      if (replyToId) payload.replyToId = replyToId
+      socket.emit('send_message', payload)
     }
   },
 
