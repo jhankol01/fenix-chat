@@ -1,17 +1,18 @@
+import { Home, Users, Bell, User } from 'lucide-react'
 import PhoenixIcon from '../ui/PhoenixIcon'
 import './BottomNav.css'
 
 /**
- * BottomNav — Navegación inferior premium con íconos Fénix Brand Pack
- * 5 tabs: Inicio(Chats), Comunidades, 🔥Fénix, Alertas(Voz), Perfil(Eventos)
+ * BottomNav — Navegación inferior con íconos lineales + fénix central
+ * Estilo limpio como el concepto mockup
  */
 function BottomNav({ activeSection, onSectionChange }) {
   const tabs = [
-    { id: 'chats', label: 'Inicio', icon: '/icons/Chats.png' },
-    { id: 'comunidades', label: 'Comunidades', icon: '/icons/Comunidades.png' },
-    { id: 'fenix', label: '', icon: null, isCenter: true },
-    { id: 'notificaciones', label: 'Alertas', icon: '/icons/Anuncios.png' },
-    { id: 'perfil', label: 'Perfil', icon: '/icons/Voz.png' },
+    { id: 'chats', label: 'Inicio', Icon: Home },
+    { id: 'comunidades', label: 'Comunidades', Icon: Users },
+    { id: 'fenix', label: '', Icon: null, isCenter: true },
+    { id: 'notificaciones', label: 'Notificaciones', Icon: Bell },
+    { id: 'perfil', label: 'Perfil', Icon: User },
   ]
 
   return (
@@ -28,7 +29,7 @@ function BottomNav({ activeSection, onSectionChange }) {
               aria-label="Fénix"
             >
               <div className="bottom-nav__center-ring">
-                <PhoenixIcon size={26} variant="logo" glow />
+                <PhoenixIcon size={26} variant="logo" />
               </div>
             </button>
           )
@@ -44,7 +45,7 @@ function BottomNav({ activeSection, onSectionChange }) {
             aria-label={tab.label}
           >
             <span className="bottom-nav__icon">
-              <img src={tab.icon} alt={tab.label} className="bottom-nav__icon-img" />
+              <tab.Icon size={20} strokeWidth={isActive ? 2.2 : 1.5} />
             </span>
             <span className="bottom-nav__label">{tab.label}</span>
           </button>

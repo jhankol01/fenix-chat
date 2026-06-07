@@ -59,27 +59,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  transition: all 0.2s;
-}
-
-.bottom-nav__icon-img {
   width: 22px;
   height: 22px;
-  object-fit: contain;
-  opacity: 0.45;
-  transition: all 0.2s;
-}
-
-.bottom-nav__tab--active .bottom-nav__icon-img {
-  opacity: 1;
-  filter: drop-shadow(0 0 4px rgba(124, 58, 237, 0.5));
 }
 
 /* Label */
 .bottom-nav__label {
-  font-size: 0.55rem;
+  font-size: 0.6rem;
   font-weight: var(--weight-medium);
   line-height: 1;
   letter-spacing: 0.02em;
