@@ -1,42 +1,73 @@
-const CACHE_NAME = 'fenix-chat-v1'
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/icons/fenix-flame.png',
-  '/backgrounds/fenix-dark.png',
-  '/backgrounds/fenix-light.png',
-]
+/**
+ * Fenix Messenger — Service Worker
+ * Recibe Push Notifications aunque la app esté cerrada
+ */
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-  )
   self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
-  )
-  self.clients.claim()
+  event.waitUntil(clients.claim())
 })
 
-self.addEventListener('fetch', (event) => {
-  // Network first for API calls, cache first for static assets
-  if (event.request.url.includes('/api/') || event.request.url.includes('socket.io')) {
-    return // Don't cache API or socket requests
+/**
+ * Push event — recibido del servidor via Web Push
+ */
+self.addEventListener('push', (event) => {
+  if (!event.data) return
+
+  let data
+  try {
+    data = event.data.json()
+  } catch (e) {
+    data = { title: 'Fenix Messenger', body: event.data.text() }
   }
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).then((response) => {
-        if (response.status === 200) {
-          const clone = response.clone()
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
+
+  const title = data.title || 'Fenix Messenger'
+  const options = {
+    body: data.body || 'Nuevo mensaje',
+    icon: '/fenix-icon-192.png',
+    badge: '/fenix-icon-192.png',
+    tag: data.tag || 'fenix-msg',
+    renotify: true,
+    vibrate: [200, 100, 200],
+    data: {
+      url: data.url || '/',
+      conversationId: data.conversationId,
+    },
+    actions: [
+      { action: 'open', title: 'Abrir' },
+      { action: 'dismiss', title: 'Cerrar' },
+    ],
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(title, options)
+  )
+})
+
+/**
+ * Click en la notificación — abrir/enfocar la app
+ */
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+
+  if (event.action === 'dismiss') return
+
+  const urlToOpen = event.notification.data?.url || '/'
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Si ya hay una pestaña abierta, enfocarla
+      for (const client of windowClients) {
+        if (client.url.includes(self.location.origin)) {
+          client.focus()
+          return client
         }
-        return response
-      })
-    }).catch(() => caches.match('/index.html'))
+      }
+      // Si no, abrir una nueva
+      return clients.openWindow(urlToOpen)
+    })
   )
 })

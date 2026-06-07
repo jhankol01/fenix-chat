@@ -5,6 +5,7 @@ import Conversation from '../models/Conversation.js'
 import Reaction from '../models/Reaction.js'
 import { query } from '../config/database.js'
 import logger from '../utils/logger.js'
+import { sendPushToUser } from '../routes/pushRoutes.js'
 
 // Track online users: Map<userId, Set<socketId>>
 const onlineUsers = new Map()
@@ -126,6 +127,19 @@ export default function chatHandler(io) {
               const memberSocket = io.sockets.sockets.get(socketId)
               if (memberSocket) memberSocket.join(conversationId)
             }
+          }
+
+          // Send push notification to OFFLINE members
+          if (member.id !== user.id && (!memberSockets || memberSockets.size === 0)) {
+            const truncated = (type === 'text' && content.length > 80) ? content.slice(0, 80) + '...' : content
+            const body = type === 'text' ? truncated : (type === 'image' ? '📷 Imagen' : type === 'audio' ? '🎤 Audio' : type === 'video' ? '🎬 Video' : '📎 Archivo')
+            sendPushToUser(member.id, {
+              title: `${user.username}`,
+              body,
+              tag: `fenix-msg-${conversationId}`,
+              conversationId,
+              url: '/',
+            })
           }
         }
 

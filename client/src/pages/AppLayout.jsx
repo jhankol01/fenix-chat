@@ -11,7 +11,7 @@ import StoriesBar from '../components/layout/StoriesBar'
 import useAuthStore from '../stores/authStore'
 import useChatStore from '../stores/chatStore'
 import { connectSocket, disconnectSocket, getSocket, onReconnect } from '../lib/socket'
-import { requestNotificationPermission, notifyNewMessage } from '../lib/notifications'
+import { requestNotificationPermission, notifyNewMessage, initPushNotifications } from '../lib/notifications'
 import api from '../lib/api'
 import './AppLayout.css'
 
@@ -76,8 +76,9 @@ function AppLayout() {
   useEffect(() => {
     if (!accessToken) return
 
-    // Solicitar permiso para notificaciones
+    // Solicitar permiso para notificaciones + registrar push
     requestNotificationPermission()
+    initPushNotifications()
 
     // Conectar socket con el token de autenticación
     const socket = connectSocket(accessToken)

@@ -538,6 +538,67 @@
   color: var(--color-text-primary);
 }
 
+/* ---------- Sound Selector ---------- */
+.profile-view__sound-section {
+  padding: var(--space-4) var(--space-5);
+}
+
+.profile-view__sound-title {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-3);
+}
+
+.profile-view__sound-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.profile-view__sound-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.profile-view__sound-item:hover {
+  background: var(--color-bg-hover);
+}
+
+.profile-view__sound-item--active {
+  border-color: var(--color-brand);
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.profile-view__sound-label {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  min-width: 90px;
+}
+
+.profile-view__sound-desc {
+  flex: 1;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.profile-view__sound-check {
+  color: var(--color-brand);
+  flex-shrink: 0;
+}
+
 /* ---------- Chat Background Picker ---------- */
 .profile-view__bg-content {
   padding: var(--space-4);

@@ -47,5 +47,8 @@ router.use('/gifs', gifRoutes);
 // Story routes
 import storyRoutes from './storyRoutes.js';
 router.use('/stories', storyRoutes);
+// Push notification routes
+import pushRoutes from './pushRoutes.js';
+router.use('/push', pushRoutes);
 
 export default router;

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import useAuthStore from '../../stores/authStore'
 import api from '../../lib/api'
+import { NOTIFICATION_SOUNDS, previewSound } from '../../lib/notifications'
 import './ProfileView.css'
 
 /**
@@ -584,6 +585,27 @@ function ProfileView() {
           />
         </div>
 
+        {/* Sound selector */}
+        <div className="profile-view__sound-section">
+          <span className="profile-view__sound-title">Tono de notificación</span>
+          <div className="profile-view__sound-list">
+            {NOTIFICATION_SOUNDS.map(s => {
+              const selected = (localStorage.getItem('fenix_notification_sound') || 'fenix') === s.id
+              return (
+                <button
+                  key={s.id}
+                  className={`profile-view__sound-item ${selected ? 'profile-view__sound-item--active' : ''}`}
+                  onClick={() => { localStorage.setItem('fenix_notification_sound', s.id); previewSound(s.id); setNotifSettings(prev => ({ ...prev })) }}
+                >
+                  <span className="profile-view__sound-label">{s.label}</span>
+                  <span className="profile-view__sound-desc">{s.description}</span>
+                  {selected && <Check size={16} className="profile-view__sound-check" />}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         {!notifAvailable && (
           <div className="profile-view__notif-banner">
             <div className="profile-view__notif-banner-icon">📱</div>
@@ -596,7 +618,7 @@ function ProfileView() {
 
         <div className="profile-view__notif-info">
           <p>🔊 <strong>El sonido</strong> siempre funciona cuando recibes un mensaje nuevo y no estás en esa conversación.</p>
-          <p>💬 <strong>El título de la pestaña</strong> también cambia para avisarte.</p>
+          <p>🔔 <strong>Push notifications</strong> llegan aunque la app esté cerrada.</p>
         </div>
       </div>
     )
