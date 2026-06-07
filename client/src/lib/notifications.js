@@ -21,7 +21,7 @@ function getCtx() {
  * Cada uno genera un tono único usando Web Audio API.
  */
 export const NOTIFICATION_SOUNDS = [
-  { id: 'fenix',     label: '🔥 Fenix',     description: 'Clásico Fenix — doble tono cálido' },
+  { id: 'fenix',     label: '🔥 Fenix',     description: 'El ave renace — ascenso de fuego' },
   { id: 'pulse',     label: '💜 Pulse',     description: 'Pulso suave — moderno y discreto' },
   { id: 'chime',     label: '🔔 Chime',     description: 'Campana cristalina — elegante' },
   { id: 'bubble',    label: '💬 Bubble',    description: 'Burbuja pop — divertido y amigable' },
@@ -30,17 +30,53 @@ export const NOTIFICATION_SOUNDS = [
 ]
 
 const soundGenerators = {
-  // 🔥 Fenix — doble tono cálido (el original)
+  // 🔥 Fenix — El ave de fuego renace: ascenso cálido + destello brillante
   fenix(ctx) {
     const now = ctx.currentTime
-    const o1 = ctx.createOscillator(), g1 = ctx.createGain()
-    o1.type = 'sine'; o1.frequency.setValueAtTime(880, now); o1.frequency.setValueAtTime(1108, now + 0.08)
-    g1.gain.setValueAtTime(0.3, now); g1.gain.exponentialRampToValueAtTime(0.01, now + 0.25)
-    o1.connect(g1); g1.connect(ctx.destination); o1.start(now); o1.stop(now + 0.25)
-    const o2 = ctx.createOscillator(), g2 = ctx.createGain()
-    o2.type = 'sine'; o2.frequency.setValueAtTime(1318, now + 0.06)
-    g2.gain.setValueAtTime(0, now); g2.gain.setValueAtTime(0.2, now + 0.06); g2.gain.exponentialRampToValueAtTime(0.01, now + 0.3)
-    o2.connect(g2); g2.connect(ctx.destination); o2.start(now + 0.06); o2.stop(now + 0.3)
+
+    // Layer 1: Ember rumble — rumor cálido de brasas (base grave)
+    const ember = ctx.createOscillator(), eg = ctx.createGain()
+    ember.type = 'triangle'
+    ember.frequency.setValueAtTime(180, now)
+    ember.frequency.exponentialRampToValueAtTime(400, now + 0.2)
+    eg.gain.setValueAtTime(0.15, now)
+    eg.gain.exponentialRampToValueAtTime(0.01, now + 0.3)
+    ember.connect(eg); eg.connect(ctx.destination)
+    ember.start(now); ember.stop(now + 0.3)
+
+    // Layer 2: Fire rise — llama ascendente (tono principal)
+    const fire = ctx.createOscillator(), fg = ctx.createGain()
+    fire.type = 'sine'
+    fire.frequency.setValueAtTime(523, now + 0.05)       // C5 — inicio
+    fire.frequency.exponentialRampToValueAtTime(1047, now + 0.2) // C6 — sube una octava
+    fire.frequency.setValueAtTime(1175, now + 0.22)      // D6 — destello
+    fg.gain.setValueAtTime(0, now)
+    fg.gain.linearRampToValueAtTime(0.28, now + 0.08)
+    fg.gain.setValueAtTime(0.28, now + 0.2)
+    fg.gain.exponentialRampToValueAtTime(0.01, now + 0.45)
+    fire.connect(fg); fg.connect(ctx.destination)
+    fire.start(now + 0.05); fire.stop(now + 0.45)
+
+    // Layer 3: Wing shimmer — brillo de alas (armónico agudo)
+    const wing = ctx.createOscillator(), wg = ctx.createGain()
+    wing.type = 'sine'
+    wing.frequency.setValueAtTime(1568, now + 0.15)      // G6
+    wing.frequency.exponentialRampToValueAtTime(2093, now + 0.28) // C7
+    wg.gain.setValueAtTime(0, now + 0.15)
+    wg.gain.linearRampToValueAtTime(0.12, now + 0.2)
+    wg.gain.exponentialRampToValueAtTime(0.01, now + 0.5)
+    wing.connect(wg); wg.connect(ctx.destination)
+    wing.start(now + 0.15); wing.stop(now + 0.5)
+
+    // Layer 4: Spark — chispa final (micro-destello)
+    const spark = ctx.createOscillator(), sg = ctx.createGain()
+    spark.type = 'sine'
+    spark.frequency.setValueAtTime(2637, now + 0.25)     // E7
+    sg.gain.setValueAtTime(0, now + 0.25)
+    sg.gain.linearRampToValueAtTime(0.08, now + 0.27)
+    sg.gain.exponentialRampToValueAtTime(0.01, now + 0.4)
+    spark.connect(sg); sg.connect(ctx.destination)
+    spark.start(now + 0.25); spark.stop(now + 0.4)
   },
 
   // 💜 Pulse — pulso moderno
