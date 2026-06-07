@@ -28,6 +28,7 @@ async function runMigrations() {
       '008_add_reply_forward_delete.sql',
       '009_create_reactions.sql',
       '010_preferences_presence.sql',
+      '011_groups.sql',
     ]
 
     for (const file of migrations) {

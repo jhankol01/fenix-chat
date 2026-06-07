@@ -152,6 +152,61 @@ const Conversation = {
       client.release()
     }
   },
+
+  /**
+   * Create a group conversation with multiple members.
+   */
+  async createGroup(creatorId, name, memberIds = []) {
+    const client = await getClient()
+    try {
+      await client.query('BEGIN')
+
+      const convResult = await client.query(
+        `INSERT INTO conversations (type, name) VALUES ('group', $1) RETURNING id, type, name, created_at`,
+        [name]
+      )
+      const conv = convResult.rows[0]
+
+      // Add creator + all members
+      const allMembers = [creatorId, ...memberIds.filter(id => id !== creatorId)]
+      for (const memberId of allMembers) {
+        await client.query(
+          `INSERT INTO conversation_members (conversation_id, user_id, role) VALUES ($1, $2, $3)
+           ON CONFLICT DO NOTHING`,
+          [conv.id, memberId, memberId === creatorId ? 'admin' : 'member']
+        )
+      }
+
+      await client.query('COMMIT')
+      return conv
+    } catch (err) {
+      await client.query('ROLLBACK')
+      throw err
+    } finally {
+      client.release()
+    }
+  },
+
+  /**
+   * Add a member to a group conversation.
+   */
+  async addMember(conversationId, userId) {
+    await query(
+      `INSERT INTO conversation_members (conversation_id, user_id, role) VALUES ($1, $2, 'member')
+       ON CONFLICT DO NOTHING`,
+      [conversationId, userId]
+    )
+  },
+
+  /**
+   * Remove a member from a group conversation.
+   */
+  async removeMember(conversationId, userId) {
+    await query(
+      'DELETE FROM conversation_members WHERE conversation_id = $1 AND user_id = $2',
+      [conversationId, userId]
+    )
+  },
 }
 
 export default Conversation

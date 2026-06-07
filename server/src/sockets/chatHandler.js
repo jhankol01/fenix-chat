@@ -238,6 +238,52 @@ export default function chatHandler(io) {
       }
     })
 
+    // ─── Create Group ─────────────────────────────────────────────────────────
+    socket.on('create_group', async ({ name, memberIds }) => {
+      try {
+        if (!name || !memberIds || memberIds.length === 0) {
+          return socket.emit('error_message', { error: 'Nombre y miembros son requeridos' })
+        }
+        const conv = await Conversation.createGroup(user.id, name, memberIds)
+
+        // Join all online members to the new room
+        const allMembers = [user.id, ...memberIds.filter(id => id !== user.id)]
+        for (const memberId of allMembers) {
+          const memberSockets = onlineUsers.get(memberId)
+          if (memberSockets) {
+            for (const sid of memberSockets) {
+              const memberSocket = io.sockets.sockets.get(sid)
+              if (memberSocket) memberSocket.join(conv.id)
+            }
+          }
+        }
+
+        // Send system message
+        const sysMsg = await Message.create({
+          conversationId: conv.id,
+          senderId: user.id,
+          content: `${user.username} creó el grupo "${name}"`,
+          type: 'system',
+        })
+        io.to(conv.id).emit('new_message', sysMsg)
+
+        // Notify all members to reload conversations
+        for (const memberId of allMembers) {
+          const memberSockets = onlineUsers.get(memberId)
+          if (memberSockets) {
+            for (const sid of memberSockets) {
+              io.to(sid).emit('group_created', { conversation: conv })
+            }
+          }
+        }
+
+        logger.info(`Group "${name}" created by ${user.username} with ${allMembers.length} members`)
+      } catch (err) {
+        logger.error('Error creating group:', err.message)
+        socket.emit('error_message', { error: 'Error al crear el grupo' })
+      }
+    })
+
     // ─── Mark Messages as Seen (Read Receipts) ───────────────────────────────
     socket.on('mark_seen', async ({ conversationId }) => {
       try {

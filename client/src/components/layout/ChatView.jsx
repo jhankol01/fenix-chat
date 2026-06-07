@@ -51,6 +51,13 @@ function ChatView({ onBack }) {
   // Forward state
   const [forwardingMsg, setForwardingMsg] = useState(null)
 
+  // GIF picker state
+  const [showGifPicker, setShowGifPicker] = useState(false)
+  const [gifSearchQuery, setGifSearchQuery] = useState('')
+  const [gifResults, setGifResults] = useState([])
+  const [isLoadingGifs, setIsLoadingGifs] = useState(false)
+  const gifSearchTimeoutRef = useRef(null)
+
   // Voice note state
   const [isRecording, setIsRecording] = useState(false)
   const [recordingDuration, setRecordingDuration] = useState(0)
@@ -329,12 +336,61 @@ function ChatView({ onBack }) {
     }
   }, [isLoadingMessages, hasMoreMessages, messages, activeConversation, loadMessages])
 
+  // GIF search with debounce
+  const handleGifSearch = useCallback((query) => {
+    setGifSearchQuery(query)
+    if (gifSearchTimeoutRef.current) clearTimeout(gifSearchTimeoutRef.current)
+    if (!query.trim()) {
+      setGifResults([])
+      return
+    }
+    gifSearchTimeoutRef.current = setTimeout(async () => {
+      setIsLoadingGifs(true)
+      try {
+        const res = await fetch(
+          `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(query)}&key=AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ&limit=20&media_filter=gif`
+        )
+        const data = await res.json()
+        setGifResults(data.results || [])
+      } catch (err) {
+        console.error('GIF search error:', err)
+        setGifResults([])
+      } finally {
+        setIsLoadingGifs(false)
+      }
+    }, 400)
+  }, [])
+
+  // Load trending GIFs when panel opens
+  useEffect(() => {
+    if (showGifPicker && gifResults.length === 0 && !gifSearchQuery) {
+      setIsLoadingGifs(true)
+      fetch(
+        `https://tenor.googleapis.com/v2/featured?key=AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ&limit=20&media_filter=gif`
+      )
+        .then(res => res.json())
+        .then(data => setGifResults(data.results || []))
+        .catch(() => setGifResults([]))
+        .finally(() => setIsLoadingGifs(false))
+    }
+  }, [showGifPicker])
+
+  // Send a GIF as image message
+  const handleSendGif = useCallback((gifUrl) => {
+    sendMessage(gifUrl, 'image', replyingTo?.id || null)
+    setShowGifPicker(false)
+    setGifSearchQuery('')
+    setGifResults([])
+    setReplyingTo(null)
+  }, [sendMessage, replyingTo])
+
   // Manejar envío de mensaje
   const handleSend = () => {
     if (!inputValue.trim()) return
     sendMessage(inputValue, 'text', replyingTo?.id || null)
     setInputValue('')
     setShowEmojiPicker(false)
+    setShowGifPicker(false)
     setReplyingTo(null)
     handleStopTyping()
   }
@@ -955,6 +1011,69 @@ function ChatView({ onBack }) {
         </div>
       )}
 
+      {/* --- GIF Picker Panel --- */}
+      {showGifPicker && (
+        <div className="chat-view__gif-panel">
+          <div className="chat-view__gif-header">
+            <div className="chat-view__gif-search-wrapper">
+              <Search size={16} className="chat-view__gif-search-icon" />
+              <input
+                type="text"
+                className="chat-view__gif-search-input"
+                placeholder="Buscar GIFs..."
+                value={gifSearchQuery}
+                onChange={(e) => handleGifSearch(e.target.value)}
+                autoFocus
+              />
+              {gifSearchQuery && (
+                <button
+                  className="chat-view__gif-search-clear"
+                  onClick={() => { setGifSearchQuery(''); setGifResults([]); }}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="chat-view__gif-grid">
+            {isLoadingGifs ? (
+              <div className="chat-view__gif-loading">
+                <Loader2 size={24} className="chat-view__spinner" />
+                <span>Buscando GIFs...</span>
+              </div>
+            ) : gifResults.length === 0 ? (
+              <div className="chat-view__gif-empty">
+                {gifSearchQuery ? 'No se encontraron GIFs' : 'Escribe para buscar GIFs'}
+              </div>
+            ) : (
+              gifResults.map((gif) => {
+                const gifUrl = gif.media_formats?.gif?.url || gif.media_formats?.mediumgif?.url || gif.media_formats?.tinygif?.url
+                const previewUrl = gif.media_formats?.tinygif?.url || gif.media_formats?.nanogif?.url || gifUrl
+                if (!gifUrl) return null
+                return (
+                  <button
+                    key={gif.id}
+                    className="chat-view__gif-item"
+                    onClick={() => handleSendGif(gifUrl)}
+                    title={gif.content_description || 'GIF'}
+                  >
+                    <img
+                      src={previewUrl}
+                      alt={gif.content_description || 'GIF'}
+                      className="chat-view__gif-thumb"
+                      loading="lazy"
+                    />
+                  </button>
+                )
+              })
+            )}
+          </div>
+          <div className="chat-view__gif-footer">
+            <span className="chat-view__gif-powered">Powered by Tenor</span>
+          </div>
+        </div>
+      )}
+
       {/* --- Reply preview bar --- */}
       {replyingTo && (
         <div className="chat-view__reply-preview">
@@ -980,9 +1099,16 @@ function ChatView({ onBack }) {
           <button
             className={`chat-view__input-btn ${showEmojiPicker ? 'chat-view__input-btn--active' : ''}`}
             aria-label="Emoji"
-            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowGifPicker(false) }}
           >
             <Smile size={20} />
+          </button>
+          <button
+            className={`chat-view__input-btn ${showGifPicker ? 'chat-view__input-btn--active' : ''}`}
+            aria-label="GIF"
+            onClick={() => { setShowGifPicker(!showGifPicker); setShowEmojiPicker(false) }}
+          >
+            <span className="chat-view__gif-icon">GIF</span>
           </button>
           <button
             className="chat-view__input-btn"
@@ -1053,7 +1179,7 @@ function ChatView({ onBack }) {
             value={inputValue}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            onFocus={() => setShowEmojiPicker(false)}
+            onFocus={() => { setShowEmojiPicker(false); setShowGifPicker(false) }}
           />
         </div>
 
@@ -1177,6 +1303,7 @@ function getConversationName(conversation, currentUser) {
 
 /** Obtener avatar de la conversación */
 function getConversationAvatar(conversation, currentUser) {
+  if (conversation.type === 'group') return conversation.avatar_url || null
   if (conversation.participants) {
     const other = conversation.participants.find(p => p.id !== currentUser?.id)
     return other?.avatar_url || null

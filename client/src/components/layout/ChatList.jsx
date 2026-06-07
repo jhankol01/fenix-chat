@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2, Rocket, Phone } from 'lucide-react'
+import { Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2, Rocket, Phone, Users, Check } from 'lucide-react'
 import PhoenixIcon from '../ui/PhoenixIcon'
 import useChatStore from '../../stores/chatStore'
 import useAuthStore from '../../stores/authStore'
@@ -23,6 +23,12 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
   const [newChatQuery, setNewChatQuery] = useState('')
   const [isStartingDM, setIsStartingDM] = useState(false)
   const [contextMenu, setContextMenu] = useState(null)
+  // Group creation state
+  const [showCreateGroup, setShowCreateGroup] = useState(false)
+  const [groupName, setGroupName] = useState('')
+  const [groupMembers, setGroupMembers] = useState([])
+  const [groupSearch, setGroupSearch] = useState('')
+  const [groupSearchResults, setGroupSearchResults] = useState([])
   const searchTimeoutRef = useRef(null)
   const newChatInputRef = useRef(null)
 
@@ -37,6 +43,7 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
     unreadCounts,
     onlineUsers,
     deleteConversation,
+    createGroup,
   } = useChatStore()
 
   const user = useAuthStore(state => state.user)
@@ -81,6 +88,26 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
     } finally {
       setIsStartingDM(false)
     }
+  }
+
+  // Group search
+  const handleGroupSearch = async (q) => {
+    setGroupSearch(q)
+    if (!q.trim()) { setGroupSearchResults([]); return }
+    try {
+      const results = await searchUsers(q)
+      setGroupSearchResults(results.filter(u => u.id !== user?.id && !groupMembers.find(m => m.id === u.id)))
+    } catch (_) {}
+  }
+
+  const handleCreateGroup = () => {
+    if (!groupName.trim() || groupMembers.length === 0) return
+    createGroup(groupName.trim(), groupMembers.map(m => m.id))
+    setShowCreateGroup(false)
+    setGroupName('')
+    setGroupMembers([])
+    setGroupSearch('')
+    setGroupSearchResults([])
   }
 
   // Seleccionar una conversación existente
@@ -165,6 +192,15 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
       {/* Panel de nueva conversación — búsqueda de usuarios */}
       {showNewChat && (
             <div className="chat-list__new-chat-panel">
+              {/* Create group button */}
+              <button
+                className="chat-list__create-group-btn"
+                onClick={() => { setShowCreateGroup(true); setShowNewChat(false) }}
+              >
+                <Users size={18} />
+                <span>Crear grupo</span>
+              </button>
+
               <div className="chat-list__new-chat-search">
                 <Search size={16} className="chat-list__search-icon" />
                 <input
@@ -217,6 +253,77 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
               </div>
             </div>
           )}
+
+      {/* Group creation modal */}
+      {showCreateGroup && (
+        <div className="chat-list__group-modal">
+          <div className="chat-list__group-header">
+            <button onClick={() => setShowCreateGroup(false)}><X size={18} /></button>
+            <h3>Nuevo grupo</h3>
+            <button
+              className="chat-list__group-create-btn"
+              onClick={handleCreateGroup}
+              disabled={!groupName.trim() || groupMembers.length === 0}
+            >
+              <Check size={18} />
+            </button>
+          </div>
+
+          <input
+            className="chat-list__group-name-input"
+            placeholder="Nombre del grupo..."
+            value={groupName}
+            onChange={(e) => setGroupName(e.target.value)}
+            autoFocus
+          />
+
+          {groupMembers.length > 0 && (
+            <div className="chat-list__group-members-row">
+              {groupMembers.map(m => (
+                <div key={m.id} className="chat-list__group-member-chip">
+                  <span>{m.username}</span>
+                  <button onClick={() => setGroupMembers(prev => prev.filter(p => p.id !== m.id))}>
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="chat-list__new-chat-search">
+            <Search size={16} className="chat-list__search-icon" />
+            <input
+              type="text"
+              className="chat-list__search-input"
+              placeholder="Buscar usuarios..."
+              value={groupSearch}
+              onChange={(e) => handleGroupSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="chat-list__new-chat-results">
+            {groupSearchResults.map(u => (
+              <button
+                key={u.id}
+                className="chat-list__search-result"
+                onClick={() => {
+                  setGroupMembers(prev => [...prev, u])
+                  setGroupSearchResults(prev => prev.filter(p => p.id !== u.id))
+                  setGroupSearch('')
+                }}
+              >
+                <div className="chat-list__avatar chat-list__avatar--small">
+                  {u.avatar_url ? <img src={u.avatar_url} alt={u.username} className="chat-list__avatar-img" /> : getInitials(u.username)}
+                </div>
+                <div className="chat-list__search-result-info">
+                  <span className="chat-list__search-result-name">{u.username}</span>
+                </div>
+                <Plus size={16} className="chat-list__search-result-icon" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
           {/* Barra de búsqueda de conversaciones */}
           <div className="chat-list__search">

@@ -231,6 +231,14 @@ const useChatStore = create((set, get) => ({
       return { messages }
     })
   },
+
+  // Crear grupo
+  createGroup: (name, memberIds) => {
+    const socket = getSocket()
+    if (socket) {
+      socket.emit('create_group', { name, memberIds })
+    }
+  },
 }))
 
 // Expose for notifications (avoids circular import)

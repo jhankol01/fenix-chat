@@ -712,3 +712,101 @@
 .profile-view__bg-custom-remove:hover {
   background: rgba(255, 107, 107, 0.15);
 }
+
+/* ---------- Color Theme Picker ---------- */
+.profile-view__theme-content {
+  padding: var(--space-6) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  overflow-y: auto;
+}
+
+.profile-view__theme-grid {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+  padding: var(--space-2) 0;
+}
+
+.profile-view__theme-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.2s ease;
+}
+
+.profile-view__theme-swatch:hover {
+  transform: scale(1.1);
+}
+
+.profile-view__theme-swatch-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 3px solid transparent;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.profile-view__theme-swatch--active .profile-view__theme-swatch-circle {
+  border-color: white;
+  box-shadow: 0 0 0 3px var(--color-brand), 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.profile-view__theme-swatch-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.profile-view__theme-swatch-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+}
+
+.profile-view__theme-swatch--active .profile-view__theme-swatch-label {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-semibold);
+}
+
+.profile-view__theme-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.profile-view__theme-preview-bar {
+  width: 100%;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.35s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.profile-view__theme-preview-text {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  color: white;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.03em;
+}

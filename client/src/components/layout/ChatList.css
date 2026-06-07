@@ -733,3 +733,55 @@
 .chat-list__context-item--danger:hover {
   background: rgba(255, 71, 87, 0.1);
 }
+
+/* ========== Create Group ========== */
+.chat-list__create-group-btn {
+  display: flex; align-items: center; gap: var(--space-3);
+  width: 100%; padding: 12px 16px;
+  color: var(--color-brand); font-size: var(--text-sm); font-weight: 600;
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: background 0.15s; cursor: pointer;
+}
+.chat-list__create-group-btn:hover { background: var(--color-bg-hover); }
+
+.chat-list__group-modal {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-subtle);
+  animation: fadeIn 0.15s ease;
+}
+
+.chat-list__group-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--color-border-subtle);
+}
+.chat-list__group-header h3 { margin: 0; font-size: var(--text-sm); color: var(--color-text-primary); }
+.chat-list__group-header button {
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-full); color: var(--color-text-muted);
+}
+
+.chat-list__group-create-btn { color: var(--color-brand) !important; }
+.chat-list__group-create-btn:disabled { opacity: 0.3; }
+
+.chat-list__group-name-input {
+  width: 100%; padding: 12px 16px;
+  background: transparent; border: none; outline: none;
+  border-bottom: 1px solid var(--color-border-subtle);
+  color: var(--color-text-primary); font-size: var(--text-sm);
+}
+.chat-list__group-name-input::placeholder { color: var(--color-text-muted); }
+
+.chat-list__group-members-row {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 8px 16px; border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.chat-list__group-member-chip {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: var(--radius-full);
+  background: rgba(124,58,237,0.15); color: var(--color-brand);
+  font-size: 0.7rem; font-weight: 600;
+}
+.chat-list__group-member-chip button {
+  display: flex; align-items: center; color: var(--color-brand); opacity: 0.7;
+}

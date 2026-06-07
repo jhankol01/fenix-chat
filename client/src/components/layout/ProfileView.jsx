@@ -24,6 +24,16 @@ const CHAT_BG_PRESETS = [
   { id: 'gradient-6', label: 'Oscuro puro', value: 'gradient-6', css: 'linear-gradient(135deg, #0a0a0a, #1a1a1a)' },
 ]
 
+// Color theme definitions
+const THEMES = {
+  fenix:   { id: 'fenix',   label: 'Fénix',         brand: '#7C3AED', light: '#A855F7', dark: '#6D28D9' },
+  ocean:   { id: 'ocean',   label: 'Ocean Blue',     brand: '#0ea5e9', light: '#38bdf8', dark: '#0284c7' },
+  emerald: { id: 'emerald', label: 'Emerald Green',   brand: '#10b981', light: '#34d399', dark: '#059669' },
+  rose:    { id: 'rose',    label: 'Rose Pink',       brand: '#f43f5e', light: '#fb7185', dark: '#e11d48' },
+  amber:   { id: 'amber',   label: 'Amber Gold',      brand: '#f59e0b', light: '#fbbf24', dark: '#d97706' },
+}
+const THEME_LIST = Object.values(THEMES)
+
 function getBackgroundCSS(chatBg) {
   if (!chatBg || chatBg === 'default') return null
   const preset = CHAT_BG_PRESETS.find(p => p.id === chatBg)
@@ -34,7 +44,7 @@ function getBackgroundCSS(chatBg) {
 }
 
 function ProfileView() {
-  const [activePanel, setActivePanel] = useState(null) // null | 'editProfile' | 'notifications' | 'privacy' | 'settings' | 'chatBackground'
+  const [activePanel, setActivePanel] = useState(null) // null | 'editProfile' | 'notifications' | 'privacy' | 'settings' | 'chatBackground' | 'colorTheme'
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
   const fileInputRef = useRef(null)
@@ -56,12 +66,19 @@ function ProfileView() {
   const [savedBg, setSavedBg] = useState('default')
   const [bgUploading, setBgUploading] = useState(false)
 
-  // Load saved background preference
+  // Color theme state
+  const [selectedTheme, setSelectedTheme] = useState('fenix')
+  const [savedTheme, setSavedTheme] = useState('fenix')
+
+  // Load saved preferences (background + theme)
   useEffect(() => {
     api.get('/preferences').then(data => {
       const bg = data?.preferences?.chat_bg || 'default'
       setSelectedBg(bg)
       setSavedBg(bg)
+      const theme = data?.preferences?.color_theme || 'fenix'
+      setSelectedTheme(theme)
+      setSavedTheme(theme)
     }).catch(() => {})
   }, [])
 
@@ -75,6 +92,7 @@ function ProfileView() {
   const menuItems = [
     { id: 'editProfile', icon: User, label: 'Editar perfil', color: '#00F5FF' },
     { id: 'chatBackground', icon: ImageIcon, label: 'Fondo de chat', color: '#A855F7' },
+    { id: 'colorTheme', icon: Palette, label: 'Tema de color', color: '#00F5FF' },
     { id: 'notifications', icon: Bell, label: 'Notificaciones', color: '#FFD93D' },
     { id: 'privacy', icon: Lock, label: 'Privacidad', color: '#6C63FF' },
     { id: 'settings', icon: Settings, label: 'Configuración', color: '#FF6B6B' },
@@ -198,6 +216,27 @@ function ProfileView() {
     }
   }
 
+  // Save color theme preference
+  const handleSaveTheme = async () => {
+    setSaving(true)
+    setSaveMsg('')
+    try {
+      await api.patch('/preferences', { color_theme: selectedTheme })
+      setSavedTheme(selectedTheme)
+      // Apply theme CSS custom properties immediately
+      const t = THEMES[selectedTheme] || THEMES.fenix
+      document.documentElement.style.setProperty('--color-brand', t.brand)
+      document.documentElement.style.setProperty('--color-brand-light', t.light)
+      document.documentElement.style.setProperty('--color-brand-dark', t.dark)
+      setSaveMsg('✅ Tema guardado')
+      setTimeout(() => setSaveMsg(''), 2000)
+    } catch (err) {
+      setSaveMsg('❌ Error al guardar')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   // Handle custom background image upload
   const handleBgImageUpload = async (e) => {
     const file = e.target.files[0]
@@ -223,6 +262,64 @@ function ProfileView() {
   }
 
   // --- SUB PANELS ---
+
+  // Color Theme Picker Panel
+  if (activePanel === 'colorTheme') {
+    return (
+      <div className="profile-view">
+        <div className="profile-view__panel-header">
+          <button className="profile-view__back-btn" onClick={() => { setSelectedTheme(savedTheme); setActivePanel(null) }}>
+            <ArrowLeft size={20} />
+          </button>
+          <span className="profile-view__panel-title">Tema de color</span>
+          <button className="profile-view__save-btn" onClick={handleSaveTheme} disabled={saving || selectedTheme === savedTheme}>
+            {saving ? '...' : <Check size={20} />}
+          </button>
+        </div>
+
+        <div className="profile-view__theme-content">
+          <label className="profile-view__field-label">Elige un color</label>
+          <div className="profile-view__theme-grid">
+            {THEME_LIST.map((theme) => (
+              <button
+                key={theme.id}
+                className={`profile-view__theme-swatch ${selectedTheme === theme.id ? 'profile-view__theme-swatch--active' : ''}`}
+                onClick={() => setSelectedTheme(theme.id)}
+                title={theme.label}
+              >
+                <span
+                  className="profile-view__theme-swatch-circle"
+                  style={{ background: `linear-gradient(135deg, ${theme.light}, ${theme.brand}, ${theme.dark})` }}
+                >
+                  {selectedTheme === theme.id && (
+                    <span className="profile-view__theme-swatch-check">
+                      <Check size={16} />
+                    </span>
+                  )}
+                </span>
+                <span className="profile-view__theme-swatch-label">{theme.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Live preview bar */}
+          <div className="profile-view__theme-preview">
+            <label className="profile-view__field-label">Vista previa</label>
+            <div
+              className="profile-view__theme-preview-bar"
+              style={{ background: `linear-gradient(135deg, ${(THEMES[selectedTheme] || THEMES.fenix).dark}, ${(THEMES[selectedTheme] || THEMES.fenix).brand}, ${(THEMES[selectedTheme] || THEMES.fenix).light})` }}
+            >
+              <span className="profile-view__theme-preview-text">Fénix Chat</span>
+            </div>
+          </div>
+
+          {saveMsg && (
+            <div className="profile-view__save-msg">{saveMsg}</div>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   // Chat Background Picker Panel
   if (activePanel === 'chatBackground') {
@@ -633,6 +730,7 @@ function ProfileView() {
               className="profile-view__menu-item"
               onClick={() => {
                 if (item.id === 'editProfile') handleOpenEdit()
+                else if (item.id === 'colorTheme') { setSelectedTheme(savedTheme); setActivePanel('colorTheme') }
                 else setActivePanel(item.id)
               }}
               aria-label={item.label}

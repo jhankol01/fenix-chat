@@ -11,10 +11,20 @@ import useAuthStore from '../stores/authStore'
 import useChatStore from '../stores/chatStore'
 import { connectSocket, disconnectSocket, getSocket } from '../lib/socket'
 import { requestNotificationPermission, notifyNewMessage } from '../lib/notifications'
+import api from '../lib/api'
 import './AppLayout.css'
 
 // Only this email sees the online-users panel
 const ADMIN_EMAIL = 'jhanamazon1729@gmail.com'
+
+// Color theme definitions (must stay in sync with ProfileView)
+const THEMES = {
+  fenix:   { brand: '#7C3AED', light: '#A855F7', dark: '#6D28D9' },
+  ocean:   { brand: '#0ea5e9', light: '#38bdf8', dark: '#0284c7' },
+  emerald: { brand: '#10b981', light: '#34d399', dark: '#059669' },
+  rose:    { brand: '#f43f5e', light: '#fb7185', dark: '#e11d48' },
+  amber:   { brand: '#f59e0b', light: '#fbbf24', dark: '#d97706' },
+}
 
 /**
  * Hook para detectar si estamos en pantalla móvil
@@ -50,6 +60,17 @@ function AppLayout() {
   const currentUser = useAuthStore(state => state.user)
   const { activeConversation, loadConversations, addMessage, setUserTyping, clearTyping } = useChatStore()
 
+  // Fetch preferences on mount and apply color theme
+  useEffect(() => {
+    api.get('/preferences').then(data => {
+      const themeKey = data?.preferences?.color_theme || 'fenix'
+      const t = THEMES[themeKey] || THEMES.fenix
+      document.documentElement.style.setProperty('--color-brand', t.brand)
+      document.documentElement.style.setProperty('--color-brand-light', t.light)
+      document.documentElement.style.setProperty('--color-brand-dark', t.dark)
+    }).catch(() => {})
+  }, [])
+
   // Conectar socket y configurar event listeners
   useEffect(() => {
     if (!accessToken) return
@@ -74,6 +95,11 @@ function AppLayout() {
           activeConversationId: activeId,
         })
       }
+    })
+
+    // Group created — reload conversations
+    socket.on('group_created', () => {
+      loadConversations()
     })
 
     // Escuchar indicadores de escritura
