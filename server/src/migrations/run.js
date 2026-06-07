@@ -21,6 +21,8 @@ async function runMigrations() {
       '001_create_users.sql',
       '002_create_conversations.sql',
       '003_add_reset_token.sql',
+      '004_add_audio_type.sql',
+      '005_add_seen_at.sql',
     ]
 
     for (const file of migrations) {

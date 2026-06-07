@@ -193,6 +193,25 @@ const useChatStore = create((set, get) => ({
       return false
     }
   },
+
+  // Marcar mensajes como vistos — emitir al server
+  markSeen: (conversationId) => {
+    const socket = getSocket()
+    if (socket && conversationId) {
+      socket.emit('mark_seen', { conversationId })
+    }
+  },
+
+  // Recibir confirmación de que mensajes fueron vistos
+  handleMessagesSeen: ({ conversationId, messageIds, seenAt }) => {
+    set(state => {
+      if (state.activeConversation?.id !== conversationId) return state
+      const messages = state.messages.map(m =>
+        messageIds.includes(m.id) ? { ...m, seen_at: seenAt } : m
+      )
+      return { messages }
+    })
+  },
 }))
 
 export default useChatStore

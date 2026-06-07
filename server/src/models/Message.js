@@ -8,7 +8,7 @@ const Message = {
     const result = await query(
       `INSERT INTO messages (conversation_id, sender_id, content, type)
        VALUES ($1, $2, $3, $4)
-       RETURNING id, conversation_id, sender_id, content, type, created_at`,
+       RETURNING id, conversation_id, sender_id, content, type, created_at, seen_at`,
       [conversationId, senderId, content, type]
     )
 
@@ -51,6 +51,7 @@ const Message = {
         m.content,
         m.type,
         m.created_at,
+        m.seen_at,
         u.username AS sender_username,
         u.display_name AS sender_display_name,
         u.avatar_url AS sender_avatar_url
@@ -75,6 +76,23 @@ const Message = {
       [messageId, userId]
     )
     return result.rows[0] || null
+  },
+
+  /**
+   * Mark all messages in a conversation as seen (except own messages).
+   * Returns the IDs of messages that were marked.
+   */
+  async markSeen(conversationId, userId) {
+    const result = await query(
+      `UPDATE messages
+       SET seen_at = NOW()
+       WHERE conversation_id = $1
+         AND sender_id != $2
+         AND seen_at IS NULL
+       RETURNING id, sender_id`,
+      [conversationId, userId]
+    )
+    return result.rows
   },
 }
 

@@ -154,6 +154,28 @@ export default function chatHandler(io) {
       }
     })
 
+    // ─── Mark Messages as Seen (Read Receipts) ───────────────────────────────
+    socket.on('mark_seen', async ({ conversationId }) => {
+      try {
+        const markedMessages = await Message.markSeen(conversationId, user.id)
+        if (markedMessages.length > 0) {
+          // Group by sender and notify each sender
+          const senderIds = [...new Set(markedMessages.map(m => m.sender_id))]
+          const messageIds = markedMessages.map(m => m.id)
+          
+          // Emit to the conversation room so sender's UI updates
+          socket.to(conversationId).emit('messages_seen', {
+            conversationId,
+            messageIds,
+            seenBy: user.id,
+            seenAt: new Date().toISOString(),
+          })
+        }
+      } catch (err) {
+        logger.error('Error marking messages seen:', err.message)
+      }
+    })
+
     // ─── WebRTC Call Signaling ─────────────────────────────────────────────────
 
     // Helper: send a call notification message to the conversation

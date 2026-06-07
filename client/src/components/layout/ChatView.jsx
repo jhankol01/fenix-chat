@@ -74,6 +74,22 @@ function ChatView({ onBack }) {
     return () => socket.off('message_deleted', onMsgDeleted)
   }, [])
 
+  // Listen for read receipts (messages_seen)
+  useEffect(() => {
+    const socket = getSocket()
+    if (!socket) return
+    const onSeen = (data) => useChatStore.getState().handleMessagesSeen(data)
+    socket.on('messages_seen', onSeen)
+    return () => socket.off('messages_seen', onSeen)
+  }, [])
+
+  // Mark messages as seen when viewing a conversation
+  useEffect(() => {
+    if (activeConversation?.id && messages.length > 0) {
+      useChatStore.getState().markSeen(activeConversation.id)
+    }
+  }, [activeConversation?.id, messages.length])
+
   // Delete a message
   const handleDeleteMessage = useCallback(() => {
     if (!msgContextMenu) return
@@ -475,7 +491,7 @@ function ChatView({ onBack }) {
                   </span>
                 </div>
 
-                {group.messages.map((msg) => (
+                {group.messages.map((msg, msgIdx) => (
                   <div
                     key={msg.id}
                     className="chat-view__msg-text"
@@ -497,6 +513,12 @@ function ChatView({ onBack }) {
                       <span className="chat-view__msg-system">{msg.content}</span>
                     ) : (
                       msg.content
+                    )}
+                    {/* 🔥 Flame read receipt — solo en mensajes propios, último del grupo */}
+                    {group.isOwn && msgIdx === group.messages.length - 1 && msg.type !== 'system' && (
+                      <span className={`chat-view__flame-receipt ${msg.seen_at ? 'chat-view__flame-receipt--seen' : ''}`}>
+                        <img src="/icons/fenix-flame.png" alt="" className="chat-view__flame-img" />
+                      </span>
                     )}
                   </div>
                 ))}
