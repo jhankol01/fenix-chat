@@ -56,10 +56,10 @@ const mediaUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
   fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/') || file.mimetype.startsWith('audio/')) {
       cb(null, true)
     } else {
-      cb(new Error('Solo se permiten imágenes y videos'), false)
+      cb(new Error('Solo se permiten imágenes, videos y audio'), false)
     }
   },
 })
@@ -73,7 +73,8 @@ router.post('/media', authenticate, mediaUpload.single('media'), async (req, res
 
     const isImage = req.file.mimetype.startsWith('image/')
     const isVideo = req.file.mimetype.startsWith('video/')
-    const folder = isImage ? 'chat-images' : 'chat-videos'
+    const isAudio = req.file.mimetype.startsWith('audio/')
+    const folder = isImage ? 'chat-images' : isVideo ? 'chat-videos' : 'chat-audio'
 
     let buffer = req.file.buffer
     let mimeType = req.file.mimetype
@@ -93,7 +94,7 @@ router.post('/media', authenticate, mediaUpload.single('media'), async (req, res
 
     res.json({
       url,
-      type: isImage ? 'image' : 'video',
+      type: isImage ? 'image' : isVideo ? 'video' : 'audio',
       originalName: req.file.originalname,
     })
   } catch (err) {

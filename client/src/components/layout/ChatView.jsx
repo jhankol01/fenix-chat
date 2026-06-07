@@ -224,11 +224,14 @@ function ChatView({ onBack }) {
         stream.getTracks().forEach(t => t.stop())
         const blob = new Blob(audioChunksRef.current, { type: mimeType || 'audio/webm' })
         if (blob.size > 0 && !mediaRecorderRef.current._cancelled) {
-          const reader = new FileReader()
-          reader.onload = () => {
-            sendMessage(reader.result, 'audio')
-          }
-          reader.readAsDataURL(blob)
+          // Upload to B2 instead of base64
+          const formData = new FormData()
+          formData.append('media', blob, `voice-note.${mimeType === 'audio/ogg' ? 'ogg' : 'webm'}`)
+          api.upload('/upload/media', formData).then(data => {
+            sendMessage(data.url, 'audio')
+          }).catch(err => {
+            console.error('Audio upload error:', err)
+          })
         }
         audioChunksRef.current = []
       })
