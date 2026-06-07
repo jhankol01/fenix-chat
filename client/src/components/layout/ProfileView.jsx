@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   User, Bell, Lock, Settings, ChevronRight, Camera, LogOut,
-  ArrowLeft, Check, X, Moon, Globe, Trash2, Info, Palette, ImageIcon, Upload
+  ArrowLeft, Check, X, Moon, Globe, Trash2, Info, Palette, ImageIcon, Upload,
+  Monitor, Smartphone, AlertTriangle, ExternalLink
 } from 'lucide-react'
 import useAuthStore from '../../stores/authStore'
 import api from '../../lib/api'
@@ -48,6 +49,7 @@ function ProfileView() {
   const [activePanel, setActivePanel] = useState(null) // null | 'editProfile' | 'notifications' | 'privacy' | 'settings' | 'chatBackground' | 'colorTheme'
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
+  const [showNotifHelpModal, setShowNotifHelpModal] = useState(false)
   const fileInputRef = useRef(null)
   const bgFileInputRef = useRef(null)
 
@@ -207,11 +209,28 @@ function ProfileView() {
   // Toggle notification permission
   const handleToggleBrowserNotif = async () => {
     if (!('Notification' in window)) return
-    if (!notifSettings.browserNotif) {
+
+    // If currently enabled, just turn off locally
+    if (notifSettings.browserNotif) {
+      setNotifSettings(prev => ({ ...prev, browserNotif: false }))
+      return
+    }
+
+    const permission = Notification.permission
+
+    if (permission === 'default') {
+      // Never asked yet — show the browser prompt
       const result = await Notification.requestPermission()
       setNotifSettings(prev => ({ ...prev, browserNotif: result === 'granted' }))
-    } else {
-      setNotifSettings(prev => ({ ...prev, browserNotif: false }))
+      if (result === 'denied') {
+        // They just denied it — show the help modal immediately
+        setShowNotifHelpModal(true)
+      }
+    } else if (permission === 'denied') {
+      // Already blocked — show help modal with instructions
+      setShowNotifHelpModal(true)
+    } else if (permission === 'granted') {
+      setNotifSettings(prev => ({ ...prev, browserNotif: true }))
     }
   }
 
@@ -543,7 +562,17 @@ function ProfileView() {
   // Notifications Panel
   if (activePanel === 'notifications') {
     const notifAvailable = typeof window !== 'undefined' && 'Notification' in window
-    const notifDenied = notifAvailable && Notification.permission === 'denied'
+    const notifPermission = notifAvailable ? Notification.permission : 'default'
+    const notifDenied = notifPermission === 'denied'
+    const notifDefault = notifPermission === 'default'
+
+    const browserNotifDesc = !notifAvailable
+      ? '📱 Para activar, añade Fenix a tu pantalla de inicio'
+      : notifDenied
+        ? '⛔ Bloqueadas — toca para ver cómo activarlas'
+        : notifDefault
+          ? '🔔 Toca para activar notificaciones'
+          : 'Mostrar notificaciones emergentes'
 
     return (
       <div className="profile-view">
@@ -566,13 +595,7 @@ function ProfileView() {
           <ToggleItem
             icon={Globe}
             label="Notificaciones del navegador"
-            description={
-              !notifAvailable
-                ? '📱 Para activar, añade Fenix a tu pantalla de inicio'
-                : notifDenied
-                  ? '⛔ Bloqueadas. Ve a ajustes del navegador para permitir'
-                  : 'Mostrar notificaciones emergentes'
-            }
+            description={browserNotifDesc}
             value={notifSettings.browserNotif}
             onChange={handleToggleBrowserNotif}
           />
@@ -620,6 +643,11 @@ function ProfileView() {
           <p>🔊 <strong>El sonido</strong> siempre funciona cuando recibes un mensaje nuevo y no estás en esa conversación.</p>
           <p>🔔 <strong>Push notifications</strong> llegan aunque la app esté cerrada.</p>
         </div>
+
+        {/* Notification help modal */}
+        {showNotifHelpModal && (
+          <NotifHelpModal onClose={() => setShowNotifHelpModal(false)} />
+        )}
       </div>
     )
   }
@@ -820,6 +848,143 @@ function ToggleItem({ icon: Icon, label, description, value, onChange }) {
         <div className="profile-view__toggle-knob" />
       </div>
     </button>
+  )
+}
+
+/** Modal with step-by-step instructions for enabling blocked notifications */
+function NotifHelpModal({ onClose }) {
+  const isAndroid = /android/i.test(navigator.userAgent)
+  const isIOS = /ipad|iphone|ipod/i.test(navigator.userAgent)
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+  const isChrome = /chrome/i.test(navigator.userAgent) && !/edge|edg/i.test(navigator.userAgent)
+  const isFirefox = /firefox/i.test(navigator.userAgent)
+
+  const handleOpenSettings = () => {
+    // Try to reload the page to re-trigger permission (fallback)
+    window.open(window.location.origin, '_self')
+  }
+
+  return (
+    <div className="notif-help-overlay" onClick={onClose}>
+      <div className="notif-help-modal" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="notif-help-modal__header">
+          <div className="notif-help-modal__icon-wrapper">
+            <AlertTriangle size={28} />
+          </div>
+          <h3 className="notif-help-modal__title">Notificaciones bloqueadas</h3>
+          <p className="notif-help-modal__subtitle">
+            Tu navegador bloqueó las notificaciones. Sigue estos pasos para activarlas:
+          </p>
+          <button className="notif-help-modal__close" onClick={onClose}>
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Instructions */}
+        <div className="notif-help-modal__body">
+          {/* Chrome Desktop */}
+          {(!isAndroid && !isIOS) && (
+            <div className="notif-help-modal__instruction">
+              <div className="notif-help-modal__instruction-icon">
+                <Monitor size={20} />
+              </div>
+              <div className="notif-help-modal__instruction-content">
+                <span className="notif-help-modal__instruction-browser">Chrome / Edge (Escritorio)</span>
+                <ol className="notif-help-modal__steps">
+                  <li>Haz click en el candado 🔒 en la barra de direcciones</li>
+                  <li>Busca <strong>"Permisos"</strong> o <strong>"Configuración del sitio"</strong></li>
+                  <li>En <strong>Notificaciones</strong> → selecciona <strong>Permitir</strong></li>
+                  <li>Recarga la página</li>
+                </ol>
+              </div>
+            </div>
+          )}
+
+          {/* Chrome Android */}
+          {isAndroid && (
+            <div className="notif-help-modal__instruction">
+              <div className="notif-help-modal__instruction-icon">
+                <Smartphone size={20} />
+              </div>
+              <div className="notif-help-modal__instruction-content">
+                <span className="notif-help-modal__instruction-browser">Chrome (Android)</span>
+                <ol className="notif-help-modal__steps">
+                  <li>Toca el candado 🔒 junto a la URL</li>
+                  <li>Toca <strong>"Permisos"</strong></li>
+                  <li>En <strong>Notificaciones</strong> → activa el permiso</li>
+                  <li>Recarga la página</li>
+                </ol>
+              </div>
+            </div>
+          )}
+
+          {/* Safari */}
+          {(isSafari || isIOS) && (
+            <div className="notif-help-modal__instruction">
+              <div className="notif-help-modal__instruction-icon">
+                <Globe size={20} />
+              </div>
+              <div className="notif-help-modal__instruction-content">
+                <span className="notif-help-modal__instruction-browser">Safari</span>
+                <ol className="notif-help-modal__steps">
+                  <li>Ve a <strong>Configuración</strong> del dispositivo</li>
+                  <li>Busca <strong>Safari</strong> → <strong>Notificaciones</strong></li>
+                  <li>Encuentra este sitio y activa las notificaciones</li>
+                </ol>
+              </div>
+            </div>
+          )}
+
+          {/* Firefox */}
+          {isFirefox && (
+            <div className="notif-help-modal__instruction">
+              <div className="notif-help-modal__instruction-icon">
+                <Globe size={20} />
+              </div>
+              <div className="notif-help-modal__instruction-content">
+                <span className="notif-help-modal__instruction-browser">Firefox</span>
+                <ol className="notif-help-modal__steps">
+                  <li>Haz click en el candado 🔒 en la barra de direcciones</li>
+                  <li>Selecciona <strong>"Más información"</strong></li>
+                  <li>Ve a <strong>Permisos</strong> → <strong>Notificaciones</strong> → <strong>Permitir</strong></li>
+                  <li>Recarga la página</li>
+                </ol>
+              </div>
+            </div>
+          )}
+
+          {/* Generic fallback — always show if none of the above matched */}
+          {!isChrome && !isSafari && !isIOS && !isFirefox && !isAndroid && (
+            <div className="notif-help-modal__instruction">
+              <div className="notif-help-modal__instruction-icon">
+                <Globe size={20} />
+              </div>
+              <div className="notif-help-modal__instruction-content">
+                <span className="notif-help-modal__instruction-browser">Navegador</span>
+                <ol className="notif-help-modal__steps">
+                  <li>Busca el icono de candado 🔒 o ajustes en la barra de direcciones</li>
+                  <li>Encuentra los permisos del sitio</li>
+                  <li>Activa <strong>Notificaciones</strong></li>
+                  <li>Recarga la página</li>
+                </ol>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="notif-help-modal__actions">
+          <button className="notif-help-modal__btn notif-help-modal__btn--primary" onClick={handleOpenSettings}>
+            <ExternalLink size={16} />
+            <span>Recargar y reintentar</span>
+          </button>
+          <button className="notif-help-modal__btn notif-help-modal__btn--secondary" onClick={onClose}>
+            Entendido
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
