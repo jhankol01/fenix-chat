@@ -90,6 +90,12 @@ server.listen(config.port, async () => {
     await query(`ALTER TABLE messages DROP CONSTRAINT IF EXISTS messages_type_check`);
     await query(`ALTER TABLE messages ADD CONSTRAINT messages_type_check CHECK (type IN ('text', 'image', 'system', 'audio'))`);
     logger.info('✅ Audio message type migration applied');
+
+    // Password reset columns
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(128)`);
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMPTZ`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)`);
+    logger.info('✅ Password reset migration applied');
   } catch (err) {
     logger.warn('Migration note:', err.message);
   }
