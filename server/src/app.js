@@ -129,6 +129,18 @@ server.listen(config.port, async () => {
     await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMPTZ`);
     await query(`CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(reset_token)`);
     logger.info('✅ Password reset migration applied');
+
+    // Push notification subscriptions
+    await query(`CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      endpoint TEXT NOT NULL UNIQUE,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_push_subs_user ON push_subscriptions(user_id)`);
+    logger.info('✅ Push subscriptions migration applied');
   } catch (err) {
     logger.warn('Migration note:', err.message);
   }
