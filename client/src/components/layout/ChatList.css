@@ -28,22 +28,25 @@
   gap: var(--space-2);
 }
 
-.chat-list__logo-icon {
-  color: var(--color-brand);
-  filter: drop-shadow(0 0 8px var(--color-brand-glow));
+.chat-list__logo-brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  gap: 0;
 }
 
-.chat-list__logo-text {
-  font-size: var(--text-lg);
-  font-weight: var(--weight-bold);
-  color: var(--color-text-primary);
-  letter-spacing: -0.02em;
+.chat-list__logo-fenix {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  letter-spacing: 0.08em;
 }
 
-.chat-list__logo-fire {
-  font-size: var(--text-base);
-  animation: emberFloat 2s ease-in-out infinite;
-  display: inline-block;
+.chat-list__logo-chat {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 0.25em;
 }
 
 .chat-list__new-btn {

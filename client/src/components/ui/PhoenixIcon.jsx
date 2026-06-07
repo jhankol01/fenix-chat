@@ -1,22 +1,23 @@
 /**
- * PhoenixIcon — Ícono de fuego/fénix premium con gradientes
- * Inspirado en el concepto visual del usuario
- * Variantes: 'default' (violeta-rosa), 'fire' (azul-rosa-naranja), 'brand' (violeta-azul)
+ * PhoenixIcon — Logo Fénix Chat exacto
+ * Llama con gradiente azul → violeta → rosa/magenta
+ * Variantes: 'logo' (el principal), 'fire', 'brand'
  */
-function PhoenixIcon({ size = 24, variant = 'default', className = '', glow = false }) {
+function PhoenixIcon({ size = 24, variant = 'logo', className = '', glow = false }) {
   const id = `phoenix-${variant}-${Math.random().toString(36).slice(2, 7)}`
   
   const gradients = {
-    default: [
-      { offset: '0%', color: '#A855F7' },
-      { offset: '50%', color: '#EC4899' },
-      { offset: '100%', color: '#F97316' },
+    logo: [
+      { offset: '0%', color: '#3B82F6' },
+      { offset: '40%', color: '#7C3AED' },
+      { offset: '70%', color: '#A855F7' },
+      { offset: '100%', color: '#EC4899' },
     ],
     fire: [
       { offset: '0%', color: '#3B82F6' },
-      { offset: '35%', color: '#A855F7' },
-      { offset: '65%', color: '#EC4899' },
-      { offset: '100%', color: '#F97316' },
+      { offset: '40%', color: '#7C3AED' },
+      { offset: '70%', color: '#A855F7' },
+      { offset: '100%', color: '#EC4899' },
     ],
     brand: [
       { offset: '0%', color: '#7C3AED' },
@@ -25,33 +26,40 @@ function PhoenixIcon({ size = 24, variant = 'default', className = '', glow = fa
     ],
   }
 
-  const stops = gradients[variant] || gradients.default
+  const stops = gradients[variant] || gradients.logo
 
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
+      viewBox="0 0 64 64"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      style={glow ? { filter: `drop-shadow(0 0 ${size * 0.3}px rgba(168, 85, 247, 0.5))` } : undefined}
+      style={glow ? { filter: `drop-shadow(0 0 ${size * 0.25}px rgba(124, 58, 237, 0.5))` } : undefined}
     >
       <defs>
-        <linearGradient id={id} x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse">
+        <linearGradient id={`${id}-main`} x1="32" y1="56" x2="32" y2="4" gradientUnits="userSpaceOnUse">
           {stops.map((s, i) => (
             <stop key={i} offset={s.offset} stopColor={s.color} />
           ))}
         </linearGradient>
+        <linearGradient id={`${id}-inner`} x1="32" y1="56" x2="32" y2="20" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#60A5FA" />
+          <stop offset="50%" stopColor="#A78BFA" />
+          <stop offset="100%" stopColor="#F472B6" />
+        </linearGradient>
       </defs>
+      {/* Outer flame */}
       <path
-        d="M12 2C12 2 7.5 7 7.5 11.5C7.5 14 9 16 10.5 17C9.5 15.5 9.5 13.5 10.5 12C10.5 12 11 14 12.5 15.5C14 17 14 19 12 22C12 22 19 18 19 12C19 7 12 2 12 2Z"
-        fill={`url(#${id})`}
+        d="M32 4C32 4 18 16 18 30C18 38 22 44 28 48C28 48 24 42 26 36C28 30 32 26 32 26C32 26 36 30 38 36C40 42 36 48 36 48C42 44 46 38 46 30C46 16 32 4 32 4Z"
+        fill={`url(#${id}-main)`}
       />
+      {/* Inner flame */}
       <path
-        d="M12 22C12 22 9 19.5 9 17C9 14.5 12 13 12 13C12 13 11 15 12 16.5C13 18 12 22 12 22Z"
-        fill={`url(#${id})`}
-        opacity="0.7"
+        d="M32 56C32 56 24 50 24 44C24 38 28 34 32 30C36 34 40 38 40 44C40 50 32 56 32 56Z"
+        fill={`url(#${id}-inner)`}
+        opacity="0.85"
       />
     </svg>
   )
