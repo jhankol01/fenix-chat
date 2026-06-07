@@ -82,7 +82,8 @@ function AppLayout() {
     })
 
     socket.on('user_stop_typing', ({ conversationId }) => {
-      clearTyping(conversationId)
+      // Don't clear immediately — let the auto-clear timer in setUserTyping handle it
+      // This keeps the indicator visible for a natural duration
     })
 
     // Presence: online users

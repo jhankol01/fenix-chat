@@ -16,7 +16,8 @@ import './ChatView.css'
  */
 function ChatView({ onBack }) {
   const [inputValue, setInputValue] = useState('')
-  const [isTypingLocal, setIsTypingLocal] = useState(false)
+  const isTypingRef = useRef(false)
+  const lastTypingEmitRef = useRef(0)
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
   const typingTimeoutRef = useRef(null)
@@ -352,23 +353,28 @@ function ChatView({ onBack }) {
     setInputValue(e.target.value)
 
     if (activeConversation) {
-      // Only emit 'typing' if we haven't already (debounce)
-      if (!isTypingLocal) {
-        setIsTypingLocal(true)
+      const now = Date.now()
+      // Emit 'typing' on first keystroke or every 2 seconds
+      if (!isTypingRef.current || (now - lastTypingEmitRef.current > 2000)) {
+        isTypingRef.current = true
+        lastTypingEmitRef.current = now
         setTyping(activeConversation.id)
       }
 
       // Reset the stop-typing timeout every keystroke
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
       typingTimeoutRef.current = setTimeout(() => {
-        handleStopTyping()
-      }, 3000) // 3 seconds after last keystroke
+        if (isTypingRef.current && activeConversation) {
+          isTypingRef.current = false
+          stopTyping(activeConversation.id)
+        }
+      }, 3000)
     }
   }
 
   const handleStopTyping = () => {
-    if (isTypingLocal && activeConversation) {
-      setIsTypingLocal(false)
+    if (isTypingRef.current && activeConversation) {
+      isTypingRef.current = false
       stopTyping(activeConversation.id)
     }
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
