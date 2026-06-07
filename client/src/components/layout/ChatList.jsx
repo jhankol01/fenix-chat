@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Flame, Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2 } from 'lucide-react'
+import { Flame, Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2, Rocket, Phone } from 'lucide-react'
 import useChatStore from '../../stores/chatStore'
 import useAuthStore from '../../stores/authStore'
 import './ChatList.css'
@@ -7,12 +7,14 @@ import './ChatList.css'
 /**
  * ChatList — Panel izquierdo de conversaciones reales
  * Muestra las conversaciones del usuario con búsqueda de usuarios para iniciar DMs
+ * Incluye tabs: Chats | Comunidades | Llamadas
  *
  * Props:
  *  - section (opcional): 'chats' | 'comunidades' — para mobile
  *  - onSelectConversation: callback cuando se selecciona una conversación
  */
 function ChatList({ section, onSelectConversation, onOpenProfile }) {
+  const [activeTab, setActiveTab] = useState('chats')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
@@ -36,9 +38,6 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
   } = useChatStore()
 
   const user = useAuthStore(state => state.user)
-
-  // Título del header según modo
-  const headerTitle = section ? 'Chats' : 'Fénix Chat'
 
   // Focus en el input de nuevo chat cuando se abre
   useEffect(() => {
@@ -142,13 +141,12 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
 
   return (
     <div className="chat-list">
-      {/* Header */}
+      {/* Premium Header with branding */}
       <div className="chat-list__header">
         <div className="chat-list__logo">
-          {!section && (
-            <Flame size={24} className="chat-list__logo-icon" />
-          )}
-          <span className="chat-list__logo-text">{headerTitle}</span>
+          <Flame size={22} className="chat-list__logo-icon" />
+          <span className="chat-list__logo-text">Fénix Chat</span>
+          <span className="chat-list__logo-fire">🔥</span>
         </div>
         <button
           className="chat-list__new-btn"
@@ -159,178 +157,237 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
         </button>
       </div>
 
-      {/* Panel de nueva conversación — búsqueda de usuarios */}
-      {showNewChat && (
-        <div className="chat-list__new-chat-panel">
-          <div className="chat-list__new-chat-search">
-            <Search size={16} className="chat-list__search-icon" />
-            <input
-              ref={newChatInputRef}
-              type="text"
-              className="chat-list__search-input"
-              placeholder="Buscar usuario por nombre..."
-              value={newChatQuery}
-              onChange={(e) => handleUserSearch(e.target.value)}
-            />
+      {/* Sub-tabs: Chats | Comunidades | Llamadas */}
+      <div className="chat-list__tabs">
+        <button
+          className={`chat-list__tab ${activeTab === 'chats' ? 'chat-list__tab--active' : ''}`}
+          onClick={() => setActiveTab('chats')}
+        >
+          Chats
+        </button>
+        <button
+          className={`chat-list__tab ${activeTab === 'comunidades' ? 'chat-list__tab--active' : ''}`}
+          onClick={() => setActiveTab('comunidades')}
+        >
+          Comunidades
+        </button>
+        <button
+          className={`chat-list__tab ${activeTab === 'llamadas' ? 'chat-list__tab--active' : ''}`}
+          onClick={() => setActiveTab('llamadas')}
+        >
+          Llamadas
+        </button>
+      </div>
+
+      {/* === CHATS TAB === */}
+      {activeTab === 'chats' && (
+        <>
+          {/* Panel de nueva conversación — búsqueda de usuarios */}
+          {showNewChat && (
+            <div className="chat-list__new-chat-panel">
+              <div className="chat-list__new-chat-search">
+                <Search size={16} className="chat-list__search-icon" />
+                <input
+                  ref={newChatInputRef}
+                  type="text"
+                  className="chat-list__search-input"
+                  placeholder="Buscar usuario por nombre..."
+                  value={newChatQuery}
+                  onChange={(e) => handleUserSearch(e.target.value)}
+                />
+              </div>
+
+              <div className="chat-list__new-chat-results">
+                {isSearching && (
+                  <div className="chat-list__search-status">
+                    <Loader2 size={16} className="chat-list__spinner" />
+                    <span>Buscando...</span>
+                  </div>
+                )}
+
+                {!isSearching && newChatQuery.length >= 2 && searchResults.length === 0 && (
+                  <div className="chat-list__search-status">
+                    <span>No se encontraron usuarios</span>
+                  </div>
+                )}
+
+                {searchResults.map((foundUser) => (
+                  <button
+                    key={foundUser.id}
+                    className="chat-list__search-result"
+                    onClick={() => handleStartDM(foundUser)}
+                    disabled={isStartingDM}
+                  >
+                    <div className="chat-list__avatar chat-list__avatar--small">
+                      {foundUser.avatar_url ? (
+                        <img src={foundUser.avatar_url} alt={foundUser.username} className="chat-list__avatar-img" />
+                      ) : (
+                        getInitials(foundUser.username)
+                      )}
+                    </div>
+                    <div className="chat-list__search-result-info">
+                      <span className="chat-list__search-result-name">{foundUser.username}</span>
+                      {foundUser.display_name && (
+                        <span className="chat-list__search-result-display">{foundUser.display_name}</span>
+                      )}
+                    </div>
+                    <MessageCircle size={16} className="chat-list__search-result-icon" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Barra de búsqueda de conversaciones */}
+          <div className="chat-list__search">
+            <div className="chat-list__search-bar">
+              <Search size={16} className="chat-list__search-icon" />
+              <input
+                type="text"
+                className="chat-list__search-input"
+                placeholder="Buscar conversación..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
 
-          <div className="chat-list__new-chat-results">
-            {isSearching && (
-              <div className="chat-list__search-status">
-                <Loader2 size={16} className="chat-list__spinner" />
-                <span>Buscando...</span>
+          {/* Lista de conversaciones */}
+          <div className="chat-list__items">
+            {isLoadingConversations && conversations.length === 0 ? (
+              // Skeleton loading
+              <div className="chat-list__loading">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className="chat-list__skeleton-item">
+                    <div className="chat-list__skeleton-avatar skeleton" />
+                    <div className="chat-list__skeleton-content">
+                      <div className="chat-list__skeleton-name skeleton" />
+                      <div className="chat-list__skeleton-message skeleton" />
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-
-            {!isSearching && newChatQuery.length >= 2 && searchResults.length === 0 && (
-              <div className="chat-list__search-status">
-                <span>No se encontraron usuarios</span>
+            ) : filteredConversations.length === 0 ? (
+              <div className="chat-list__empty">
+                <MessageCircle size={40} className="chat-list__empty-icon" />
+                <p className="chat-list__empty-text">
+                  {searchQuery ? 'No se encontraron conversaciones' : 'Aún no tienes conversaciones'}
+                </p>
+                {!searchQuery && (
+                  <p className="chat-list__empty-hint">
+                    Toca <Plus size={14} style={{ verticalAlign: 'middle' }} /> para iniciar un chat
+                  </p>
+                )}
               </div>
-            )}
+            ) : (
+              filteredConversations.map((conv) => {
+                const isActive = activeConversation?.id === conv.id
+                const otherName = getConversationName(conv, user)
+                const otherAvatar = getConversationAvatar(conv, user)
+                const isTyping = typingUsers[conv.id]
+                const unreadCount = unreadCounts[conv.id] || 0
+                const hasUnread = unreadCount > 0
 
-            {searchResults.map((foundUser) => (
-              <button
-                key={foundUser.id}
-                className="chat-list__search-result"
-                onClick={() => handleStartDM(foundUser)}
-                disabled={isStartingDM}
-              >
-                <div className="chat-list__avatar chat-list__avatar--small">
-                  {foundUser.avatar_url ? (
-                    <img src={foundUser.avatar_url} alt={foundUser.username} className="chat-list__avatar-img" />
-                  ) : (
-                    getInitials(foundUser.username)
-                  )}
-                </div>
-                <div className="chat-list__search-result-info">
-                  <span className="chat-list__search-result-name">{foundUser.username}</span>
-                  {foundUser.display_name && (
-                    <span className="chat-list__search-result-display">{foundUser.display_name}</span>
-                  )}
-                </div>
-                <MessageCircle size={16} className="chat-list__search-result-icon" />
-              </button>
-            ))}
+                const itemClasses = [
+                  'chat-list__item',
+                  isActive && 'chat-list__item--active',
+                  hasUnread && 'chat-list__item--unread',
+                ].filter(Boolean).join(' ')
+
+                return (
+                  <div key={conv.id} className="chat-list__item-wrapper">
+                    <div
+                      className={itemClasses}
+                      onClick={() => handleSelectConversation(conv)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSelectConversation(conv)}
+                      onContextMenu={(e) => handleContextMenu(e, conv)}
+                      onTouchStart={() => handleTouchStart(conv)}
+                      onTouchEnd={handleTouchEnd}
+                      onTouchMove={handleTouchEnd}
+                    >
+                      {/* Avatar */}
+                      <div className={`chat-list__avatar ${isTyping ? 'chat-list__avatar--typing' : ''}`}>
+                        {otherAvatar ? (
+                          <img src={otherAvatar} alt={otherName} className="chat-list__avatar-img" />
+                        ) : (
+                          getInitials(otherName)
+                        )}
+                        {/* Estado online — TODO: implementar presencia real */}
+                      </div>
+
+                      {/* Contenido */}
+                      <div className="chat-list__item-content">
+                        <div className="chat-list__item-top">
+                          <span className="chat-list__item-name">{otherName}</span>
+                          <span className="chat-list__item-time">
+                            {formatTime(conv.last_message_at)}
+                          </span>
+                        </div>
+                        <div className="chat-list__item-bottom">
+                          {isTyping ? (
+                            <span className="chat-list__item-typing">
+                              escribiendo
+                              <span className="chat-list__typing-dots">
+                                <span>.</span><span>.</span><span>.</span>
+                              </span>
+                            </span>
+                          ) : (
+                            <span className="chat-list__item-preview">
+                              {conv.last_sender && conv.last_sender !== otherName
+                                ? `Tú: ${conv.last_message || ''}`
+                                : conv.last_message || 'Conversación nueva'
+                              }
+                            </span>
+                          )}
+                          {hasUnread && (
+                            <span className="chat-list__unread-badge">
+                              🔥 {unreadCount}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </>
+      )}
+
+      {/* === COMUNIDADES TAB === */}
+      {activeTab === 'comunidades' && (
+        <div className="chat-list__placeholder">
+          <div className="chat-list__placeholder-icon">
+            <Rocket size={48} />
+          </div>
+          <h3 className="chat-list__placeholder-title">Próximamente</h3>
+          <p className="chat-list__placeholder-desc">
+            Las comunidades están en camino. Pronto podrás crear y unirte a comunidades gaming, organizar torneos y mucho más.
+          </p>
+          <div className="chat-list__placeholder-badge">
+            🚀 En desarrollo
           </div>
         </div>
       )}
 
-      {/* Barra de búsqueda de conversaciones */}
-      <div className="chat-list__search">
-        <div className="chat-list__search-bar">
-          <Search size={16} className="chat-list__search-icon" />
-          <input
-            type="text"
-            className="chat-list__search-input"
-            placeholder="Buscar conversación..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      {/* === LLAMADAS TAB === */}
+      {activeTab === 'llamadas' && (
+        <div className="chat-list__placeholder">
+          <div className="chat-list__placeholder-icon">
+            <Phone size={48} />
+          </div>
+          <h3 className="chat-list__placeholder-title">Historial de llamadas</h3>
+          <p className="chat-list__placeholder-desc">
+            Historial de llamadas próximamente. Podrás ver todas tus llamadas de voz y video realizadas y recibidas.
+          </p>
+          <div className="chat-list__placeholder-badge">
+            📞 Próximamente
+          </div>
         </div>
-      </div>
-
-      {/* Lista de conversaciones */}
-      <div className="chat-list__items">
-        {isLoadingConversations && conversations.length === 0 ? (
-          // Skeleton loading
-          <div className="chat-list__loading">
-            {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="chat-list__skeleton-item">
-                <div className="chat-list__skeleton-avatar skeleton" />
-                <div className="chat-list__skeleton-content">
-                  <div className="chat-list__skeleton-name skeleton" />
-                  <div className="chat-list__skeleton-message skeleton" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : filteredConversations.length === 0 ? (
-          <div className="chat-list__empty">
-            <MessageCircle size={40} className="chat-list__empty-icon" />
-            <p className="chat-list__empty-text">
-              {searchQuery ? 'No se encontraron conversaciones' : 'Aún no tienes conversaciones'}
-            </p>
-            {!searchQuery && (
-              <p className="chat-list__empty-hint">
-                Toca <Plus size={14} style={{ verticalAlign: 'middle' }} /> para iniciar un chat
-              </p>
-            )}
-          </div>
-        ) : (
-          filteredConversations.map((conv) => {
-            const isActive = activeConversation?.id === conv.id
-            const otherName = getConversationName(conv, user)
-            const otherAvatar = getConversationAvatar(conv, user)
-            const isTyping = typingUsers[conv.id]
-            const unreadCount = unreadCounts[conv.id] || 0
-            const hasUnread = unreadCount > 0
-
-            const itemClasses = [
-              'chat-list__item',
-              isActive && 'chat-list__item--active',
-              hasUnread && 'chat-list__item--unread',
-            ].filter(Boolean).join(' ')
-
-            return (
-              <div key={conv.id} className="chat-list__item-wrapper">
-                <div
-                  className={itemClasses}
-                  onClick={() => handleSelectConversation(conv)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSelectConversation(conv)}
-                  onContextMenu={(e) => handleContextMenu(e, conv)}
-                  onTouchStart={() => handleTouchStart(conv)}
-                  onTouchEnd={handleTouchEnd}
-                  onTouchMove={handleTouchEnd}
-                >
-                  {/* Avatar */}
-                  <div className={`chat-list__avatar ${isTyping ? 'chat-list__avatar--typing' : ''}`}>
-                    {otherAvatar ? (
-                      <img src={otherAvatar} alt={otherName} className="chat-list__avatar-img" />
-                    ) : (
-                      getInitials(otherName)
-                    )}
-                    {/* Estado online — TODO: implementar presencia real */}
-                  </div>
-
-                  {/* Contenido */}
-                  <div className="chat-list__item-content">
-                    <div className="chat-list__item-top">
-                      <span className="chat-list__item-name">{otherName}</span>
-                      <span className="chat-list__item-time">
-                        {formatTime(conv.last_message_at)}
-                      </span>
-                    </div>
-                    <div className="chat-list__item-bottom">
-                      {isTyping ? (
-                        <span className="chat-list__item-typing">
-                          escribiendo
-                          <span className="chat-list__typing-dots">
-                            <span>.</span><span>.</span><span>.</span>
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="chat-list__item-preview">
-                          {conv.last_sender && conv.last_sender !== otherName
-                            ? `Tú: ${conv.last_message || ''}`
-                            : conv.last_message || 'Conversación nueva'
-                          }
-                        </span>
-                      )}
-                      {hasUnread && (
-                        <span className="chat-list__unread-badge">
-                          🔥 {unreadCount}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          })
-        )}
-      </div>
+      )}
 
       {/* Barra de usuario (abajo) — solo en modo desktop */}
       {!section && user && (
