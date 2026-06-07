@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Video, Trash2, UserPlus, UserCheck, Paperclip, Image, Camera, Reply, Ban
+  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Video, Trash2, UserPlus, UserCheck, Paperclip, Image, Camera, Reply, Ban, Search, Forward
 } from 'lucide-react'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
 import { getSocket } from '../../lib/socket'
@@ -43,6 +43,13 @@ function ChatView({ onBack }) {
   // Reply state
   const [replyingTo, setReplyingTo] = useState(null)
 
+  // Search state
+  const [showSearch, setShowSearch] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+
+  // Forward state
+  const [forwardingMsg, setForwardingMsg] = useState(null)
 
   // Voice note state
   const [isRecording, setIsRecording] = useState(false)
@@ -53,6 +60,7 @@ function ChatView({ onBack }) {
 
   const {
     activeConversation,
+    conversations,
     messages,
     typingUsers,
     isLoadingMessages,
@@ -264,6 +272,49 @@ function ChatView({ onBack }) {
     setMsgContextMenu(null)
     inputRef.current?.focus()
   }, [msgContextMenu])
+
+  // Search messages
+  const handleSearch = useCallback((q) => {
+    setSearchQuery(q)
+    if (!q.trim() || !activeConversation) {
+      setSearchResults([])
+      return
+    }
+    const socket = getSocket()
+    if (socket) {
+      socket.emit('search_messages', { conversationId: activeConversation.id, searchQuery: q.trim() })
+    }
+  }, [activeConversation])
+
+  // Listen for search results
+  useEffect(() => {
+    const socket = getSocket()
+    if (!socket) return
+    const onResults = ({ results }) => setSearchResults(results || [])
+    socket.on('search_results', onResults)
+    return () => socket.off('search_results', onResults)
+  }, [])
+
+  // Forward message
+  const handleForward = useCallback(() => {
+    if (!msgContextMenu) return
+    setForwardingMsg(msgContextMenu.msg)
+    setMsgContextMenu(null)
+  }, [msgContextMenu])
+
+  const doForward = useCallback((targetConvId) => {
+    if (!forwardingMsg) return
+    const socket = getSocket()
+    if (socket) {
+      socket.emit('send_message', {
+        conversationId: targetConvId,
+        content: forwardingMsg.content,
+        type: forwardingMsg.type || 'text',
+        forwarded: true,
+      })
+    }
+    setForwardingMsg(null)
+  }, [forwardingMsg])
 
   // Cargar más mensajes al hacer scroll arriba
   const handleScroll = useCallback(() => {
@@ -481,6 +532,13 @@ function ChatView({ onBack }) {
         </div>
 
         <div className="chat-view__header-actions">
+          <button
+            className="chat-view__header-btn"
+            aria-label="Buscar"
+            onClick={() => { setShowSearch(s => !s); setSearchQuery(''); setSearchResults([]) }}
+          >
+            <Search size={18} />
+          </button>
           {/* Add contact button */}
           {isContact === false && (
             <button
@@ -624,6 +682,41 @@ function ChatView({ onBack }) {
           </div>
         )
       })()}
+
+      {/* --- Search bar --- */}
+      {showSearch && (
+        <div className="chat-view__search-bar">
+          <Search size={16} className="chat-view__search-icon" />
+          <input
+            type="text"
+            className="chat-view__search-input"
+            placeholder="Buscar en este chat..."
+            value={searchQuery}
+            onChange={(e) => handleSearch(e.target.value)}
+            autoFocus
+          />
+          {searchQuery && (
+            <span className="chat-view__search-count">{searchResults.length} resultado{searchResults.length !== 1 ? 's' : ''}</span>
+          )}
+          <button className="chat-view__search-close" onClick={() => { setShowSearch(false); setSearchQuery(''); setSearchResults([]) }}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* Search results overlay */}
+      {showSearch && searchResults.length > 0 && (
+        <div className="chat-view__search-results">
+          {searchResults.map(r => (
+            <div key={r.id} className="chat-view__search-result-item">
+              <span className="chat-view__search-result-time">
+                {new Date(r.created_at).toLocaleDateString('es', { day: 'numeric', month: 'short' })}
+              </span>
+              <span className="chat-view__search-result-text">{r.content?.slice(0, 100)}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* --- Mensajes --- */}
       <div
@@ -819,6 +912,13 @@ function ChatView({ onBack }) {
               }}>
                 <Smile size={16} />
                 <span>Reaccionar</span>
+              </button>
+            )}
+            {/* Forward */}
+            {!msgContextMenu.msg.deleted_at && (
+              <button className="chat-list__context-item" onClick={handleForward}>
+                <Forward size={16} />
+                <span>Reenviar</span>
               </button>
             )}
             {msgContextMenu.msg.sender_id === user?.id && !msgContextMenu.msg.deleted_at && (
@@ -1023,6 +1123,43 @@ function ChatView({ onBack }) {
           />
         </div>
       )}
+
+      {/* --- Forward modal --- */}
+      {forwardingMsg && (
+        <>
+          <div className="chat-view__lightbox" onClick={() => setForwardingMsg(null)} />
+          <div className="chat-view__forward-modal">
+            <div className="chat-view__forward-header">
+              <h3>Reenviar a...</h3>
+              <button onClick={() => setForwardingMsg(null)}><X size={18} /></button>
+            </div>
+            <div className="chat-view__forward-preview">
+              <span>↗</span>
+              <span className="chat-view__forward-preview-text">
+                {forwardingMsg.type === 'image' ? '📷 Foto'
+                  : forwardingMsg.type === 'video' ? '🎥 Video'
+                  : forwardingMsg.type === 'audio' ? '🎤 Audio'
+                  : (forwardingMsg.content || '').slice(0, 60)}
+              </span>
+            </div>
+            <div className="chat-view__forward-list">
+              {conversations.filter(c => c.id !== activeConversation?.id).map(conv => {
+                const name = getConversationName(conv, user)
+                const avatar = getConversationAvatar(conv, user)
+                return (
+                  <button key={conv.id} className="chat-view__forward-item" onClick={() => doForward(conv.id)}>
+                    <div className="chat-view__forward-item-avatar">
+                      {avatar ? <img src={avatar} alt={name} /> : getInitials(name)}
+                    </div>
+                    <span>{name}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
     </div>
   )
 }
