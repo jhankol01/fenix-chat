@@ -252,4 +252,9 @@ const useChatStore = create((set, get) => ({
   },
 }))
 
+// Expose for notifications (avoids circular import)
+if (typeof window !== 'undefined') {
+  window.__fenixChatStore = useChatStore
+}
+
 export default useChatStore

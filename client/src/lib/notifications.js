@@ -82,19 +82,18 @@ export function showBrowserNotification(title, body, options = {}) {
       badge: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔥</text></svg>',
       tag: options.tag || 'fenix-chat',
       renotify: true,
-      silent: true, // ya reproducimos nuestro propio sonido
+      silent: true,
+      requireInteraction: true,  // stays until user interacts
       ...options,
     })
 
-    // Click en la notificación → focus en la ventana
     notification.onclick = () => {
       window.focus()
       notification.close()
       if (options.onClick) options.onClick()
     }
 
-    // Auto-cerrar después de 5 segundos
-    setTimeout(() => notification.close(), 5000)
+    setTimeout(() => notification.close(), 10000)
 
     return notification
   } catch (err) {
@@ -111,8 +110,13 @@ export function notifyNewMessage({ senderName, content, conversationId, activeCo
   const isViewingConversation = conversationId === activeConversationId && document.hasFocus()
   if (isViewingConversation) return
 
-  // Reproducir sonido
+  // Reproducir sonido SIEMPRE
   playNotificationSound()
+
+  // Vibrar en móvil
+  if (navigator.vibrate) {
+    navigator.vibrate([100, 50, 100])
+  }
 
   // Mostrar notificación del navegador
   const truncatedContent = content.length > 80 ? content.slice(0, 80) + '...' : content
@@ -122,17 +126,33 @@ export function notifyNewMessage({ senderName, content, conversationId, activeCo
     { tag: `fenix-msg-${conversationId}` }
   )
 
-  // Actualizar el título de la pestaña
-  if (!document.hasFocus()) {
-    const originalTitle = document.title
-    document.title = `💬 ${senderName}: ${truncatedContent}`
+  // Actualizar el título de la pestaña con conteo
+  updateTitleBadge()
+}
 
-    const restoreTitle = () => {
-      document.title = originalTitle
-      window.removeEventListener('focus', restoreTitle)
+/**
+ * Update page title with unread count badge
+ */
+let _originalTitle = 'Fénix Chat — Comunidades Simples'
+export function updateTitleBadge() {
+  try {
+    // Dynamic import to avoid circular deps
+    const state = window.__fenixChatStore?.getState?.()
+    const unread = state?.unreadCounts || {}
+    const total = Object.values(unread).reduce((sum, n) => sum + n, 0)
+    if (total > 0) {
+      document.title = `(${total}) 🔥 Fénix Chat`
+    } else {
+      document.title = _originalTitle
     }
-    window.addEventListener('focus', restoreTitle)
-  }
+  } catch (_) {}
+}
+
+// Restore title on focus
+if (typeof window !== 'undefined') {
+  window.addEventListener('focus', () => {
+    setTimeout(updateTitleBadge, 500)
+  })
 }
 
 export default {
@@ -140,4 +160,5 @@ export default {
   requestNotificationPermission,
   showBrowserNotification,
   notifyNewMessage,
+  updateTitleBadge,
 }

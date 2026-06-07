@@ -533,21 +533,21 @@
 
 /* Unread badge with fire emoji */
 .chat-list__unread-badge {
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
   gap: 2px;
   background: linear-gradient(135deg, #7C3AED, #A855F7);
   color: white;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: var(--weight-bold);
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  animation: flameBadgePulse 2s ease infinite;
-  filter: drop-shadow(0 0 4px rgba(124, 58, 237, 0.5));
+  animation: flameBadgePulse 1.5s ease infinite;
+  filter: drop-shadow(0 0 6px rgba(124, 58, 237, 0.7));
   white-space: nowrap;
 }
 
