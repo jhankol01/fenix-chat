@@ -181,6 +181,13 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
         </div>
         <button
           className="chat-list__new-btn"
+          aria-label="Crear grupo"
+          onClick={() => setShowCreateGroup(!showCreateGroup)}
+        >
+          <Users size={18} />
+        </button>
+        <button
+          className="chat-list__new-btn"
           aria-label="Nueva conversación"
           onClick={() => setShowNewChat(!showNewChat)}
         >
