@@ -149,38 +149,19 @@ const useChatStore = create((set, get) => ({
 
   // Recibir indicador de escritura de otro usuario
   setUserTyping: (conversationId, username) => {
-    // Store the timestamp of last typing event
-    _typingTimestamps[conversationId] = Date.now()
-
     set(state => ({
       typingUsers: { ...state.typingUsers, [conversationId]: username }
     }))
-
-    // Start the cleanup interval if not already running
-    if (!_typingInterval) {
-      _typingInterval = setInterval(() => {
-        const now = Date.now()
-        const current = get().typingUsers
-        let changed = false
-        const updated = { ...current }
-        for (const cid in updated) {
-          if (now - (_typingTimestamps[cid] || 0) > 4000) {
-            delete updated[cid]
-            delete _typingTimestamps[cid]
-            changed = true
-          }
-        }
-        if (changed) set({ typingUsers: updated })
-        if (Object.keys(updated).length === 0) {
-          clearInterval(_typingInterval)
-          _typingInterval = null
-        }
-      }, 1000)
-    }
+    setTimeout(() => {
+      set(state => {
+        const updated = { ...state.typingUsers }
+        delete updated[conversationId]
+        return { typingUsers: updated }
+      })
+    }, 3000)
   },
 
   clearTyping: (conversationId) => {
-    delete _typingTimestamps[conversationId]
     set(state => {
       const updated = { ...state.typingUsers }
       delete updated[conversationId]
