@@ -30,7 +30,9 @@ function StoriesBar() {
     try {
       const data = await api.get('/stories')
       setStoryGroups(data.stories || [])
-    } catch (_) {}
+    } catch (err) {
+      console.error('Error loading stories:', err)
+    }
   }
 
   useEffect(() => {
@@ -167,7 +169,15 @@ function StoriesBar() {
       {/* Stories horizontal bar */}
       <div className="stories-bar" ref={scrollRef}>
         {/* Add story button */}
-        <button className="stories-bar__add" onClick={() => setShowCreate(true)}>
+        <button className="stories-bar__add" onClick={() => {
+          // If I have stories, open viewer; otherwise open creator
+          const myIdx = storyGroups.findIndex(g => g.userId === user?.id)
+          if (myIdx >= 0 && storyGroups[myIdx].stories.length > 0) {
+            openStory(myIdx)
+          } else {
+            setShowCreate(true)
+          }
+        }}>
           <div className={`stories-bar__avatar-ring ${myStories?.hasUnviewed ? 'stories-bar__avatar-ring--unviewed' : ''}`}>
             {user?.avatar_url ? (
               <img src={user.avatar_url} alt="Mi story" className="stories-bar__avatar-img" />
@@ -182,7 +192,7 @@ function StoriesBar() {
         </button>
 
         {/* Other users' stories */}
-        {storyGroups.filter(g => g.userId !== user?.id).map((group, i) => (
+        {storyGroups.filter(g => g.userId !== user?.id).map((group) => (
           <button key={group.userId} className="stories-bar__item" onClick={() => openStory(storyGroups.indexOf(group))}>
             <div className={`stories-bar__avatar-ring ${group.hasUnviewed ? 'stories-bar__avatar-ring--unviewed' : 'stories-bar__avatar-ring--viewed'}`}>
               {group.avatarUrl ? (
