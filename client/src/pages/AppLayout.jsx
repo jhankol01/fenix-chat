@@ -10,7 +10,7 @@ import BottomNav from '../components/layout/BottomNav'
 import StoriesBar from '../components/layout/StoriesBar'
 import useAuthStore from '../stores/authStore'
 import useChatStore from '../stores/chatStore'
-import { connectSocket, disconnectSocket, getSocket } from '../lib/socket'
+import { connectSocket, disconnectSocket, getSocket, onReconnect } from '../lib/socket'
 import { requestNotificationPermission, notifyNewMessage } from '../lib/notifications'
 import api from '../lib/api'
 import './AppLayout.css'
@@ -120,6 +120,17 @@ function AppLayout() {
 
     // Cargar conversaciones al montar
     loadConversations()
+
+    // Recargar datos cuando el socket reconecta o la pestaña vuelve
+    onReconnect(() => {
+      console.log('🔄 Reconnected — reloading data...')
+      loadConversations()
+      // Recargar mensajes de la conversación activa
+      const activeConv = useChatStore.getState().activeConversation
+      if (activeConv?.id) {
+        useChatStore.getState().loadMessages(activeConv.id)
+      }
+    })
 
     // Limpiar al desmontar
     return () => {
