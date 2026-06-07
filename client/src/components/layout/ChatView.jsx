@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Trash2
+  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Video, Trash2
 } from 'lucide-react'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
 import { getSocket } from '../../lib/socket'
@@ -306,15 +306,25 @@ function ChatView({ onBack }) {
             onClick={() => {
               const otherId = activeConversation.other_user_id
                 || activeConversation.participants?.find(p => p.id !== user?.id)?.id
-              console.log('📞 Calling user:', otherId, otherName)
               if (otherId && window.__fenixStartCall) {
-                window.__fenixStartCall(otherId, otherName, otherAvatar)
-              } else {
-                console.warn('❌ No user ID found:', JSON.stringify(activeConversation))
+                window.__fenixStartCall(otherId, otherName, otherAvatar, false)
               }
             }}
           >
             <Phone size={18} />
+          </button>
+          <button
+            className="chat-view__header-btn"
+            aria-label="Videollamada"
+            onClick={() => {
+              const otherId = activeConversation.other_user_id
+                || activeConversation.participants?.find(p => p.id !== user?.id)?.id
+              if (otherId && window.__fenixStartCall) {
+                window.__fenixStartCall(otherId, otherName, otherAvatar, true)
+              }
+            }}
+          >
+            <Video size={18} />
           </button>
           <button className="chat-view__header-btn" aria-label="Más opciones">
             <MoreVertical size={18} />

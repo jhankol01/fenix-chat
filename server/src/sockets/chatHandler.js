@@ -173,8 +173,8 @@ export default function chatHandler(io) {
     }
 
     // Initiate a call
-    socket.on('call_user', ({ targetUserId, offer, callerName, callerAvatar }) => {
-      logger.info(`📞 Call attempt: ${user.username} (${user.id}) → target: ${targetUserId}`)
+    socket.on('call_user', ({ targetUserId, offer, callerName, callerAvatar, isVideoCall }) => {
+      logger.info(`📞 Call attempt: ${user.username} (${user.id}) → target: ${targetUserId} video: ${!!isVideoCall}`)
       
       const targetSockets = onlineUsers.get(targetUserId)
       if (targetSockets && targetSockets.size > 0) {
@@ -184,6 +184,7 @@ export default function chatHandler(io) {
             callerName: callerName || user.username,
             callerAvatar,
             offer,
+            isVideoCall: !!isVideoCall,
           })
         }
         logger.info(`📞 ${user.username} calling user ${targetUserId} (${targetSockets.size} sockets)`)

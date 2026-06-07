@@ -76,7 +76,7 @@
 .chat-list__new-chat-search:focus-within {
   background: var(--color-bg-elevated);
   border-color: var(--color-border-focus);
-  box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.08);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.08);
 }
 
 .chat-list__new-chat-results {
@@ -306,7 +306,7 @@
   color: white;
   flex-shrink: 0;
   position: relative;
-  background: linear-gradient(135deg, #FF6B00, #FFD700);
+  background: linear-gradient(135deg, #7C3AED, #A855F7);
 }
 
 .chat-list__avatar--small {
@@ -325,15 +325,15 @@
 /* Avatar parpadeante cuando está escribiendo */
 .chat-list__avatar--typing {
   animation: avatarTypingPulse 1.5s ease-in-out infinite;
-  box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.4);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.4);
 }
 
 @keyframes avatarTypingPulse {
   0%, 100% {
-    box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.3);
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3);
   }
   50% {
-    box-shadow: 0 0 0 5px rgba(255, 140, 0, 0.15), 0 0 12px rgba(255, 107, 0, 0.3);
+    box-shadow: 0 0 0 5px rgba(124, 58, 237, 0.15), 0 0 12px rgba(124, 58, 237, 0.3);
   }
 }
 
@@ -396,7 +396,7 @@
   gap: 2px;
   font-size: var(--text-xs);
   font-weight: var(--weight-bold);
-  color: var(--color-accent-warm);
+  color: var(--color-brand);
   background: rgba(255, 107, 53, 0.12);
   padding: 2px 8px;
   border-radius: var(--radius-full);
@@ -460,7 +460,7 @@
   height: 22px;
   padding: 0 6px;
   gap: 2px;
-  background: linear-gradient(135deg, #FF6B00, #FF2DAA);
+  background: linear-gradient(135deg, #7C3AED, #A855F7);
   color: white;
   font-size: 0.65rem;
   font-weight: var(--weight-bold);
@@ -470,16 +470,16 @@
   justify-content: center;
   flex-shrink: 0;
   animation: flameBadgePulse 2s ease infinite;
-  filter: drop-shadow(0 0 4px rgba(255, 107, 0, 0.5));
+  filter: drop-shadow(0 0 4px rgba(124, 58, 237, 0.5));
 }
 
 @keyframes flameBadgePulse {
   0%, 100% {
-    filter: drop-shadow(0 0 4px rgba(255, 107, 0, 0.4));
+    filter: drop-shadow(0 0 4px rgba(124, 58, 237, 0.4));
     transform: scale(1);
   }
   50% {
-    filter: drop-shadow(0 0 8px rgba(255, 107, 0, 0.7));
+    filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.7));
     transform: scale(1.1);
   }
 }

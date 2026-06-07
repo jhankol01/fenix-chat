@@ -11,31 +11,31 @@
    ============================================ */
 :root {
   /* --- Color Palette: "Phoenix Fire" --- */
-  /* Base (dark backgrounds) — near-black with warm undertones */
-  --color-bg-primary: #0A0A12;
-  --color-bg-secondary: #12121E;
-  --color-bg-tertiary: #1A1A2E;
-  --color-bg-elevated: #22223A;
-  --color-bg-hover: #2A2A42;
-  --color-bg-active: #33334D;
+  /* Base (dark backgrounds) — near-black with violet undertones */
+  --color-bg-primary: #08081A;
+  --color-bg-secondary: #0F0F24;
+  --color-bg-tertiary: #17173A;
+  --color-bg-elevated: #1E1E48;
+  --color-bg-hover: #2A2A55;
+  --color-bg-active: #33335D;
 
   /* Surface (cards, panels) */
   --color-surface: rgba(26, 26, 46, 0.7);
   --color-surface-hover: rgba(42, 42, 66, 0.7);
-  --color-surface-border: rgba(255, 140, 0, 0.1);
-  --color-surface-glass: rgba(18, 18, 30, 0.85);
+  --color-surface-border: rgba(124, 58, 237, 0.08);
+  --color-surface-glass: rgba(15, 15, 36, 0.85);
 
-  /* Brand / Accent — Golden-Orange (primary action color) */
-  --color-brand: #FF8C00;
-  --color-brand-hover: #FFA033;
-  --color-brand-active: #E67E00;
-  --color-brand-glow: rgba(255, 140, 0, 0.4);
-  --color-brand-subtle: rgba(255, 140, 0, 0.08);
+  /* Brand / Accent — Vivid Violet (primary action color) */
+  --color-brand: #7C3AED;
+  --color-brand-hover: #8B5CF6;
+  --color-brand-active: #6D28D9;
+  --color-brand-glow: rgba(124, 58, 237, 0.4);
+  --color-brand-subtle: rgba(124, 58, 237, 0.08);
 
-  /* Accent Secondary — Hot Pink/Magenta (notifications, highlights) */
-  --color-accent: #FF2DAA;
-  --color-accent-hover: #FF5CC0;
-  --color-accent-glow: rgba(255, 107, 0, 0.35);
+  /* Accent Secondary — Orange/Gold (fire accent, notifications) */
+  --color-accent: #FF8C00;
+  --color-accent-hover: #FFA033;
+  --color-accent-glow: rgba(124, 58, 237, 0.35);
 
   /* Accent Tertiary — Electric Violet (complementary) */
   --color-accent-warm: #7C3AED;
@@ -47,8 +47,8 @@
   --color-text-tertiary: #6B5F52;
   --color-text-muted: #4A4038;
   --color-text-inverse: #0A0A12;
-  --color-text-brand: #FFD700;
-  --color-text-link: #FF8C00;
+  --color-text-brand: #A78BFA;
+  --color-text-link: #A78BFA;
 
   /* Status */
   --color-online: #00E676;
@@ -63,9 +63,9 @@
   --color-info: #FF8C00;
 
   /* Borders */
-  --color-border: rgba(255, 140, 0, 0.08);
-  --color-border-hover: rgba(255, 140, 0, 0.2);
-  --color-border-focus: rgba(255, 140, 0, 0.45);
+  --color-border: rgba(124, 58, 237, 0.08);
+  --color-border-hover: rgba(124, 58, 237, 0.2);
+  --color-border-focus: rgba(124, 58, 237, 0.45);
   --color-border-subtle: rgba(255, 255, 255, 0.04);
 
   /* --- Typography --- */
@@ -118,8 +118,8 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
   --shadow-xl: 0 16px 50px rgba(0, 0, 0, 0.6);
-  --shadow-glow-brand: 0 0 20px rgba(255, 140, 0, 0.3), 0 0 60px rgba(255, 140, 0, 0.1);
-  --shadow-glow-accent: 0 0 20px rgba(255, 107, 0, 0.3), 0 0 60px rgba(124, 58, 237, 0.1);
+  --shadow-glow-brand: 0 0 20px rgba(124, 58, 237, 0.3), 0 0 60px rgba(124, 58, 237, 0.1);
+  --shadow-glow-accent: 0 0 20px rgba(124, 58, 237, 0.3), 0 0 60px rgba(124, 58, 237, 0.1);
   --shadow-inner: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 
   /* --- Transitions --- */
@@ -171,7 +171,7 @@ body {
   font-weight: var(--weight-regular);
   line-height: var(--leading-normal);
   color: var(--color-text-primary);
-  background: linear-gradient(-45deg, #0A0A12, #1A0A1E, #0A0A12, #12080A);
+  background: linear-gradient(-45deg, #08081A, #1A0A2E, #08081A, #120A1E);
   background-size: 400% 400%;
   animation: phoenixGlow 20s ease infinite;
   overflow: hidden;
@@ -247,7 +247,7 @@ ul, ol {
 
 /* Selection */
 ::selection {
-  background: #FF6B00;
+  background: #7C3AED;
   color: white;
 }
 
@@ -457,7 +457,7 @@ ul, ol {
   background: linear-gradient(
     90deg,
     var(--color-bg-tertiary) 25%,
-    rgba(255, 140, 0, 0.08) 50%,
+    rgba(124, 58, 237, 0.08) 50%,
     var(--color-bg-tertiary) 75%
   );
   background-size: 200% 100%;
@@ -467,7 +467,7 @@ ul, ol {
 
 /* Fire text utility */
 .fire-text {
-  background: linear-gradient(90deg, #FF6B00, #FFD700, #FF6B00, #FFD700);
+  background: linear-gradient(90deg, #7C3AED, #A78BFA, #7C3AED, #A78BFA);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

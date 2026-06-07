@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Phone, PhoneOff, Mic, MicOff, Volume2, Volume1 } from 'lucide-react'
+import { Phone, PhoneOff, Mic, MicOff, Volume2, Volume1, Video, VideoOff, CameraOff } from 'lucide-react'
 import { getSocket } from '../../lib/socket'
 import useAuthStore from '../../stores/authStore'
 import './CallOverlay.css'
@@ -17,6 +17,8 @@ function CallOverlay() {
   const [remoteUser, setRemoteUser] = useState(null)
   const [isMuted, setIsMuted] = useState(false)
   const [isSpeaker, setIsSpeaker] = useState(false)
+  const [isVideoCall, setIsVideoCall] = useState(false)
+  const [isCameraOff, setIsCameraOff] = useState(false)
   const [duration, setDuration] = useState(0)
   const [endReason, setEndReason] = useState('')
 
@@ -39,6 +41,9 @@ function CallOverlay() {
     remoteAudioRef.current = new Audio()
     remoteAudioRef.current.autoplay = true
   }
+  const localVideoRef = useRef(null)
+  const remoteVideoRef = useRef(null)
+  const isVideoCallRef = useRef(false)
 
   const user = useAuthStore(s => s.user)
 
@@ -119,6 +124,8 @@ function CallOverlay() {
     setRemoteUser(null)
     setIsMuted(false)
     setIsSpeaker(false)
+    setIsCameraOff(false)
+    setIsVideoCall(false)
     setDuration(0)
     setEndReason('')
     callerIdRef.current = null
@@ -157,20 +164,26 @@ function CallOverlay() {
 
     // CRITICAL: When remote track arrives, pipe it to the persistent Audio object
     pc.ontrack = (e) => {
-      console.log('🔊 ontrack fired! streams:', e.streams.length, 'tracks:', e.track.kind)
-      const audio = remoteAudioRef.current
-      if (e.streams && e.streams[0]) {
-        audio.srcObject = e.streams[0]
+      console.log('🎧 Got remote track:', e.track.kind)
+      if (e.track.kind === 'video') {
+        // Video track → show in remote video element
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = e.streams[0] || new MediaStream([e.track])
+        }
       } else {
-        // Fallback: create a new stream from the track
-        const stream = new MediaStream([e.track])
-        audio.srcObject = stream
+        // Audio track → play in audio element
+        const audio = remoteAudioRef.current
+        if (e.streams && e.streams[0]) {
+          audio.srcObject = e.streams[0]
+        } else {
+          audio.srcObject = new MediaStream([e.track])
+        }
+        audio.play().then(() => {
+          console.log('🔊 Audio playing!')
+        }).catch(err => {
+          console.warn('🔊 Audio play blocked:', err.message)
+        })
       }
-      audio.play().then(() => {
-        console.log('🔊 Audio playing!')
-      }).catch(err => {
-        console.warn('🔊 Audio play blocked:', err.message)
-      })
     }
 
     // Connection state management
@@ -210,15 +223,23 @@ function CallOverlay() {
   }, [cleanup])
 
   // ─── Start Call (CALLER) ───────────────────────────────
-  const startCall = useCallback(async (targetUserId, targetName, targetAvatar) => {
+  const startCall = useCallback(async (targetUserId, targetName, targetAvatar, withVideo = false) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const constraints = { audio: true, video: withVideo ? { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } : false }
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
       localStreamRef.current = stream
       remoteDescSetRef.current = false
       iceCandidateQueueRef.current = []
+      isVideoCallRef.current = withVideo
+      setIsVideoCall(withVideo)
 
       const pc = createPC(targetUserId)
       stream.getTracks().forEach(t => pc.addTrack(t, stream))
+
+      // Show local video preview
+      if (withVideo && localVideoRef.current) {
+        localVideoRef.current.srcObject = stream
+      }
 
       const offer = await pc.createOffer()
       await pc.setLocalDescription(offer)
@@ -236,6 +257,7 @@ function CallOverlay() {
         offer: { type: offer.type, sdp: offer.sdp },
         callerName: user?.username,
         callerAvatar: user?.avatar_url,
+        isVideoCall: withVideo,
       })
       console.log('📞 Call emitted to', targetUserId)
 
@@ -258,8 +280,15 @@ function CallOverlay() {
   // ─── Answer Call (RECEIVER) ────────────────────────────
   const answerCall = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const wantVideo = isVideoCallRef.current
+      const constraints = { audio: true, video: wantVideo ? { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } : false }
+      const stream = await navigator.mediaDevices.getUserMedia(constraints)
       localStreamRef.current = stream
+
+      // Show local video
+      if (wantVideo && localVideoRef.current) {
+        localVideoRef.current.srcObject = stream
+      }
 
       const callerId = callerIdRef.current
       const offer = pendingOfferRef.current
@@ -331,13 +360,20 @@ function CallOverlay() {
     }
   }
 
+  const toggleCamera = () => {
+    if (localStreamRef.current) {
+      const track = localStreamRef.current.getVideoTracks()[0]
+      if (track) { track.enabled = !track.enabled; setIsCameraOff(!track.enabled) }
+    }
+  }
+
   // ─── Socket Listeners ─────────────────────────────────
   useEffect(() => {
     let cleanupFns = null
 
     const setupListeners = (socket) => {
-      const onIncomingCall = ({ callerId, callerName, callerAvatar, offer }) => {
-        console.log('📞 Incoming call from', callerName, 'caller:', callerId)
+      const onIncomingCall = ({ callerId, callerName, callerAvatar, offer, isVideoCall: videoCall }) => {
+        console.log('📞 Incoming call from', callerName, 'video:', videoCall)
         if (callStateRef.current !== 'idle') {
           socket.emit('call_rejected', { callerId })
           return
@@ -346,6 +382,8 @@ function CallOverlay() {
         pendingOfferRef.current = offer
         remoteDescSetRef.current = false
         iceCandidateQueueRef.current = []
+        isVideoCallRef.current = !!videoCall
+        setIsVideoCall(!!videoCall)
         setRemoteUser({ name: callerName, avatar: callerAvatar })
         setCallState('ringing')
       }
@@ -452,28 +490,39 @@ function CallOverlay() {
   if (callState === 'idle') return null
 
   return (
-    <div className="call-overlay">
+    <div className={`call-overlay ${isVideoCall ? 'call-overlay--video' : ''}`}>
+      {/* Video elements */}
+      {isVideoCall && (
+        <>
+          <video ref={remoteVideoRef} className="call-overlay__remote-video" autoPlay playsInline />
+          <video ref={localVideoRef} className="call-overlay__local-video" autoPlay playsInline muted />
+        </>
+      )}
+
       <div className="call-overlay__content">
-        <div className={`call-overlay__avatar ${callState !== 'connected' ? 'call-overlay__avatar--pulsing' : ''}`}>
-          {remoteUser?.avatar ? (
-            <img src={remoteUser.avatar} alt="" className="call-overlay__avatar-img" />
-          ) : (
-            <div className="call-overlay__avatar-fallback">
-              {(remoteUser?.name || '?').slice(0, 2).toUpperCase()}
-            </div>
-          )}
-        </div>
+        {/* Only show avatar when NOT in video call or not connected */}
+        {(!isVideoCall || callState !== 'connected') && (
+          <div className={`call-overlay__avatar ${callState !== 'connected' ? 'call-overlay__avatar--pulsing' : ''}`}>
+            {remoteUser?.avatar ? (
+              <img src={remoteUser.avatar} alt="" className="call-overlay__avatar-img" />
+            ) : (
+              <div className="call-overlay__avatar-fallback">
+                {(remoteUser?.name || '?').slice(0, 2).toUpperCase()}
+              </div>
+            )}
+          </div>
+        )}
 
         <h2 className="call-overlay__name">{remoteUser?.name || 'Usuario'}</h2>
 
         <div className="call-overlay__status">
-          {callState === 'calling' && 'Llamando...'}
-          {callState === 'ringing' && 'Llamada entrante...'}
+          {callState === 'calling' && (isVideoCall ? '📹 Videollamada...' : 'Llamando...')}
+          {callState === 'ringing' && (isVideoCall ? '📹 Videollamada entrante...' : 'Llamada entrante...')}
           {callState === 'connected' && fmt(duration)}
           {callState === 'ended' && (endReason || 'Llamada terminada')}
         </div>
 
-        {callState === 'connected' && (
+        {callState === 'connected' && !isVideoCall && (
           <div className="call-overlay__wave">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="call-overlay__wave-bar" style={{ animationDelay: `${i * 0.15}s` }} />
@@ -489,19 +538,30 @@ function CallOverlay() {
                 <span>Rechazar</span>
               </button>
               <button className="call-overlay__btn call-overlay__btn--accept" onClick={answerCall}>
-                <Phone size={24} />
+                {isVideoCall ? <Video size={24} /> : <Phone size={24} />}
                 <span>Contestar</span>
               </button>
             </>
           ) : (
             <>
-              <button
-                className={`call-overlay__btn call-overlay__btn--speaker ${isSpeaker ? 'call-overlay__btn--speaker-on' : ''}`}
-                onClick={toggleSpeaker}
-              >
-                {isSpeaker ? <Volume2 size={22} /> : <Volume1 size={22} />}
-                <span>{isSpeaker ? 'Alta voz' : 'Normal'}</span>
-              </button>
+              {isVideoCall && (
+                <button
+                  className={`call-overlay__btn call-overlay__btn--camera ${isCameraOff ? 'call-overlay__btn--camera-off' : ''}`}
+                  onClick={toggleCamera}
+                >
+                  {isCameraOff ? <VideoOff size={22} /> : <Video size={22} />}
+                  <span>{isCameraOff ? 'Cámara off' : 'Cámara'}</span>
+                </button>
+              )}
+              {!isVideoCall && (
+                <button
+                  className={`call-overlay__btn call-overlay__btn--speaker ${isSpeaker ? 'call-overlay__btn--speaker-on' : ''}`}
+                  onClick={toggleSpeaker}
+                >
+                  {isSpeaker ? <Volume2 size={22} /> : <Volume1 size={22} />}
+                  <span>{isSpeaker ? 'Alta voz' : 'Normal'}</span>
+                </button>
+              )}
               <button
                 className={`call-overlay__btn call-overlay__btn--mute ${isMuted ? 'call-overlay__btn--muted' : ''}`}
                 onClick={toggleMute}
