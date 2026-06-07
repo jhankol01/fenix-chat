@@ -158,33 +158,9 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
         </button>
       </div>
 
-      {/* Sub-tabs: Chats | Comunidades | Llamadas */}
-      <div className="chat-list__tabs">
-        <button
-          className={`chat-list__tab ${activeTab === 'chats' ? 'chat-list__tab--active' : ''}`}
-          onClick={() => setActiveTab('chats')}
-        >
-          Chats
-        </button>
-        <button
-          className={`chat-list__tab ${activeTab === 'comunidades' ? 'chat-list__tab--active' : ''}`}
-          onClick={() => setActiveTab('comunidades')}
-        >
-          Comunidades
-        </button>
-        <button
-          className={`chat-list__tab ${activeTab === 'llamadas' ? 'chat-list__tab--active' : ''}`}
-          onClick={() => setActiveTab('llamadas')}
-        >
-          Llamadas
-        </button>
-      </div>
 
-      {/* === CHATS TAB === */}
-      {activeTab === 'chats' && (
-        <>
-          {/* Panel de nueva conversación — búsqueda de usuarios */}
-          {showNewChat && (
+      {/* Panel de nueva conversación — búsqueda de usuarios */}
+      {showNewChat && (
             <div className="chat-list__new-chat-panel">
               <div className="chat-list__new-chat-search">
                 <Search size={16} className="chat-list__search-icon" />
@@ -354,41 +330,7 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
                 )
               })
             )}
-          </div>
-        </>
-      )}
-
-      {/* === COMUNIDADES TAB === */}
-      {activeTab === 'comunidades' && (
-        <div className="chat-list__placeholder">
-          <div className="chat-list__placeholder-icon">
-            <Rocket size={48} />
-          </div>
-          <h3 className="chat-list__placeholder-title">Próximamente</h3>
-          <p className="chat-list__placeholder-desc">
-            Las comunidades están en camino. Pronto podrás crear y unirte a comunidades gaming, organizar torneos y mucho más.
-          </p>
-          <div className="chat-list__placeholder-badge">
-            🚀 En desarrollo
-          </div>
-        </div>
-      )}
-
-      {/* === LLAMADAS TAB === */}
-      {activeTab === 'llamadas' && (
-        <div className="chat-list__placeholder">
-          <div className="chat-list__placeholder-icon">
-            <Phone size={48} />
-          </div>
-          <h3 className="chat-list__placeholder-title">Historial de llamadas</h3>
-          <p className="chat-list__placeholder-desc">
-            Historial de llamadas próximamente. Podrás ver todas tus llamadas de voz y video realizadas y recibidas.
-          </p>
-          <div className="chat-list__placeholder-badge">
-            📞 Próximamente
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Barra de usuario (abajo) — solo en modo desktop */}
       {!section && user && (

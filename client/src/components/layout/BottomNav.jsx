@@ -10,7 +10,7 @@ function BottomNav({ activeSection, onSectionChange }) {
   const tabs = [
     { id: 'chats', label: 'Inicio', icon: MessageCircle },
     { id: 'comunidades', label: 'Comunidades', icon: Users },
-    { id: 'fenix', label: '', icon: Flame, isCenter: true },
+    { id: 'fenix', label: '', icon: null, isCenter: true },
     { id: 'notificaciones', label: 'Alertas', icon: Bell },
     { id: 'perfil', label: 'Perfil', icon: User },
   ]
