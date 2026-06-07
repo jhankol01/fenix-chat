@@ -213,7 +213,7 @@ function AppLayout() {
   return (
     <>
     <CallOverlay />
-    <div className="app-layout app-layout--mobile">
+    <div className={`app-layout app-layout--mobile${showMobileChat ? ' app-layout--chat-open' : ''}`}>
       {/* Contenido principal basado en la sección activa */}
       <div className={`app-layout__mobile-content ${showMobileChat ? 'app-layout__mobile-content--hidden' : ''}`}>
         {mobileSection === 'chats' && (

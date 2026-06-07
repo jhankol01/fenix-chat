@@ -80,6 +80,11 @@
     padding-bottom: 56px; /* Espacio para el BottomNav */
   }
 
+  /* Sin padding cuando el chat está abierto (BottomNav oculto) */
+  .app-layout--mobile.app-layout--chat-open {
+    padding-bottom: 0;
+  }
+
   /* Contenido mobile — ocupa todo el espacio disponible */
   .app-layout__mobile-content {
     flex: 1;
