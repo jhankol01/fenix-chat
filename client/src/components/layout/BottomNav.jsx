@@ -29,7 +29,7 @@ function BottomNav({ activeSection, onSectionChange }) {
               aria-label="Fénix"
             >
               <div className="bottom-nav__center-ring">
-                <PhoenixIcon size={26} variant="logo" />
+                <PhoenixIcon size={32} />
               </div>
             </button>
           )

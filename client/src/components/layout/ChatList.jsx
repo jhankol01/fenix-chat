@@ -145,7 +145,7 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
       {/* Premium Header with branding */}
       <div className="chat-list__header">
         <div className="chat-list__logo">
-          <PhoenixIcon size={28} variant="logo" />
+          <PhoenixIcon size={36} />
           <div className="chat-list__logo-brand">
             <span className="chat-list__logo-fenix">FÉNIX</span>
             <span className="chat-list__logo-chat">CHAT</span>
