@@ -436,9 +436,9 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
                             </span>
                           ) : (
                             <span className="chat-list__item-preview">
-                              {conv.last_sender && conv.last_sender !== otherName
-                                ? `Tú: ${conv.last_message || ''}`
-                                : conv.last_message || 'Conversación nueva'
+                              {conv.last_message_sender && conv.last_message_sender !== otherName
+                                ? `Tú: ${conv.last_message_content || ''}`
+                                : conv.last_message_content || 'Conversación nueva'
                               }
                             </span>
                           )}

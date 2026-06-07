@@ -122,7 +122,7 @@ const useChatStore = create((set, get) => ({
       // Actualizar el último mensaje de la conversación en la lista
       const conversations = (state.conversations || []).map(c => 
         c.id === message.conversation_id
-          ? { ...c, last_message: message.content, last_message_at: message.created_at, last_sender: message.sender_username }
+          ? { ...c, last_message_content: message.content, last_message_at: message.created_at, last_message_sender: message.sender_username }
           : c
       ).sort((a, b) => new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0))
 
