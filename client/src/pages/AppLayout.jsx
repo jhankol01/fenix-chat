@@ -7,6 +7,7 @@ import OnlineUsers from '../components/layout/OnlineUsers'
 import ContactsView from '../components/layout/ContactsView'
 import CallOverlay from '../components/layout/CallOverlay'
 import BottomNav from '../components/layout/BottomNav'
+import StoriesBar from '../components/layout/StoriesBar'
 import useAuthStore from '../stores/authStore'
 import useChatStore from '../stores/chatStore'
 import { connectSocket, disconnectSocket, getSocket } from '../lib/socket'
@@ -58,7 +59,7 @@ function AppLayout() {
 
   const accessToken = useAuthStore(state => state.accessToken)
   const currentUser = useAuthStore(state => state.user)
-  const { activeConversation, loadConversations, addMessage, setUserTyping, clearTyping } = useChatStore()
+  const { activeConversation, conversations, unreadCounts, loadConversations, addMessage, setUserTyping, clearTyping, setActiveConversation } = useChatStore()
 
   // Fetch preferences on mount and apply color theme
   useEffect(() => {
@@ -222,33 +223,56 @@ function AppLayout() {
             <div className="section-placeholder__icon section-placeholder__icon--fire">🔥</div>
             <h2 className="section-placeholder__title">Fénix Hub</h2>
             <p className="section-placeholder__desc">
-              Tu centro de actividad. Descubre comunidades, eventos y contenido exclusivo.
+              Tu centro de actividad. Comparte historias y descubre lo que está pasando.
             </p>
+
+            {/* Inline stories */}
+            <div style={{ width: '100%', marginTop: 12 }}>
+              <StoriesBar />
+            </div>
+
             <div className="section-placeholder__cards">
-              <div className="section-placeholder__card">
-                <span>🎙️</span>
-                <span>Salas de Voz</span>
+              <div className="section-placeholder__card" onClick={() => {
+                setMobileSection('chats')
+              }}>
+                <span>💬</span>
+                <span>Chats</span>
               </div>
-              <div className="section-placeholder__card">
-                <span>📅</span>
-                <span>Eventos</span>
+              <div className="section-placeholder__card" onClick={() => {
+                setMobileSection('contactos')
+              }}>
+                <span>👥</span>
+                <span>Contactos</span>
               </div>
-              <div className="section-placeholder__card">
-                <span>⭐</span>
-                <span>Destacados</span>
+              <div className="section-placeholder__card" onClick={() => {
+                setMobileSection('perfil')
+              }}>
+                <span>🎨</span>
+                <span>Personalizar</span>
               </div>
             </div>
-            <span className="section-placeholder__badge">✨ En desarrollo</span>
           </div>
         )}
         {mobileSection === 'notificaciones' && (
           <div className="section-placeholder">
             <div className="section-placeholder__icon">🔔</div>
             <h2 className="section-placeholder__title">Notificaciones</h2>
-            <p className="section-placeholder__desc">
-              Aquí verás tus alertas, menciones y actividad reciente.
-            </p>
-            <span className="section-placeholder__badge">🔜 Próximamente</span>
+            {Object.keys(unreadCounts).length > 0 ? (
+              <div className="section-placeholder__notif-list">
+                {conversations.filter(c => unreadCounts[c.id] > 0).map(c => (
+                  <button key={c.id} className="section-placeholder__notif-item" onClick={() => {
+                    setActiveConversation(c)
+                    setMobileSection('chats')
+                    setShowMobileChat(true)
+                  }}>
+                    <span className="section-placeholder__notif-badge">{unreadCounts[c.id]}</span>
+                    <span>{c.other_username || c.name || 'Chat'}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="section-placeholder__desc">No hay notificaciones pendientes 🎉</p>
+            )}
           </div>
         )}
         {mobileSection === 'perfil' && (
