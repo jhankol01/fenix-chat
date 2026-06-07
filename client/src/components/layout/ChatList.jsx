@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2, Rocket, Phone, Users, Check } from 'lucide-react'
 import PhoenixIcon from '../ui/PhoenixIcon'
+import StoriesBar from './StoriesBar'
 import useChatStore from '../../stores/chatStore'
 import useAuthStore from '../../stores/authStore'
 import './ChatList.css'
@@ -345,6 +346,9 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
               />
             </div>
           </div>
+
+          {/* Stories */}
+          <StoriesBar />
 
           {/* Lista de conversaciones */}
           <div className="chat-list__items">

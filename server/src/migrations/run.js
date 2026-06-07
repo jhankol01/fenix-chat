@@ -29,6 +29,7 @@ async function runMigrations() {
       '009_create_reactions.sql',
       '010_preferences_presence.sql',
       '011_groups.sql',
+      '012_stories.sql',
     ]
 
     for (const file of migrations) {

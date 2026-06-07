@@ -40,4 +40,8 @@ import { listUsers, getStats } from '../controllers/admin.js';
 router.get('/admin/users', authenticate, listUsers);
 router.get('/admin/stats', authenticate, getStats);
 
+// Story routes
+import storyRoutes from './storyRoutes.js';
+router.use('/stories', storyRoutes);
+
 export default router;

@@ -63,7 +63,7 @@ function AppLayout() {
   // Fetch preferences on mount and apply color theme
   useEffect(() => {
     api.get('/preferences').then(data => {
-      const themeKey = data?.preferences?.color_theme || 'fenix'
+      const themeKey = data?.preferences?.theme || 'fenix'
       const t = THEMES[themeKey] || THEMES.fenix
       document.documentElement.style.setProperty('--color-brand', t.brand)
       document.documentElement.style.setProperty('--color-brand-light', t.light)

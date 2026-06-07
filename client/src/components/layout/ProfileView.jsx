@@ -76,7 +76,7 @@ function ProfileView() {
       const bg = data?.preferences?.chat_bg || 'default'
       setSelectedBg(bg)
       setSavedBg(bg)
-      const theme = data?.preferences?.color_theme || 'fenix'
+      const theme = data?.preferences?.theme || 'fenix'
       setSelectedTheme(theme)
       setSavedTheme(theme)
     }).catch(() => {})
@@ -221,7 +221,7 @@ function ProfileView() {
     setSaving(true)
     setSaveMsg('')
     try {
-      await api.patch('/preferences', { color_theme: selectedTheme })
+      await api.patch('/preferences', { theme: selectedTheme })
       setSavedTheme(selectedTheme)
       // Apply theme CSS custom properties immediately
       const t = THEMES[selectedTheme] || THEMES.fenix
