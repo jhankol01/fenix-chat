@@ -178,10 +178,49 @@ function AppLayout() {
           currentUser?.email === ADMIN_EMAIL ? (
             <OnlineUsers onSelectConversation={handleSelectConversation} />
           ) : (
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'100%', color:'var(--color-text-muted)' }}>
-              <p>Próximamente</p>
+            <div className="section-placeholder">
+              <div className="section-placeholder__icon">🎮</div>
+              <h2 className="section-placeholder__title">Comunidades</h2>
+              <p className="section-placeholder__desc">
+                Crea y únete a comunidades gaming. Canales de texto, voz y más.
+              </p>
+              <span className="section-placeholder__badge">🚀 Próximamente</span>
             </div>
           )
+        )}
+        {mobileSection === 'fenix' && (
+          <div className="section-placeholder section-placeholder--fenix">
+            <div className="section-placeholder__icon section-placeholder__icon--fire">🔥</div>
+            <h2 className="section-placeholder__title">Fénix Hub</h2>
+            <p className="section-placeholder__desc">
+              Tu centro de actividad. Descubre comunidades, eventos y contenido exclusivo.
+            </p>
+            <div className="section-placeholder__cards">
+              <div className="section-placeholder__card">
+                <span>🎙️</span>
+                <span>Salas de Voz</span>
+              </div>
+              <div className="section-placeholder__card">
+                <span>📅</span>
+                <span>Eventos</span>
+              </div>
+              <div className="section-placeholder__card">
+                <span>⭐</span>
+                <span>Destacados</span>
+              </div>
+            </div>
+            <span className="section-placeholder__badge">✨ En desarrollo</span>
+          </div>
+        )}
+        {mobileSection === 'notificaciones' && (
+          <div className="section-placeholder">
+            <div className="section-placeholder__icon">🔔</div>
+            <h2 className="section-placeholder__title">Notificaciones</h2>
+            <p className="section-placeholder__desc">
+              Aquí verás tus alertas, menciones y actividad reciente.
+            </p>
+            <span className="section-placeholder__badge">🔜 Próximamente</span>
+          </div>
         )}
         {mobileSection === 'perfil' && (
           <ProfileView />

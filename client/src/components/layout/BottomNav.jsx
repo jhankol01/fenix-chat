@@ -1,16 +1,17 @@
-import { MessageCircle, Users, User } from 'lucide-react'
+import { MessageCircle, Users, Bell, User, Flame } from 'lucide-react'
 import './BottomNav.css'
 
 /**
- * BottomNav — Navegación inferior para mobile
- * 3 secciones: Chats, Comunidades, Yo (Perfil)
- * Se oculta automáticamente en desktop (>= 768px via CSS)
+ * BottomNav — Navegación inferior premium con fénix central
+ * 5 tabs: Inicio, Comunidades, 🔥Fénix, Notificaciones, Perfil
  */
 function BottomNav({ activeSection, onSectionChange }) {
   const tabs = [
-    { id: 'chats', label: 'Chats', icon: MessageCircle },
+    { id: 'chats', label: 'Inicio', icon: MessageCircle },
     { id: 'comunidades', label: 'Comunidades', icon: Users },
-    { id: 'perfil', label: 'Yo', icon: User },
+    { id: 'fenix', label: '', icon: Flame, isCenter: true },
+    { id: 'notificaciones', label: 'Alertas', icon: Bell },
+    { id: 'perfil', label: 'Perfil', icon: User },
   ]
 
   return (
@@ -18,6 +19,22 @@ function BottomNav({ activeSection, onSectionChange }) {
       {tabs.map((tab) => {
         const Icon = tab.icon
         const isActive = activeSection === tab.id
+        
+        if (tab.isCenter) {
+          return (
+            <button
+              key={tab.id}
+              className="bottom-nav__center"
+              onClick={() => onSectionChange(tab.id)}
+              aria-label="Fénix"
+            >
+              <div className="bottom-nav__center-ring">
+                <Flame size={24} />
+              </div>
+            </button>
+          )
+        }
+
         return (
           <button
             key={tab.id}
