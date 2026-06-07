@@ -2,6 +2,10 @@ import { create } from 'zustand'
 import api from '../lib/api'
 import { getSocket } from '../lib/socket'
 
+// Module-level typing state (outside Zustand to avoid closure issues)
+const _typingTimestamps = {}  // { conversationId: lastTypingTimestamp }
+let _typingInterval = null
+
 /**
  * Chat Store — Gestiona conversaciones, mensajes, typing, y búsqueda de usuarios
  * Usa Zustand siguiendo el mismo patrón del authStore
@@ -144,42 +148,43 @@ const useChatStore = create((set, get) => ({
   },
 
   // Recibir indicador de escritura de otro usuario
-  _typingTimeouts: {},
-
   setUserTyping: (conversationId, username) => {
-    // Clear any existing timeout for this conversation
-    const timeouts = get()._typingTimeouts
-    if (timeouts[conversationId]) clearTimeout(timeouts[conversationId])
+    // Store the timestamp of last typing event
+    _typingTimestamps[conversationId] = Date.now()
 
     set(state => ({
       typingUsers: { ...state.typingUsers, [conversationId]: username }
     }))
 
-    // Auto-clear after 5 seconds (safety net if stop_typing never arrives)
-    const timeout = setTimeout(() => {
-      set(state => {
-        const updated = { ...state.typingUsers }
-        delete updated[conversationId]
-        return { typingUsers: updated }
-      })
-    }, 5000)
-
-    set(state => ({
-      _typingTimeouts: { ...state._typingTimeouts, [conversationId]: timeout }
-    }))
+    // Start the cleanup interval if not already running
+    if (!_typingInterval) {
+      _typingInterval = setInterval(() => {
+        const now = Date.now()
+        const current = get().typingUsers
+        let changed = false
+        const updated = { ...current }
+        for (const cid in updated) {
+          if (now - (_typingTimestamps[cid] || 0) > 4000) {
+            delete updated[cid]
+            delete _typingTimestamps[cid]
+            changed = true
+          }
+        }
+        if (changed) set({ typingUsers: updated })
+        if (Object.keys(updated).length === 0) {
+          clearInterval(_typingInterval)
+          _typingInterval = null
+        }
+      }, 1000)
+    }
   },
 
   clearTyping: (conversationId) => {
-    // Clear the safety timeout
-    const timeouts = get()._typingTimeouts
-    if (timeouts[conversationId]) clearTimeout(timeouts[conversationId])
-
+    delete _typingTimestamps[conversationId]
     set(state => {
       const updated = { ...state.typingUsers }
       delete updated[conversationId]
-      const updatedTimeouts = { ...state._typingTimeouts }
-      delete updatedTimeouts[conversationId]
-      return { typingUsers: updated, _typingTimeouts: updatedTimeouts }
+      return { typingUsers: updated }
     })
   },
 
