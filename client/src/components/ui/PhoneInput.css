@@ -47,7 +47,7 @@
 
 .phone-input:focus-within .phone-input__field {
   border-color: var(--color-brand);
-  box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.1), 0 0 20px rgba(0, 245, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1), 0 0 20px rgba(255, 140, 0, 0.15);
   background: var(--color-bg-elevated);
 }
 
@@ -214,7 +214,7 @@
 }
 
 .phone-input__option--active:hover {
-  background: rgba(0, 245, 255, 0.12);
+  background: rgba(255, 140, 0, 0.12);
 }
 
 .phone-input__option-flag {

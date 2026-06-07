@@ -59,7 +59,7 @@
 }
 
 .profile-view__save-btn:hover {
-  background: rgba(0, 245, 255, 0.1);
+  background: rgba(255, 140, 0, 0.1);
 }
 
 .profile-view__save-btn:disabled {
@@ -90,7 +90,7 @@
   font-size: var(--text-2xl);
   font-weight: var(--weight-bold);
   color: white;
-  background: linear-gradient(135deg, #FF2DAA, #8A00FF);
+  background: linear-gradient(135deg, #FF6B00, #7C3AED);
   flex-shrink: 0;
 }
 
@@ -287,7 +287,7 @@
 
 .profile-view__field-input:focus {
   border-color: var(--color-border-focus);
-  box-shadow: 0 0 0 2px rgba(0, 245, 255, 0.08);
+  box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.08);
   outline: none;
 }
 
@@ -494,8 +494,8 @@
   gap: var(--space-3);
   margin: var(--space-4) var(--space-4) 0;
   padding: var(--space-4);
-  background: rgba(0, 245, 255, 0.06);
-  border: 1px solid rgba(0, 245, 255, 0.15);
+  background: rgba(255, 140, 0, 0.06);
+  border: 1px solid rgba(255, 140, 0, 0.15);
   border-radius: var(--radius-lg);
 }
 

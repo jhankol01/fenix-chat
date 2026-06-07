@@ -1,6 +1,6 @@
 /* ============================================
    🔥 FÉNIX CHAT — Design System
-   Dark Gaming Aesthetic
+   Phoenix Fire Premium Aesthetic
    ============================================ */
 
 /* ---------- Google Fonts ---------- */
@@ -10,45 +10,45 @@
    CSS CUSTOM PROPERTIES (Design Tokens)
    ============================================ */
 :root {
-  /* --- Color Palette: "Neon Phoenix" --- */
-  /* Base (dark backgrounds) — deeper navy, not pure black */
-  --color-bg-primary: #080B16;
-  --color-bg-secondary: #0D1117;
-  --color-bg-tertiary: #151B28;
-  --color-bg-elevated: #1C2333;
-  --color-bg-hover: #252D3F;
-  --color-bg-active: #2E3850;
+  /* --- Color Palette: "Phoenix Fire" --- */
+  /* Base (dark backgrounds) — near-black with warm undertones */
+  --color-bg-primary: #0A0A12;
+  --color-bg-secondary: #12121E;
+  --color-bg-tertiary: #1A1A2E;
+  --color-bg-elevated: #22223A;
+  --color-bg-hover: #2A2A42;
+  --color-bg-active: #33334D;
 
   /* Surface (cards, panels) */
-  --color-surface: rgba(21, 27, 40, 0.7);
-  --color-surface-hover: rgba(37, 45, 63, 0.7);
-  --color-surface-border: rgba(0, 245, 255, 0.08);
-  --color-surface-glass: rgba(13, 17, 23, 0.8);
+  --color-surface: rgba(26, 26, 46, 0.7);
+  --color-surface-hover: rgba(42, 42, 66, 0.7);
+  --color-surface-border: rgba(255, 140, 0, 0.1);
+  --color-surface-glass: rgba(18, 18, 30, 0.85);
 
-  /* Brand / Accent — Electric Cyan (primary action color) */
-  --color-brand: #00F5FF;
-  --color-brand-hover: #33F7FF;
-  --color-brand-active: #00D4DD;
-  --color-brand-glow: rgba(0, 245, 255, 0.4);
-  --color-brand-subtle: rgba(0, 245, 255, 0.08);
+  /* Brand / Accent — Golden-Orange (primary action color) */
+  --color-brand: #FF8C00;
+  --color-brand-hover: #FFA033;
+  --color-brand-active: #E67E00;
+  --color-brand-glow: rgba(255, 140, 0, 0.4);
+  --color-brand-subtle: rgba(255, 140, 0, 0.08);
 
   /* Accent Secondary — Hot Pink/Magenta (notifications, highlights) */
   --color-accent: #FF2DAA;
   --color-accent-hover: #FF5CC0;
-  --color-accent-glow: rgba(255, 45, 170, 0.35);
+  --color-accent-glow: rgba(255, 107, 0, 0.35);
 
-  /* Accent Tertiary — Vivid Violet (complementary) */
-  --color-accent-warm: #8A00FF;
-  --color-accent-warm-glow: rgba(138, 0, 255, 0.35);
+  /* Accent Tertiary — Electric Violet (complementary) */
+  --color-accent-warm: #7C3AED;
+  --color-accent-warm-glow: rgba(124, 58, 237, 0.35);
 
   /* Text */
-  --color-text-primary: #E6EDF5;
-  --color-text-secondary: #8B95A8;
-  --color-text-tertiary: #5A6478;
-  --color-text-muted: #3D4555;
-  --color-text-inverse: #080B16;
-  --color-text-brand: #7DF9FF;
-  --color-text-link: #00F5FF;
+  --color-text-primary: #F0E6D6;
+  --color-text-secondary: #9B8E7E;
+  --color-text-tertiary: #6B5F52;
+  --color-text-muted: #4A4038;
+  --color-text-inverse: #0A0A12;
+  --color-text-brand: #FFD700;
+  --color-text-link: #FF8C00;
 
   /* Status */
   --color-online: #00E676;
@@ -60,12 +60,12 @@
   --color-success: #00E676;
   --color-warning: #FFD740;
   --color-error: #FF5252;
-  --color-info: #448AFF;
+  --color-info: #FF8C00;
 
   /* Borders */
-  --color-border: rgba(0, 245, 255, 0.08);
-  --color-border-hover: rgba(0, 245, 255, 0.2);
-  --color-border-focus: rgba(0, 245, 255, 0.45);
+  --color-border: rgba(255, 140, 0, 0.08);
+  --color-border-hover: rgba(255, 140, 0, 0.2);
+  --color-border-focus: rgba(255, 140, 0, 0.45);
   --color-border-subtle: rgba(255, 255, 255, 0.04);
 
   /* --- Typography --- */
@@ -118,8 +118,8 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
   --shadow-xl: 0 16px 50px rgba(0, 0, 0, 0.6);
-  --shadow-glow-brand: 0 0 20px rgba(0, 245, 255, 0.3), 0 0 60px rgba(0, 245, 255, 0.1);
-  --shadow-glow-accent: 0 0 20px rgba(255, 45, 170, 0.3), 0 0 60px rgba(255, 45, 170, 0.1);
+  --shadow-glow-brand: 0 0 20px rgba(255, 140, 0, 0.3), 0 0 60px rgba(255, 140, 0, 0.1);
+  --shadow-glow-accent: 0 0 20px rgba(255, 107, 0, 0.3), 0 0 60px rgba(124, 58, 237, 0.1);
   --shadow-inner: inset 0 1px 3px rgba(0, 0, 0, 0.3);
 
   /* --- Transitions --- */
@@ -171,7 +171,9 @@ body {
   font-weight: var(--weight-regular);
   line-height: var(--leading-normal);
   color: var(--color-text-primary);
-  background-color: var(--color-bg-primary);
+  background: linear-gradient(-45deg, #0A0A12, #1A0A1E, #0A0A12, #12080A);
+  background-size: 400% 400%;
+  animation: phoenixGlow 20s ease infinite;
   overflow: hidden;
   height: 100%;
   height: 100dvh;
@@ -245,7 +247,7 @@ ul, ol {
 
 /* Selection */
 ::selection {
-  background: var(--color-brand);
+  background: #FF6B00;
   color: white;
 }
 
@@ -375,6 +377,24 @@ ul, ol {
   100% { background-position: 0% 50%; }
 }
 
+/* Phoenix Glow — animated background */
+@keyframes phoenixGlow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Fire shimmer effect for brand elements */
+@keyframes fireShimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* Ember float particles */
+@keyframes emberFloat {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
+  50% { transform: translateY(-8px) scale(1.1); opacity: 1; }
+}
+
 /* Bounce in */
 @keyframes bounceIn {
   0% {
@@ -437,10 +457,20 @@ ul, ol {
   background: linear-gradient(
     90deg,
     var(--color-bg-tertiary) 25%,
-    var(--color-bg-hover) 50%,
+    rgba(255, 140, 0, 0.08) 50%,
     var(--color-bg-tertiary) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: var(--radius-md);
+}
+
+/* Fire text utility */
+.fire-text {
+  background: linear-gradient(90deg, #FF6B00, #FFD700, #FF6B00, #FFD700);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: fireShimmer 3s linear infinite;
 }

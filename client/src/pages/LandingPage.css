@@ -34,7 +34,7 @@
 .landing__orb--purple {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, #00F5FF, transparent 70%);
+  background: radial-gradient(circle, #FF6B00, transparent 70%);
   top: -10%;
   left: -5%;
   animation-duration: 22s;
@@ -43,7 +43,7 @@
 .landing__orb--cyan {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, #FF2DAA, transparent 70%);
+  background: radial-gradient(circle, #FFD700, transparent 70%);
   top: 40%;
   right: -8%;
   animation-duration: 18s;
@@ -53,7 +53,7 @@
 .landing__orb--orange {
   width: 350px;
   height: 350px;
-  background: radial-gradient(circle, #8A00FF, transparent 70%);
+  background: radial-gradient(circle, #7C3AED, transparent 70%);
   bottom: -5%;
   left: 30%;
   animation-duration: 25s;
@@ -63,7 +63,7 @@
 .landing__orb--small-purple {
   width: 200px;
   height: 200px;
-  background: radial-gradient(circle, #33F7FF, transparent 70%);
+  background: radial-gradient(circle, #FF9500, transparent 70%);
   top: 60%;
   left: 10%;
   animation-duration: 16s;
@@ -107,7 +107,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-2xl);
-  background: linear-gradient(135deg, #00F5FF, #FF2DAA);
+  background: linear-gradient(135deg, #FF6B00, #FF2DAA);
   color: white;
   margin-bottom: var(--space-8);
   box-shadow: var(--shadow-glow-brand);
@@ -119,7 +119,7 @@
   font-weight: var(--weight-extrabold);
   line-height: var(--leading-tight);
   margin-bottom: var(--space-4);
-  background: linear-gradient(135deg, #00F5FF, #FF2DAA);
+  background: linear-gradient(135deg, #FF6B00, #FFD700);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -193,15 +193,15 @@
 }
 
 .landing__feature-icon--chat {
-  background: linear-gradient(135deg, #00F5FF, #00A8B0);
+  background: linear-gradient(135deg, #FF8C00, #FF6B00);
 }
 
 .landing__feature-icon--voice {
-  background: linear-gradient(135deg, #FF2DAA, #C00080);
+  background: linear-gradient(135deg, #FF2DAA, #7C3AED);
 }
 
 .landing__feature-icon--community {
-  background: linear-gradient(135deg, #8A00FF, #5C00B0);
+  background: linear-gradient(135deg, #7C3AED, #A855F7);
 }
 
 .landing__feature-title {
@@ -238,8 +238,8 @@
   height: 600px;
   background: radial-gradient(
     circle,
-    rgba(0, 245, 255, 0.08) 0%,
-    rgba(255, 45, 170, 0.04) 40%,
+    rgba(255, 107, 0, 0.08) 0%,
+    rgba(255, 215, 0, 0.04) 40%,
     transparent 70%
   );
   pointer-events: none;

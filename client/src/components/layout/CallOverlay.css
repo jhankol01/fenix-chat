@@ -3,7 +3,7 @@
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: linear-gradient(180deg, #0a0f1c 0%, #0d1a2d 50%, #091420 100%);
+  background: linear-gradient(180deg, #0A0A12 0%, #1A0A14 50%, #0D0A12 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -32,7 +32,7 @@
   position: absolute;
   inset: -8px;
   border-radius: 50%;
-  border: 2px solid rgba(0, 245, 255, 0.3);
+  border: 2px solid rgba(255, 140, 0, 0.3);
   animation: callPulseRing 2s infinite;
 }
 
@@ -40,8 +40,8 @@
   width: 140px; height: 140px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid rgba(0, 245, 255, 0.4);
-  box-shadow: 0 0 40px rgba(0, 245, 255, 0.15);
+  border: 3px solid rgba(255, 140, 0, 0.4);
+  box-shadow: 0 0 40px rgba(255, 140, 0, 0.15);
 }
 
 .call-overlay__avatar-fallback {
@@ -51,8 +51,8 @@
   font-size: 3rem;
   font-weight: 800;
   color: white;
-  background: linear-gradient(135deg, #6C63FF, #FF2DAA);
-  box-shadow: 0 0 40px rgba(108, 99, 255, 0.2);
+  background: linear-gradient(135deg, #FF6B00, #7C3AED);
+  box-shadow: 0 0 40px rgba(255, 107, 0, 0.2);
 }
 
 /* Name & status */
@@ -84,7 +84,7 @@
 .call-overlay__wave-bar {
   width: 4px;
   height: 8px;
-  background: #00F5FF;
+  background: #FF8C00;
   border-radius: 4px;
   animation: waveBar 1s ease-in-out infinite;
 }
@@ -155,10 +155,10 @@
 .call-overlay__btn--speaker:hover { background: rgba(255, 255, 255, 0.15); }
 
 .call-overlay__btn--speaker-on {
-  background: rgba(0, 245, 255, 0.15) !important;
-  border-color: rgba(0, 245, 255, 0.4) !important;
-  color: #00F5FF;
-  box-shadow: 0 0 16px rgba(0, 245, 255, 0.2);
+  background: rgba(255, 140, 0, 0.15) !important;
+  border-color: rgba(255, 140, 0, 0.4) !important;
+  color: #FF8C00;
+  box-shadow: 0 0 16px rgba(255, 140, 0, 0.2);
 }
 
 /* Animations */

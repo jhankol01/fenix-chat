@@ -1,7 +1,7 @@
 /* ============================================
    🔥 Register Page Styles
    2-step registration flow with phone verification
-   Brand accent: cyan #00F5FF
+   Brand accent: golden-orange #FF8C00
    ============================================ */
 
 /* --- Card para el registro --- */
@@ -33,7 +33,7 @@
 .register-steps__dot--active {
   background: var(--color-brand);
   border-color: var(--color-brand);
-  box-shadow: 0 0 8px var(--color-brand-glow), 0 0 20px rgba(0, 245, 255, 0.15);
+  box-shadow: 0 0 8px var(--color-brand-glow), 0 0 20px rgba(255, 140, 0, 0.15);
 }
 
 .register-steps__line {
@@ -149,7 +149,7 @@
   height: 64px;
   border-radius: var(--radius-xl);
   background: var(--color-brand-subtle);
-  border: 1px solid rgba(0, 245, 255, 0.15);
+  border: 1px solid rgba(255, 140, 0, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -178,7 +178,7 @@
   padding: var(--space-2) var(--space-4);
   background: var(--color-brand-subtle);
   border-radius: var(--radius-md);
-  border: 1px solid rgba(0, 245, 255, 0.1);
+  border: 1px solid rgba(255, 140, 0, 0.1);
 }
 
 /* Contenedor del PinInput */

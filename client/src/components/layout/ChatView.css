@@ -52,7 +52,7 @@
   font-weight: var(--weight-bold);
   color: white;
   flex-shrink: 0;
-  background: linear-gradient(135deg, var(--color-brand), #0066FF);
+  background: linear-gradient(135deg, #FF6B00, #FFD700);
   overflow: hidden;
 }
 
@@ -199,7 +199,7 @@
   color: white;
   flex-shrink: 0;
   margin-top: auto;
-  background: linear-gradient(135deg, var(--color-accent-warm), var(--color-accent));
+  background: linear-gradient(135deg, var(--color-accent-warm), #FF6B00);
   overflow: hidden;
 }
 
@@ -268,8 +268,8 @@
 
 /* Texto del mensaje — propios con fondo cyan (burbuja compacta) */
 .chat-view__msg-group--own .chat-view__msg-text {
-  background: linear-gradient(135deg, rgba(0, 245, 255, 0.12), rgba(0, 200, 255, 0.08));
-  border-color: rgba(0, 245, 255, 0.2);
+  background: linear-gradient(135deg, rgba(255, 107, 0, 0.12), rgba(255, 215, 0, 0.08));
+  border-color: rgba(255, 140, 0, 0.2);
   margin-left: auto;
   border-radius: 12px 12px 4px 12px;
 }
@@ -306,7 +306,7 @@
   flex-direction: column;
   align-items: center;
   padding: var(--space-6) var(--space-4) var(--space-8);
-  background: linear-gradient(180deg, rgba(0, 245, 255, 0.08) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(255, 140, 0, 0.08) 0%, transparent 100%);
   position: relative;
 }
 
@@ -339,7 +339,7 @@
   object-fit: cover;
   border: 4px solid transparent;
   background-clip: padding-box;
-  box-shadow: 0 0 0 4px rgba(0, 245, 255, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 0 4px rgba(255, 140, 0, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .contact-profile__photo-fallback {
@@ -349,8 +349,8 @@
   font-size: 3.5rem;
   font-weight: 800;
   color: white;
-  background: linear-gradient(135deg, #FF2DAA, #8A00FF);
-  box-shadow: 0 0 0 4px rgba(255, 45, 170, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, #FF6B00, #7C3AED);
+  box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.3), 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .contact-profile__online-ring {
@@ -493,8 +493,8 @@
 }
 
 @keyframes avatarTypingGlow {
-  0%, 100% { box-shadow: 0 0 0 2px rgba(0, 245, 255, 0.3); }
-  50% { box-shadow: 0 0 0 4px rgba(0, 245, 255, 0.15), 0 0 10px rgba(0, 245, 255, 0.2); }
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.3); }
+  50% { box-shadow: 0 0 0 4px rgba(255, 140, 0, 0.15), 0 0 10px rgba(255, 107, 0, 0.2); }
 }
 
 .chat-view__typing-bubble {
@@ -564,7 +564,7 @@
 
 .chat-view__input-wrapper:focus-within {
   border-color: var(--color-border-focus);
-  box-shadow: 0 0 0 2px rgba(0, 245, 255, 0.08);
+  box-shadow: 0 0 0 2px rgba(255, 140, 0, 0.08);
   background: var(--color-bg-elevated);
 }
 
@@ -637,15 +637,15 @@
 }
 
 .chat-view__send-btn--active {
-  background: var(--color-brand);
+  background: linear-gradient(135deg, #FF8C00, #FF6B00);
   color: var(--color-text-inverse);
-  box-shadow: 0 0 16px rgba(0, 245, 255, 0.25);
+  box-shadow: 0 0 16px rgba(255, 140, 0, 0.25);
 }
 
 .chat-view__send-btn--active:hover {
-  background: var(--color-brand-hover);
+  background: linear-gradient(135deg, #FFA033, #FF8C00);
   transform: scale(1.05);
-  box-shadow: 0 0 24px rgba(0, 245, 255, 0.35);
+  box-shadow: 0 0 24px rgba(255, 140, 0, 0.35);
 }
 
 .chat-view__send-btn:disabled {
@@ -683,7 +683,7 @@
 }
 .chat-view__mic-btn:hover {
   color: var(--color-brand);
-  background: rgba(0, 245, 255, 0.08);
+  background: rgba(255, 140, 0, 0.08);
 }
 
 /* ========== Recording UI ========== */
@@ -742,7 +742,7 @@
   color: white;
   background: var(--color-brand);
   transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 245, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.3);
 }
 .chat-view__recording-stop:hover {
   transform: scale(1.05);
@@ -765,7 +765,7 @@
   color: white;
   flex-shrink: 0;
   transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 245, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(255, 140, 0, 0.25);
 }
 .audio-msg__play:hover { transform: scale(1.08); }
 
@@ -792,7 +792,7 @@
 }
 
 .chat-view__msg-group--own .audio-msg__bar {
-  background: rgba(0, 245, 255, 0.7);
+  background: rgba(255, 140, 0, 0.7);
 }
 
 .audio-msg__time {

@@ -1,6 +1,6 @@
 /* ============================================
    🔥 Auth Pages Styles (Login & Register)
-   Tarjeta glass centrada con orbes de fondo
+   Tarjeta glass centrada con orbes de fondo — Phoenix Fire Theme
    ============================================ */
 
 .auth-page {
@@ -34,7 +34,7 @@
 .auth-page__orb--purple {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, #00F5FF, transparent 70%);
+  background: radial-gradient(circle, #FF6B00, transparent 70%);
   top: -15%;
   right: -10%;
   animation-duration: 22s;
@@ -43,7 +43,7 @@
 .auth-page__orb--cyan {
   width: 350px;
   height: 350px;
-  background: radial-gradient(circle, #FF2DAA, transparent 70%);
+  background: radial-gradient(circle, #7C3AED, transparent 70%);
   bottom: -10%;
   left: -8%;
   animation-duration: 18s;
@@ -74,7 +74,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-xl);
-  background: linear-gradient(135deg, #00F5FF, #FF2DAA);
+  background: linear-gradient(135deg, #FF6B00, #FF2DAA);
   color: white;
   margin: 0 auto var(--space-6);
   box-shadow: var(--shadow-glow-brand);
