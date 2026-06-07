@@ -144,25 +144,42 @@ const useChatStore = create((set, get) => ({
   },
 
   // Recibir indicador de escritura de otro usuario
+  _typingTimeouts: {},
+
   setUserTyping: (conversationId, username) => {
+    // Clear any existing timeout for this conversation
+    const timeouts = get()._typingTimeouts
+    if (timeouts[conversationId]) clearTimeout(timeouts[conversationId])
+
     set(state => ({
       typingUsers: { ...state.typingUsers, [conversationId]: username }
     }))
-    // Auto-limpiar después de 3 segundos
-    setTimeout(() => {
+
+    // Auto-clear after 5 seconds (safety net if stop_typing never arrives)
+    const timeout = setTimeout(() => {
       set(state => {
         const updated = { ...state.typingUsers }
         delete updated[conversationId]
         return { typingUsers: updated }
       })
-    }, 3000)
+    }, 5000)
+
+    set(state => ({
+      _typingTimeouts: { ...state._typingTimeouts, [conversationId]: timeout }
+    }))
   },
 
   clearTyping: (conversationId) => {
+    // Clear the safety timeout
+    const timeouts = get()._typingTimeouts
+    if (timeouts[conversationId]) clearTimeout(timeouts[conversationId])
+
     set(state => {
       const updated = { ...state.typingUsers }
       delete updated[conversationId]
-      return { typingUsers: updated }
+      const updatedTimeouts = { ...state._typingTimeouts }
+      delete updatedTimeouts[conversationId]
+      return { typingUsers: updated, _typingTimeouts: updatedTimeouts }
     })
   },
 

@@ -351,16 +351,19 @@ function ChatView({ onBack }) {
   const handleInputChange = (e) => {
     setInputValue(e.target.value)
 
-    if (!isTypingLocal && activeConversation) {
-      setIsTypingLocal(true)
-      setTyping(activeConversation.id)
-    }
+    if (activeConversation) {
+      // Only emit 'typing' if we haven't already (debounce)
+      if (!isTypingLocal) {
+        setIsTypingLocal(true)
+        setTyping(activeConversation.id)
+      }
 
-    // Reset del timeout de typing
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
-    typingTimeoutRef.current = setTimeout(() => {
-      handleStopTyping()
-    }, 2000)
+      // Reset the stop-typing timeout every keystroke
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+      typingTimeoutRef.current = setTimeout(() => {
+        handleStopTyping()
+      }, 3000) // 3 seconds after last keystroke
+    }
   }
 
   const handleStopTyping = () => {
