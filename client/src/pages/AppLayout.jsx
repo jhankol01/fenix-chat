@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Flame } from 'lucide-react'
+import PhoenixIcon from '../components/ui/PhoenixIcon'
 import ChatList from '../components/layout/ChatList'
 import ChatView from '../components/layout/ChatView'
 import ProfileView from '../components/layout/ProfileView'
@@ -145,7 +145,7 @@ function AppLayout() {
           ) : (
             <div className="welcome-screen">
               <div className="welcome-screen__icon">
-                <Flame size={56} />
+                <PhoenixIcon size={56} variant="fire" glow />
               </div>
               <h1 className="welcome-screen__title">Fénix Chat</h1>
               <p className="welcome-screen__subtitle">

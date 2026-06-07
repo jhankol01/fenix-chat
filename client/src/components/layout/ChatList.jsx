@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Flame, Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2, Rocket, Phone } from 'lucide-react'
+import { Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2, Rocket, Phone } from 'lucide-react'
+import PhoenixIcon from '../ui/PhoenixIcon'
 import useChatStore from '../../stores/chatStore'
 import useAuthStore from '../../stores/authStore'
 import './ChatList.css'
@@ -144,7 +145,7 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
       {/* Premium Header with branding */}
       <div className="chat-list__header">
         <div className="chat-list__logo">
-          <Flame size={22} className="chat-list__logo-icon" />
+          <PhoenixIcon size={22} variant="fire" />
           <span className="chat-list__logo-text">Fénix Chat</span>
           <span className="chat-list__logo-fire">🔥</span>
         </div>

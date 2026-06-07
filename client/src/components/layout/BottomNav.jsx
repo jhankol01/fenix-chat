@@ -1,4 +1,5 @@
-import { MessageCircle, Users, Bell, User, Flame } from 'lucide-react'
+import { MessageCircle, Users, Bell, User } from 'lucide-react'
+import PhoenixIcon from '../ui/PhoenixIcon'
 import './BottomNav.css'
 
 /**
@@ -29,7 +30,7 @@ function BottomNav({ activeSection, onSectionChange }) {
               aria-label="Fénix"
             >
               <div className="bottom-nav__center-ring">
-                <Flame size={24} />
+              <PhoenixIcon size={26} variant="fire" glow />
               </div>
             </button>
           )

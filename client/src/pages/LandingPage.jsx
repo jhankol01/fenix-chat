@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Flame } from 'lucide-react'
+import PhoenixIcon from '../components/ui/PhoenixIcon'
 import Button from '../components/ui/Button'
 import './LandingPage.css'
 
@@ -68,7 +68,7 @@ function LandingPage() {
       {/* Hero */}
       <section className="landing__hero">
         <div className="landing__logo">
-          <Flame size={44} />
+          <PhoenixIcon size={44} variant="fire" glow />
         </div>
 
         <h1 className="landing__title">
@@ -113,7 +113,7 @@ function LandingPage() {
       {/* Footer */}
       <footer className="landing__footer">
         <div className="landing__footer-brand">
-          <Flame size={18} className="landing__footer-icon" />
+          <PhoenixIcon size={18} variant="brand" />
           <span>Fénix Chat</span>
         </div>
         <p className="landing__footer-tagline">
