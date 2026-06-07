@@ -70,6 +70,11 @@ function ProfileView() {
   const [selectedTheme, setSelectedTheme] = useState('fenix')
   const [savedTheme, setSavedTheme] = useState('fenix')
 
+  // Privacy state (persisted in localStorage)
+  const [privacyLastSeen, setPrivacyLastSeen] = useState(() => localStorage.getItem('fenix_privacy_lastseen') !== 'false')
+  const [privacyReadReceipts, setPrivacyReadReceipts] = useState(() => localStorage.getItem('fenix_privacy_readreceipts') !== 'false')
+  const [privacyProfileInfo, setPrivacyProfileInfo] = useState(() => localStorage.getItem('fenix_privacy_profileinfo') !== 'false')
+
   // Load saved preferences (background + theme)
   useEffect(() => {
     api.get('/preferences').then(data => {
@@ -605,22 +610,22 @@ function ProfileView() {
             icon={User}
             label="Última conexión"
             description="Permitir que otros vean cuándo estuviste en línea"
-            value={true}
-            onChange={() => {}}
+            value={privacyLastSeen}
+            onChange={(v) => { setPrivacyLastSeen(v); localStorage.setItem('fenix_privacy_lastseen', v) }}
           />
           <ToggleItem
             icon={Check}
             label="Confirmación de lectura"
             description="Mostrar cuando leíste un mensaje"
-            value={true}
-            onChange={() => {}}
+            value={privacyReadReceipts}
+            onChange={(v) => { setPrivacyReadReceipts(v); localStorage.setItem('fenix_privacy_readreceipts', v) }}
           />
           <ToggleItem
             icon={Info}
             label="Info de perfil"
             description="Quién puede ver tu foto y estado"
-            value={true}
-            onChange={() => {}}
+            value={privacyProfileInfo}
+            onChange={(v) => { setPrivacyProfileInfo(v); localStorage.setItem('fenix_privacy_profileinfo', v) }}
           />
         </div>
       </div>
@@ -640,13 +645,13 @@ function ProfileView() {
         </div>
 
         <div className="profile-view__settings-list">
-          <button className="profile-view__settings-item" disabled>
+          <button className="profile-view__settings-item" onClick={() => setActivePanel('colorTheme')}>
             <span className="profile-view__settings-icon" style={{ color: '#6C63FF' }}>
               <Palette size={20} />
             </span>
             <div className="profile-view__settings-text">
               <span className="profile-view__settings-label">Tema</span>
-              <span className="profile-view__settings-desc">Oscuro (predeterminado)</span>
+              <span className="profile-view__settings-desc">{THEMES[savedTheme]?.label || 'Fénix'}</span>
             </div>
             <ChevronRight size={18} className="profile-view__settings-chevron" />
           </button>
@@ -674,7 +679,15 @@ function ProfileView() {
             </div>
           </button>
 
-          <button className="profile-view__settings-item profile-view__settings-item--danger" disabled>
+          <button className="profile-view__settings-item profile-view__settings-item--danger" onClick={() => {
+            if (window.confirm('¿Estás seguro? Esta acción eliminará tu cuenta permanentemente.')) {
+              api.delete('/users/me').then(() => {
+                logout()
+              }).catch(() => {
+                alert('Error al eliminar la cuenta')
+              })
+            }
+          }}>
             <span className="profile-view__settings-icon">
               <Trash2 size={20} />
             </span>
