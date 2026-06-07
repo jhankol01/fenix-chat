@@ -51,4 +51,55 @@ router.post('/avatar', authenticate, upload.single('avatar'), async (req, res, n
   }
 })
 
+// Multer for chat media: images up to 10MB, videos up to 50MB
+const mediaUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+      cb(null, true)
+    } else {
+      cb(new Error('Solo se permiten imágenes y videos'), false)
+    }
+  },
+})
+
+// POST /api/upload/media — Upload chat image or video
+router.post('/media', authenticate, mediaUpload.single('media'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se proporcionó un archivo' })
+    }
+
+    const isImage = req.file.mimetype.startsWith('image/')
+    const isVideo = req.file.mimetype.startsWith('video/')
+    const folder = isImage ? 'chat-images' : 'chat-videos'
+
+    let buffer = req.file.buffer
+    let mimeType = req.file.mimetype
+
+    // Compress images (not videos)
+    if (isImage) {
+      const sharp = (await import('sharp')).default
+      buffer = await sharp(req.file.buffer)
+        .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 80 })
+        .toBuffer()
+      mimeType = 'image/jpeg'
+    }
+
+    const url = await uploadToB2(buffer, folder, mimeType)
+    logger.info(`Media uploaded by ${req.user.id}: ${url}`)
+
+    res.json({
+      url,
+      type: isImage ? 'image' : 'video',
+      originalName: req.file.originalname,
+    })
+  } catch (err) {
+    logger.error('Media upload error:', err.message)
+    next(err)
+  }
+})
+
 export default router

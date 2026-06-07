@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Video, Trash2, UserPlus, UserCheck
+  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Video, Trash2, UserPlus, UserCheck, Paperclip, Image
 } from 'lucide-react'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
 import { getSocket } from '../../lib/socket'
@@ -28,6 +28,9 @@ function ChatView({ onBack }) {
   const [addingContact, setAddingContact] = useState(false)
   const [msgContextMenu, setMsgContextMenu] = useState(null)
   const msgLongPressRef = useRef(null)
+  const fileInputRef = useRef(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [mediaPreview, setMediaPreview] = useState(null) // { file, url, type }
 
   // Voice note state
   const [isRecording, setIsRecording] = useState(false)
@@ -556,6 +559,20 @@ function ChatView({ onBack }) {
                   >
                     {msg.type === 'audio' ? (
                       <AudioMessage src={msg.content} />
+                    ) : msg.type === 'image' ? (
+                      <img
+                        src={msg.content}
+                        alt="Foto"
+                        className="chat-view__msg-image"
+                        onClick={() => window.open(msg.content, '_blank')}
+                      />
+                    ) : msg.type === 'video' ? (
+                      <video
+                        src={msg.content}
+                        controls
+                        className="chat-view__msg-video"
+                        preload="metadata"
+                      />
                     ) : msg.type === 'system' ? (
                       <span className="chat-view__msg-system">{msg.content}</span>
                     ) : (
@@ -644,6 +661,38 @@ function ChatView({ onBack }) {
           >
             <Smile size={20} />
           </button>
+          <button
+            className="chat-view__input-btn"
+            aria-label="Adjuntar"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Paperclip size={20} />
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,video/*"
+            style={{ display: 'none' }}
+            onChange={async (e) => {
+              const file = e.target.files?.[0]
+              if (!file) return
+              e.target.value = ''
+              const type = file.type.startsWith('image/') ? 'image' : 'video'
+              // Upload to B2
+              setIsUploading(true)
+              try {
+                const formData = new FormData()
+                formData.append('media', file)
+                const data = await api.upload('/upload/media', formData)
+                sendMessage(data.url, data.type)
+              } catch (err) {
+                console.error('Upload error:', err)
+                alert('Error al subir archivo')
+              } finally {
+                setIsUploading(false)
+              }
+            }}
+          />
           <input
             ref={inputRef}
             type="text"
@@ -696,6 +745,14 @@ function ChatView({ onBack }) {
           >
             <Mic size={20} />
           </button>
+        )}
+
+        {/* Uploading indicator */}
+        {isUploading && (
+          <div className="chat-view__uploading">
+            <Loader2 size={18} className="spin" />
+            <span>Subiendo...</span>
+          </div>
         )}
       </div>
     </div>
