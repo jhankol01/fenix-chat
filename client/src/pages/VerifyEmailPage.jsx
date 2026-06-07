@@ -35,7 +35,7 @@ function VerifyEmailPage() {
         <div className="auth-card__logo">
           <Flame size={28} />
         </div>
-        <h1 className="auth-card__title">Fénix Chat</h1>
+        <h1 className="auth-card__title">Fenix Messenger</h1>
 
         {status === 'loading' && (
           <div style={{ marginTop: 32 }}>

@@ -35,6 +35,9 @@ const config = {
   // Resend (Email)
   resendApiKey: process.env.RESEND_API_KEY,
   resendFrom: process.env.RESEND_FROM || 'onboarding@resend.dev',
+
+  // Tenor GIF API
+  tenorApiKey: process.env.TENOR_API_KEY || '',
 };
 
 /**

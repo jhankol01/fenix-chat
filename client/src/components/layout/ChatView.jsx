@@ -347,10 +347,7 @@ function ChatView({ onBack }) {
     gifSearchTimeoutRef.current = setTimeout(async () => {
       setIsLoadingGifs(true)
       try {
-        const res = await fetch(
-          `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(query)}&key=AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ&limit=20&media_filter=gif`
-        )
-        const data = await res.json()
+        const data = await api.get(`/gifs/search?q=${encodeURIComponent(query)}`)
         setGifResults(data.results || [])
       } catch (err) {
         console.error('GIF search error:', err)
@@ -365,10 +362,7 @@ function ChatView({ onBack }) {
   useEffect(() => {
     if (showGifPicker && gifResults.length === 0 && !gifSearchQuery) {
       setIsLoadingGifs(true)
-      fetch(
-        `https://tenor.googleapis.com/v2/featured?key=AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ&limit=20&media_filter=gif`
-      )
-        .then(res => res.json())
+      api.get('/gifs/trending')
         .then(data => setGifResults(data.results || []))
         .catch(() => setGifResults([]))
         .finally(() => setIsLoadingGifs(false))
@@ -731,6 +725,27 @@ function ChatView({ onBack }) {
                     <span className="contact-profile__card-value">{messages.length} mensajes</span>
                   </div>
                 </div>
+
+                {/* Block user button */}
+                <button
+                  className="contact-profile__block-btn"
+                  onClick={async () => {
+                    const otherId = activeConversation?.other_user_id
+                      || activeConversation?.participants?.find(p => p.id !== user?.id)?.id
+                    if (!otherId) return
+                    if (window.confirm(`¿Bloquear a ${otherDisplay || otherName}? No podrá enviarte mensajes.`)) {
+                      try {
+                        await api.post(`/users/block/${otherId}`)
+                        alert('Usuario bloqueado')
+                        setShowContactInfo(false)
+                      } catch (err) {
+                        console.error('Error blocking:', err)
+                      }
+                    }
+                  }}
+                >
+                  🚫 Bloquear usuario
+                </button>
               </div>
 
             </div>
@@ -896,10 +911,10 @@ function ChatView({ onBack }) {
                       ) : (
                         msg.content
                       )}
-                      {/* 🔥 Flame read receipt — en cada mensaje propio */}
+                      {/* 🔥 Read receipt — en cada mensaje propio */}
                       {group.isOwn && msg.type !== 'system' && !msg.deleted_at && (
                         <span className={`chat-view__flame-receipt ${msg.seen_at ? 'chat-view__flame-receipt--seen' : ''}`}>
-                          <img src="/icons/fenix-flame.png" alt="" className="chat-view__flame-img" />
+                          <span className="chat-view__check-marks">{msg.seen_at ? '✓✓' : '✓'}</span>
                         </span>
                       )}
                     </div>

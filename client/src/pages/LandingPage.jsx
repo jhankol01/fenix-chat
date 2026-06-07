@@ -72,7 +72,7 @@ function LandingPage() {
         </div>
 
         <h1 className="landing__title">
-          Fénix Chat <span className="landing__title-fire">🔥</span>
+          Fenix Messenger <span className="landing__title-fire">🔥</span>
         </h1>
         <p className="landing__tagline">
           Comunidades. Chat. Voz. Todo en un solo lugar.
@@ -114,13 +114,13 @@ function LandingPage() {
       <footer className="landing__footer">
         <div className="landing__footer-brand">
           <PhoenixIcon size={18} variant="brand" />
-          <span>Fénix Chat</span>
+          <span>Fenix Messenger</span>
         </div>
         <p className="landing__footer-tagline">
           Tu comunidad. Tu espacio. Tus reglas.
         </p>
         <p className="landing__footer-copy">
-          © {new Date().getFullYear()} Fénix Chat. Hecho con 🔥 para comunidades.
+          © {new Date().getFullYear()} Fenix Messenger. Hecho con 🔥 para comunidades.
         </p>
       </footer>
     </div>

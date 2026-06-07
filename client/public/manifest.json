@@ -1,7 +1,7 @@
 {
-  "name": "Fénix Chat",
-  "short_name": "Fénix",
-  "description": "Chat en tiempo real con estilo Fénix 🔥",
+  "name": "Fenix Messenger",
+  "short_name": "Fenix",
+  "description": "Fenix Messenger — Mensajería en tiempo real 🔥",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0d0a1a",

@@ -54,7 +54,7 @@ function LoginPage() {
 
         <h1 className="auth-card__title">Bienvenido de vuelta</h1>
         <p className="auth-card__subtitle">
-          Inicia sesión para continuar en Fénix Chat
+          Inicia sesión para continuar en Fenix
         </p>
 
         {error && <div className="auth-card__error">{error}</div>}

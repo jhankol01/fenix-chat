@@ -184,7 +184,7 @@ function AppLayout() {
               <div className="welcome-screen__icon">
                 <PhoenixIcon size={56} variant="fire" glow />
               </div>
-              <h1 className="welcome-screen__title">Fénix Chat</h1>
+              <h1 className="welcome-screen__title">Fenix Messenger</h1>
               <p className="welcome-screen__subtitle">
                 Selecciona una conversación para comenzar a chatear
               </p>
@@ -221,7 +221,7 @@ function AppLayout() {
         {mobileSection === 'fenix' && (
           <div className="section-placeholder section-placeholder--fenix">
             <div className="section-placeholder__icon section-placeholder__icon--fire">🔥</div>
-            <h2 className="section-placeholder__title">Fénix Hub</h2>
+            <h2 className="section-placeholder__title">Fenix Hub</h2>
             <p className="section-placeholder__desc">
               Tu centro de actividad. Comparte historias y descubre lo que está pasando.
             </p>

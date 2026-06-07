@@ -57,7 +57,8 @@ const useAuthStore = create((set, get) => {
       } catch {
         // Ignore logout errors
       }
-      localStorage.removeItem('fenix_refresh_token')
+      // Clear ALL localStorage to remove tokens, preferences, privacy settings, etc.
+      localStorage.clear()
       set({
         user: null,
         accessToken: null,

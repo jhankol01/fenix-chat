@@ -3,14 +3,14 @@ import PhoenixIcon from '../ui/PhoenixIcon'
 import './BottomNav.css'
 
 /**
- * BottomNav — Navegación inferior con íconos lineales + fénix central
+ * BottomNav — Navegación inferior con íconos lineales + Fenix central
  * Estilo limpio como el concepto mockup
  */
 function BottomNav({ activeSection, onSectionChange }) {
   const tabs = [
     { id: 'chats', label: 'Inicio', Icon: Home },
     { id: 'comunidades', label: 'Contactos', Icon: Users },
-    { id: 'fenix', label: '', Icon: null, isCenter: true },
+    { id: 'fenix', label: 'Fenix', Icon: null, isCenter: true },
     { id: 'notificaciones', label: 'Notificaciones', Icon: Bell },
     { id: 'perfil', label: 'Perfil', Icon: User },
   ]
@@ -26,7 +26,7 @@ function BottomNav({ activeSection, onSectionChange }) {
               key={tab.id}
               className="bottom-nav__center"
               onClick={() => onSectionChange(tab.id)}
-              aria-label="Fénix"
+              aria-label="Fenix"
             >
               <div className="bottom-nav__center-ring">
                 <PhoenixIcon size={32} />

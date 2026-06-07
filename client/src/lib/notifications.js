@@ -1,6 +1,6 @@
 /**
  * Notification Service — Sonido + notificaciones del navegador
- * para mensajes entrantes en Fénix Chat
+ * para mensajes entrantes en Fenix Messenger
  */
 
 // --- Sonido de notificación usando Web Audio API ---
@@ -133,7 +133,7 @@ export function notifyNewMessage({ senderName, content, conversationId, activeCo
 /**
  * Update page title with unread count badge
  */
-let _originalTitle = 'Fénix Chat — Comunidades Simples'
+let _originalTitle = 'Fenix Messenger'
 export function updateTitleBadge() {
   try {
     // Dynamic import to avoid circular deps
@@ -141,7 +141,7 @@ export function updateTitleBadge() {
     const unread = state?.unreadCounts || {}
     const total = Object.values(unread).reduce((sum, n) => sum + n, 0)
     if (total > 0) {
-      document.title = `(${total}) 🔥 Fénix Chat`
+      document.title = `(${total}) 🔥 Fenix Messenger`
     } else {
       document.title = _originalTitle
     }

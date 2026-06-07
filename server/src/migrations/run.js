@@ -30,6 +30,7 @@ async function runMigrations() {
       '010_preferences_presence.sql',
       '011_groups.sql',
       '012_stories.sql',
+      '013_blocked_users.sql',
     ]
 
     for (const file of migrations) {

@@ -36,7 +36,7 @@ function ProtectedRoute({ children }) {
           animation: 'spin 1s linear infinite',
         }} />
         <p style={{ color: '#8899aa', fontSize: '14px', fontFamily: 'Inter, sans-serif' }}>
-          Cargando Fénix Chat...
+          Cargando Fenix...
         </p>
       </div>
     )
@@ -55,7 +55,7 @@ function PublicRoute({ children }) {
 }
 
 /**
- * Fénix Chat — Router principal
+ * Fenix Messenger — Router principal
  * Rutas públicas, protegidas y verificación de email.
  */
 function App() {

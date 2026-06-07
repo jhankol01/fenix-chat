@@ -137,7 +137,7 @@ function RegisterPage() {
           <div className={stepClass}>
             <h1 className="auth-card__title">Crear Cuenta</h1>
             <p className="auth-card__subtitle">
-              Únete a la comunidad Fénix Chat
+              Únete a la comunidad Fenix
             </p>
 
             {error && <div className="auth-card__error">{error}</div>}

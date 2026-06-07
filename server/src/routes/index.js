@@ -40,6 +40,10 @@ import { listUsers, getStats } from '../controllers/admin.js';
 router.get('/admin/users', authenticate, listUsers);
 router.get('/admin/stats', authenticate, getStats);
 
+// GIF proxy routes
+import gifRoutes from './gifRoutes.js';
+router.use('/gifs', gifRoutes);
+
 // Story routes
 import storyRoutes from './storyRoutes.js';
 router.use('/stories', storyRoutes);

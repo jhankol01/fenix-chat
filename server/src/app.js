@@ -4,7 +4,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
+import Story from './models/Story.js';
 
 import config, { validateConfig } from './config/index.js';
 import logger from './utils/logger.js';
@@ -52,18 +52,41 @@ app.use(
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Rate Limiting ──────────────────────────────────────────────────────────────
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,                  // limit each IP to 100 requests per window
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Too many requests, please try again later.',
-  },
+// ─── Rate Limiting (custom in-memory) ───────────────────────────────────────
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX = 100;             // 100 requests per window per IP
+
+app.use((req, res, next) => {
+  const ip = req.ip || req.connection.remoteAddress;
+  const now = Date.now();
+  let entry = rateLimitMap.get(ip);
+
+  if (!entry || now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    entry = { windowStart: now, count: 1 };
+    rateLimitMap.set(ip, entry);
+    return next();
+  }
+
+  entry.count++;
+  if (entry.count > RATE_LIMIT_MAX) {
+    return res.status(429).json({
+      success: false,
+      message: 'Too many requests, please try again later.',
+    });
+  }
+  next();
 });
-app.use(limiter);
+
+// Clean up stale rate-limit entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap) {
+    if (now - entry.windowStart >= RATE_LIMIT_WINDOW_MS) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000);
 
 // ─── Health Check ───────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
@@ -109,6 +132,19 @@ server.listen(config.port, async () => {
   } catch (err) {
     logger.warn('Migration note:', err.message);
   }
+
+  // ─── Story Cleanup Cron ─────────────────────────────────────────────────────
+  // Run once on startup
+  Story.cleanExpired()
+    .then(() => logger.info('🧹 Expired stories cleaned on startup'))
+    .catch((err) => logger.warn('Story cleanup error:', err.message));
+
+  // Run every hour
+  setInterval(() => {
+    Story.cleanExpired()
+      .then(() => logger.info('🧹 Expired stories cleaned (cron)'))
+      .catch((err) => logger.warn('Story cleanup cron error:', err.message));
+  }, 60 * 60 * 1000);
 });
 
 // ─── Graceful Shutdown ──────────────────────────────────────────────────────────

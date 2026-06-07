@@ -14,19 +14,19 @@ import './ProfileView.css'
 // Preset background options
 const CHAT_BG_PRESETS = [
   { id: 'default', label: 'Predeterminado', value: 'default', css: 'var(--color-bg-primary)' },
-  { id: 'fenix-dark', label: 'Fénix Oscuro', value: 'fenix-dark', css: 'url(/backgrounds/fenix-dark.png) center/cover' },
-  { id: 'fenix-light', label: 'Fénix Claro', value: 'fenix-light', css: 'url(/backgrounds/fenix-light.png) center/cover' },
+  { id: 'fenix-dark', label: 'Fenix Oscuro', value: 'fenix-dark', css: 'url(/backgrounds/fenix-dark.png) center/cover' },
+  { id: 'fenix-light', label: 'Fenix Claro', value: 'fenix-light', css: 'url(/backgrounds/fenix-light.png) center/cover' },
   { id: 'gradient-1', label: 'Púrpura profundo', value: 'gradient-1', css: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)' },
   { id: 'gradient-2', label: 'Azul medianoche', value: 'gradient-2', css: 'linear-gradient(135deg, #141E30, #243B55)' },
   { id: 'gradient-3', label: 'Océano oscuro', value: 'gradient-3', css: 'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)' },
-  { id: 'gradient-4', label: 'Fénix púrpura', value: 'gradient-4', css: 'linear-gradient(135deg, #2d1b69, #11001c)' },
+  { id: 'gradient-4', label: 'Fenix púrpura', value: 'gradient-4', css: 'linear-gradient(135deg, #2d1b69, #11001c)' },
   { id: 'gradient-5', label: 'Ahumado', value: 'gradient-5', css: 'linear-gradient(135deg, #1f1c2c, #928DAB)' },
   { id: 'gradient-6', label: 'Oscuro puro', value: 'gradient-6', css: 'linear-gradient(135deg, #0a0a0a, #1a1a1a)' },
 ]
 
 // Color theme definitions
 const THEMES = {
-  fenix:   { id: 'fenix',   label: 'Fénix',         brand: '#7C3AED', light: '#A855F7', dark: '#6D28D9' },
+  fenix:   { id: 'fenix',   label: 'Fenix',         brand: '#7C3AED', light: '#A855F7', dark: '#6D28D9' },
   ocean:   { id: 'ocean',   label: 'Ocean Blue',     brand: '#0ea5e9', light: '#38bdf8', dark: '#0284c7' },
   emerald: { id: 'emerald', label: 'Emerald Green',   brand: '#10b981', light: '#34d399', dark: '#059669' },
   rose:    { id: 'rose',    label: 'Rose Pink',       brand: '#f43f5e', light: '#fb7185', dark: '#e11d48' },
@@ -323,7 +323,7 @@ function ProfileView() {
               className="profile-view__theme-preview-bar"
               style={{ background: `linear-gradient(135deg, ${(THEMES[selectedTheme] || THEMES.fenix).dark}, ${(THEMES[selectedTheme] || THEMES.fenix).brand}, ${(THEMES[selectedTheme] || THEMES.fenix).light})` }}
             >
-              <span className="profile-view__theme-preview-text">Fénix Chat</span>
+              <span className="profile-view__theme-preview-text">Fenix</span>
             </div>
           </div>
 
@@ -567,7 +567,7 @@ function ProfileView() {
             label="Notificaciones del navegador"
             description={
               !notifAvailable
-                ? '📱 Para activar, añade Fénix a tu pantalla de inicio'
+                ? '📱 Para activar, añade Fenix a tu pantalla de inicio'
                 : notifDenied
                   ? '⛔ Bloqueadas. Ve a ajustes del navegador para permitir'
                   : 'Mostrar notificaciones emergentes'
@@ -660,7 +660,7 @@ function ProfileView() {
             </span>
             <div className="profile-view__settings-text">
               <span className="profile-view__settings-label">Tema</span>
-              <span className="profile-view__settings-desc">{THEMES[savedTheme]?.label || 'Fénix'}</span>
+              <span className="profile-view__settings-desc">{THEMES[savedTheme]?.label || 'Fenix'}</span>
             </div>
             <ChevronRight size={18} className="profile-view__settings-chevron" />
           </button>
@@ -708,7 +708,7 @@ function ProfileView() {
         </div>
 
         <div className="profile-view__footer">
-          <span className="profile-view__version">Fénix Chat v1.0.0</span>
+          <span className="profile-view__version">Fenix Messenger v1.0.0</span>
         </div>
       </div>
     )
@@ -777,7 +777,7 @@ function ProfileView() {
       </button>
 
       <div className="profile-view__footer">
-        <span className="profile-view__version">Fénix Chat v1.0.0</span>
+        <span className="profile-view__version">Fenix Messenger v1.0.0</span>
       </div>
     </div>
   )

@@ -176,8 +176,8 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
         <div className="chat-list__logo">
           <PhoenixIcon size={36} />
           <div className="chat-list__logo-brand">
-            <span className="chat-list__logo-fenix">FÉNIX</span>
-            <span className="chat-list__logo-chat">CHAT</span>
+            <span className="chat-list__logo-fenix">FENIX</span>
+            <span className="chat-list__logo-chat">MESSENGER</span>
           </div>
         </div>
         <button
