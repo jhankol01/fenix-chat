@@ -1107,34 +1107,39 @@ function ChatView({ onBack }) {
 
       {/* --- Input bar --- */}
       <div className="chat-view__input-bar">
-        <div className="chat-view__input-wrapper">
+        {/* Action icons row */}
+        <div className="chat-view__actions-row">
           <button
-            className={`chat-view__input-btn ${showEmojiPicker ? 'chat-view__input-btn--active' : ''}`}
+            className={`chat-view__action-btn ${showEmojiPicker ? 'chat-view__action-btn--active' : ''}`}
             aria-label="Emoji"
             onClick={() => { setShowEmojiPicker(!showEmojiPicker); setShowGifPicker(false) }}
           >
             <Smile size={20} />
+            <span className="chat-view__action-label">Emoji</span>
           </button>
           <button
-            className={`chat-view__input-btn ${showGifPicker ? 'chat-view__input-btn--active' : ''}`}
+            className={`chat-view__action-btn ${showGifPicker ? 'chat-view__action-btn--active' : ''}`}
             aria-label="GIF"
             onClick={() => { setShowGifPicker(!showGifPicker); setShowEmojiPicker(false) }}
           >
             <span className="chat-view__gif-icon">GIF</span>
+            <span className="chat-view__action-label">GIF</span>
           </button>
           <button
-            className="chat-view__input-btn"
+            className="chat-view__action-btn"
             aria-label="Adjuntar"
             onClick={() => fileInputRef.current?.click()}
           >
             <Paperclip size={20} />
+            <span className="chat-view__action-label">Archivo</span>
           </button>
           <button
-            className="chat-view__input-btn"
+            className="chat-view__action-btn"
             aria-label="Cámara"
             onClick={() => cameraInputRef.current?.click()}
           >
             <Camera size={20} />
+            <span className="chat-view__action-label">Cámara</span>
           </button>
           <input
             ref={fileInputRef}
@@ -1183,59 +1188,65 @@ function ChatView({ onBack }) {
               }
             }}
           />
-          <input
-            ref={inputRef}
-            type="text"
-            className="chat-view__input"
-            placeholder="Escribe un mensaje..."
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            onFocus={() => { setShowEmojiPicker(false); setShowGifPicker(false) }}
-          />
         </div>
 
-        {/* Recording UI */}
-        {isRecording ? (
-          <div className="chat-view__recording">
-            <div className="chat-view__recording-indicator">
-              <span className="chat-view__recording-dot" />
-              <span className="chat-view__recording-time">
-                {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
-              </span>
+        {/* Clean text input row */}
+        <div className="chat-view__text-row">
+          <div className="chat-view__input-wrapper">
+            <input
+              ref={inputRef}
+              type="text"
+              className="chat-view__input"
+              placeholder="Escribe un mensaje..."
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              onFocus={() => { setShowEmojiPicker(false); setShowGifPicker(false) }}
+            />
+          </div>
+
+          {/* Recording UI */}
+          {isRecording ? (
+            <div className="chat-view__recording">
+              <div className="chat-view__recording-indicator">
+                <span className="chat-view__recording-dot" />
+                <span className="chat-view__recording-time">
+                  {Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')}
+                </span>
+              </div>
+              <button
+                className="chat-view__recording-cancel"
+                onClick={handleCancelRecording}
+                aria-label="Cancelar"
+              >
+                <X size={18} />
+              </button>
+              <button
+                className="chat-view__recording-stop"
+                onClick={handleStopRecording}
+                aria-label="Enviar nota de voz"
+              >
+                <Send size={18} />
+              </button>
             </div>
+          ) : inputValue.trim() ? (
             <button
-              className="chat-view__recording-cancel"
-              onClick={handleCancelRecording}
-              aria-label="Cancelar"
-            >
-              <X size={18} />
-            </button>
-            <button
-              className="chat-view__recording-stop"
-              onClick={handleStopRecording}
-              aria-label="Enviar nota de voz"
+              className="chat-view__send-btn chat-view__send-btn--active"
+              aria-label="Enviar"
+              onClick={handleSend}
             >
               <Send size={18} />
             </button>
-          </div>
-        ) : inputValue.trim() ? (
-          <button
-            className="chat-view__send-btn chat-view__send-btn--active"
-            aria-label="Enviar"
-            onClick={handleSend}
-          >
-            <Send size={18} />
-          </button>
-        ) : (
-          <button
-            className="chat-view__mic-btn"
-            aria-label="Nota de voz"
-            onClick={handleStartRecording}
-          >
-            <Mic size={20} />
-          </button>
-        )}
+          ) : (
+            <button
+              className="chat-view__mic-btn"
+              aria-label="Nota de voz"
+              onClick={handleStartRecording}
+            >
+              <Mic size={20} />
+            </button>
+          )}
+        </div>
 
         {/* Uploading indicator */}
         {isUploading && (

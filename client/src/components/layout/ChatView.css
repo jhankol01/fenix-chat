@@ -711,36 +711,95 @@
 /* ---------- Input bar ---------- */
 .chat-view__input-bar {
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
+  flex-direction: column;
+  padding: 0;
   background: var(--color-surface-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid var(--color-border-subtle);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(124, 58, 237, 0.15);
   flex-shrink: 0;
   position: sticky;
   bottom: 0;
   z-index: 10;
 }
 
+/* Gradient accent line at top of input bar */
+.chat-view__input-bar::before {
+  content: '';
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-brand), #a855f7, #ec4899, #a855f7, var(--color-brand));
+  background-size: 200% 100%;
+  animation: gradientShift 4s ease infinite;
+  opacity: 0.6;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Action icons row */
+.chat-view__actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: 8px 16px 4px;
+}
+
+.chat-view__action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 14px;
+  border-radius: 12px;
+  color: var(--color-text-muted);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.chat-view__action-btn:hover {
+  color: var(--color-brand-light);
+  background: rgba(124, 58, 237, 0.08);
+}
+
+.chat-view__action-btn--active {
+  color: var(--color-brand);
+  background: rgba(124, 58, 237, 0.12);
+}
+
+.chat-view__action-label {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* Text input row */
+.chat-view__text-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 12px 10px;
+}
+
 .chat-view__input-wrapper {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
+  padding: 10px 16px;
   background: var(--color-surface);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-2xl);
+  border-radius: 24px;
   transition: all var(--transition-fast);
 }
 
 .chat-view__input-wrapper:focus-within {
   border-color: var(--color-border-focus);
-  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.08);
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
   background: var(--color-bg-elevated);
 }
 
