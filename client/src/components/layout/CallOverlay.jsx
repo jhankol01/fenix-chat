@@ -18,6 +18,7 @@ function CallOverlay() {
   const [isMuted, setIsMuted] = useState(false)
   const [isSpeaker, setIsSpeaker] = useState(false)
   const [duration, setDuration] = useState(0)
+  const [endReason, setEndReason] = useState('')
 
   // Refs
   const pcRef = useRef(null)
@@ -29,6 +30,7 @@ function CallOverlay() {
   const pendingOfferRef = useRef(null)
   const iceCandidateQueueRef = useRef([])
   const remoteDescSetRef = useRef(false)
+  const callTimeoutRef = useRef(null)
   const callStateRef = useRef('idle') // mirror of callState for socket callbacks
 
   // CRITICAL: Use a persistent Audio object that NEVER gets unmounted by React
@@ -86,9 +88,8 @@ function CallOverlay() {
   }, [stopRingtone])
 
   useEffect(() => {
-    if (callState === 'calling') playTone('outgoing')
-    else if (callState === 'ringing') playTone('incoming')
-    else stopRingtone()
+    if (callState === 'ringing') playTone('incoming')
+    else if (callState !== 'calling') stopRingtone()
     return () => stopRingtone()
   }, [callState, playTone, stopRingtone])
 
@@ -108,6 +109,7 @@ function CallOverlay() {
       localStreamRef.current = null
     }
     if (durationTimerRef.current) clearInterval(durationTimerRef.current)
+    if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current)
     // Don't destroy the audio object, just disconnect it
     if (remoteAudioRef.current) {
       remoteAudioRef.current.srcObject = null
@@ -118,6 +120,7 @@ function CallOverlay() {
     setIsMuted(false)
     setIsSpeaker(false)
     setDuration(0)
+    setEndReason('')
     callerIdRef.current = null
     targetUserIdRef.current = null
     pendingOfferRef.current = null
@@ -223,15 +226,29 @@ function CallOverlay() {
       targetUserIdRef.current = targetUserId
       setRemoteUser({ name: targetName, avatar: targetAvatar })
       setCallState('calling')
+      setEndReason('')
+      playTone('outgoing')
 
       const socket = getSocket()
+      console.log('📞 Socket connected?', socket?.connected, 'id:', socket?.id)
       socket.emit('call_user', {
         targetUserId,
         offer: { type: offer.type, sdp: offer.sdp },
         callerName: user?.username,
         callerAvatar: user?.avatar_url,
       })
-      console.log('📞 Call sent to', targetUserId)
+      console.log('📞 Call emitted to', targetUserId)
+
+      // Auto-hangup after 30s if no answer
+      callTimeoutRef.current = setTimeout(() => {
+        console.log('📞 Call timeout — no answer after 30s')
+        if (callStateRef.current === 'calling') {
+          setEndReason('No contestó')
+          setCallState('ended')
+          stopRingtone()
+          setTimeout(() => cleanup(), 2500)
+        }
+      }, 30000)
     } catch (err) {
       console.error('❌ startCall error:', err)
       cleanup()
@@ -361,8 +378,22 @@ function CallOverlay() {
         }
       }
 
-      const onCallEnded = () => { cleanup() }
-      const onCallUnavailable = () => { cleanup() }
+      const onCallEnded = () => {
+        console.log('📞 Call ended by remote')
+        setEndReason('Llamada terminada')
+        setCallState('ended')
+        stopRingtone()
+        if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current)
+        setTimeout(() => cleanup(), 2000)
+      }
+      const onCallUnavailable = ({ reason } = {}) => {
+        console.log('📞 Call unavailable:', reason)
+        setEndReason(reason || 'Usuario no disponible')
+        setCallState('ended')
+        stopRingtone()
+        if (callTimeoutRef.current) clearTimeout(callTimeoutRef.current)
+        setTimeout(() => cleanup(), 2500)
+      }
 
       socket.on('incoming_call', onIncomingCall)
       socket.on('call_answered', onCallAnswered)
@@ -439,6 +470,7 @@ function CallOverlay() {
           {callState === 'calling' && 'Llamando...'}
           {callState === 'ringing' && 'Llamada entrante...'}
           {callState === 'connected' && fmt(duration)}
+          {callState === 'ended' && (endReason || 'Llamada terminada')}
         </div>
 
         {callState === 'connected' && (
