@@ -83,11 +83,39 @@ function CommunityDetail({ community: initialCommunity, onBack }) {
     const socket = getSocket()
     if (!socket) return
 
+    // When we join a room, server sends us list of existing users
+    const onRoomUsers = async ({ users }) => {
+      if (!localStreamRef.current || !users?.length) return
+      // Add existing users to participants list
+      setVoiceParticipants(prev => {
+        const newList = [...prev]
+        for (const u of users) {
+          if (!newList.find(p => p.userId === u.userId)) newList.push(u)
+        }
+        return newList
+      })
+      // Create WebRTC offers to each existing user
+      for (const u of users) {
+        if (u.userId !== user?.id) {
+          try {
+            const pc = createPeerConnection(u.userId)
+            const offer = await pc.createOffer()
+            await pc.setLocalDescription(offer)
+            socket.emit('voice_offer', { to: u.userId, offer })
+          } catch (err) {
+            console.error('Offer creation error:', err)
+          }
+        }
+      }
+    }
+
     const onUserJoined = (data) => {
       setVoiceParticipants(prev => {
         if (prev.find(p => p.userId === data.userId)) return prev
         return [...prev, data]
       })
+      // Don't create offer here - the new joiner will get voice_room_users
+      // and create offers to us
     }
 
     const onUserLeft = (data) => {
@@ -104,25 +132,38 @@ function CommunityDetail({ community: initialCommunity, onBack }) {
 
     const onVoiceOffer = async ({ from, offer }) => {
       if (!localStreamRef.current) return
-      const pc = createPeerConnection(from)
-      await pc.setRemoteDescription(new RTCSessionDescription(offer))
-      const answer = await pc.createAnswer()
-      await pc.setLocalDescription(answer)
-      socket.emit('voice_answer', { to: from, answer })
+      try {
+        const pc = createPeerConnection(from)
+        await pc.setRemoteDescription(new RTCSessionDescription(offer))
+        const answer = await pc.createAnswer()
+        await pc.setLocalDescription(answer)
+        socket.emit('voice_answer', { to: from, answer })
+      } catch (err) {
+        console.error('Answer creation error:', err)
+      }
     }
 
     const onVoiceAnswer = async ({ from, answer }) => {
       const pc = peerConnectionsRef.current[from]
-      if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer))
+      if (pc) {
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(answer))
+        } catch (err) {
+          console.error('Set answer error:', err)
+        }
+      }
     }
 
     const onVoiceIce = async ({ from, candidate }) => {
       const pc = peerConnectionsRef.current[from]
       if (pc && candidate) {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {})
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate))
+        } catch (err) { /* ignore */ }
       }
     }
 
+    socket.on('voice_room_users', onRoomUsers)
     socket.on('voice_user_joined', onUserJoined)
     socket.on('voice_user_left', onUserLeft)
     socket.on('voice_offer', onVoiceOffer)
@@ -130,6 +171,7 @@ function CommunityDetail({ community: initialCommunity, onBack }) {
     socket.on('voice_ice', onVoiceIce)
 
     return () => {
+      socket.off('voice_room_users', onRoomUsers)
       socket.off('voice_user_joined', onUserJoined)
       socket.off('voice_user_left', onUserLeft)
       socket.off('voice_offer', onVoiceOffer)

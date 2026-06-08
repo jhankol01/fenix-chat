@@ -453,6 +453,18 @@ export default function chatHandler(io) {
     socket.on('join_voice_room', async ({ roomId }) => {
       try {
         if (!roomId) return
+
+        // Get existing participants BEFORE joining
+        const existingRes = await query(
+          `SELECT vp.user_id AS "userId", u.username, u.display_name, u.avatar_url 
+           FROM voice_participants vp 
+           JOIN users u ON vp.user_id = u.id 
+           WHERE vp.room_id = $1`,
+          [roomId]
+        )
+        const existingUsers = existingRes.rows
+
+        // Join socket room and DB
         socket.join(`voice:${roomId}`)
         await query(
           `INSERT INTO voice_participants (room_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
@@ -461,7 +473,15 @@ export default function chatHandler(io) {
         const userRes = await query(
           `SELECT username, display_name, avatar_url FROM users WHERE id = $1`, [user.id]
         )
-        io.to(`voice:${roomId}`).emit('voice_user_joined', {
+
+        // Send existing users to the new joiner (so they can create offers)
+        socket.emit('voice_room_users', {
+          roomId,
+          users: existingUsers.filter(u => u.userId !== user.id),
+        })
+
+        // Broadcast new joiner to everyone else in the room
+        socket.to(`voice:${roomId}`).emit('voice_user_joined', {
           roomId, userId: user.id, ...userRes.rows[0],
         })
       } catch (err) {
