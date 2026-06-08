@@ -1,15 +1,14 @@
-import { Home, Users, Bell, User } from 'lucide-react'
+import { Home, Users, Bell, User, Globe } from 'lucide-react'
 import PhoenixIcon from '../ui/PhoenixIcon'
 import './BottomNav.css'
 
 /**
  * BottomNav — Navegación inferior con íconos lineales + Fenix central
- * Estilo limpio como el concepto mockup
  */
 function BottomNav({ activeSection, onSectionChange }) {
   const tabs = [
-    { id: 'chats', label: 'Inicio', Icon: Home },
-    { id: 'comunidades', label: 'Contactos', Icon: Users },
+    { id: 'chats', label: 'Chats', Icon: Home },
+    { id: 'comunidades', label: 'Comunidades', Icon: Globe },
     { id: 'fenix', label: 'Fenix', Icon: null, isCenter: true },
     { id: 'notificaciones', label: 'Notificaciones', Icon: Bell },
     { id: 'perfil', label: 'Perfil', Icon: User },

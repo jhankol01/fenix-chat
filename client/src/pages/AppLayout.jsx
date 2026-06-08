@@ -5,6 +5,8 @@ import ChatView from '../components/layout/ChatView'
 import ProfileView from '../components/layout/ProfileView'
 import OnlineUsers from '../components/layout/OnlineUsers'
 import ContactsView from '../components/layout/ContactsView'
+import CommunitiesView from '../components/layout/CommunitiesView'
+import CommunityDetail from '../components/layout/CommunityDetail'
 import CallOverlay from '../components/layout/CallOverlay'
 import BottomNav from '../components/layout/BottomNav'
 import StoriesBar from '../components/layout/StoriesBar'
@@ -55,6 +57,7 @@ function AppLayout() {
   const [mobileSection, setMobileSection] = useState('chats')
   const [showMobileChat, setShowMobileChat] = useState(false)
   const [showDesktopProfile, setShowDesktopProfile] = useState(false)
+  const [selectedCommunity, setSelectedCommunity] = useState(null)
   const isMobile = useIsMobile()
 
   const accessToken = useAuthStore(state => state.accessToken)
@@ -224,11 +227,19 @@ function AppLayout() {
           />
         )}
         {mobileSection === 'comunidades' && (
-          currentUser?.email === ADMIN_EMAIL ? (
-            <OnlineUsers onSelectConversation={handleSelectConversation} />
-          ) : (
-            <ContactsView onSelectConversation={handleSelectConversation} />
-          )
+          <CommunitiesView onOpenCommunity={(c) => {
+            setSelectedCommunity(c)
+            setMobileSection('community-detail')
+          }} />
+        )}
+        {mobileSection === 'community-detail' && selectedCommunity && (
+          <CommunityDetail
+            community={selectedCommunity}
+            onBack={() => {
+              setSelectedCommunity(null)
+              setMobileSection('comunidades')
+            }}
+          />
         )}
         {mobileSection === 'fenix' && (
           <div className="fenix-hub">
