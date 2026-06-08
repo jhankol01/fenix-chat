@@ -3,6 +3,7 @@ import { Hash, Volume2, Send, Crown, Shield, Megaphone, Mic, MicOff, PhoneOff, C
 import api from '../../lib/api'
 import { getSocket } from '../../lib/socket'
 import useAuthStore from '../../stores/authStore'
+import useVoiceStore from '../../stores/voiceStore'
 import './CommunityDesktop.css'
 
 function CommunityDesktop({ community: initialCommunity, onBack }) {
@@ -135,11 +136,19 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
   }, [user?.id, createPeerConnection])
 
   const joinVoiceRoom = async (roomId) => {
+    const room = community.voice_rooms?.find(r => r.id === roomId)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
       localStreamRef.current = stream; inVoiceRoomRef.current = roomId; setInVoiceRoom(roomId); setIsMuted(false)
       setVoiceParticipants([{ userId: user.id, username: user.username, display_name: user.display_name, avatar_url: user.avatar_url }])
       const socket = getSocket(); if (socket) socket.emit('join_voice_room', { roomId })
+      // Sync global store
+      useVoiceStore.getState().joinRoom({
+        roomId,
+        roomName: room?.name || 'Sala de voz',
+        communityName: community.name,
+        communityId: community.id,
+      })
     } catch (e) { alert('No se pudo acceder al micrófono') }
   }
   const leaveVoiceRoom = () => {
@@ -149,8 +158,33 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
     Object.values(peerConnectionsRef.current).forEach(pc => pc.close()); peerConnectionsRef.current = {}
     Object.values(audioElementsRef.current).forEach(a => { try { a.srcObject = null } catch(e){} }); audioElementsRef.current = {}
     inVoiceRoomRef.current = null; setInVoiceRoom(null); setVoiceParticipants([])
+    useVoiceStore.getState().leaveRoom()
   }
-  const toggleMute = () => { if (localStreamRef.current) { localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = isMuted }); setIsMuted(!isMuted) } }
+  const toggleMute = () => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = isMuted })
+      setIsMuted(!isMuted)
+      useVoiceStore.getState().setMuted(!isMuted)
+    }
+  }
+
+  // Sync participant count to global store
+  useEffect(() => {
+    if (inVoiceRoom) useVoiceStore.getState().setParticipantCount(voiceParticipants.length)
+  }, [voiceParticipants.length, inVoiceRoom])
+
+  // Listen for indicator controls (mute/leave from global bar)
+  useEffect(() => {
+    const handleToggleMute = () => toggleMute()
+    const handleLeave = () => leaveVoiceRoom()
+    window.addEventListener('voice-toggle-mute', handleToggleMute)
+    window.addEventListener('voice-leave', handleLeave)
+    return () => {
+      window.removeEventListener('voice-toggle-mute', handleToggleMute)
+      window.removeEventListener('voice-leave', handleLeave)
+    }
+  })
+
   useEffect(() => { return () => { if (localStreamRef.current) localStreamRef.current.getTracks().forEach(t => t.stop()) } }, [])
 
   const handleSend = () => {

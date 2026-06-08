@@ -11,6 +11,7 @@ import CommunityDesktop from '../components/layout/CommunityDesktop'
 import CallOverlay from '../components/layout/CallOverlay'
 import BottomNav from '../components/layout/BottomNav'
 import StoriesBar from '../components/layout/StoriesBar'
+import VoiceIndicator from '../components/layout/VoiceIndicator'
 import useAuthStore from '../stores/authStore'
 import useChatStore from '../stores/chatStore'
 import { connectSocket, disconnectSocket, getSocket, onReconnect } from '../lib/socket'
@@ -262,6 +263,11 @@ function AppLayout() {
               <span>Crear comunidad</span>
             </button>
           </div>
+
+          {/* Voice Indicator in sidebar */}
+          <VoiceIndicator onGoToVoice={() => {
+            if (selectedCommunity) setDesktopSection('comunidades')
+          }} />
         </div>
 
         {/* ─── Main Area ─── */}
@@ -426,6 +432,15 @@ function AppLayout() {
       {showMobileChat && activeConversation && (
         <div className="app-layout__mobile-chat">
           <ChatView onBack={handleBack} />
+        </div>
+      )}
+
+      {/* Voice indicator floating above bottom nav */}
+      {!showMobileChat && (
+        <div className="voice-indicator--floating">
+          <VoiceIndicator onGoToVoice={() => {
+            if (selectedCommunity) setMobileSection('community-detail')
+          }} />
         </div>
       )}
 
