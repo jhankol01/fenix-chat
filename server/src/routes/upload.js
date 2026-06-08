@@ -103,4 +103,45 @@ router.post('/media', authenticate, mediaUpload.single('media'), async (req, res
   }
 })
 
+// POST /api/upload/community-banner — Upload community banner/cover
+router.post('/community-banner', authenticate, upload.single('banner'), async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se proporcionó una imagen' })
+    }
+    const { communityId } = req.body
+    if (!communityId) {
+      return res.status(400).json({ error: 'communityId requerido' })
+    }
+
+    // Verify user is owner or admin
+    const memberRes = await query(
+      `SELECT role FROM community_members WHERE community_id = $1 AND user_id = $2`,
+      [communityId, req.user.id]
+    )
+    if (!memberRes.rows[0] || !['owner', 'admin'].includes(memberRes.rows[0].role)) {
+      return res.status(403).json({ error: 'No tienes permisos' })
+    }
+
+    // Resize to 1200x400 banner format
+    const resized = await sharp(req.file.buffer)
+      .resize(1200, 400, { fit: 'cover', position: 'center' })
+      .webp({ quality: 85 })
+      .toBuffer()
+
+    const bannerUrl = await uploadToB2(resized, 'community-banners', 'image/webp')
+    logger.info(`Community banner uploaded for ${communityId}: ${bannerUrl}`)
+
+    await query(
+      'UPDATE communities SET banner_url = $1 WHERE id = $2',
+      [bannerUrl, communityId]
+    )
+
+    res.json({ bannerUrl })
+  } catch (err) {
+    logger.error('Banner upload error:', err.message)
+    next(err)
+  }
+})
+
 export default router

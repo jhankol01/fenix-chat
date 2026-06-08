@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Hash, Volume2, Send, Crown, Shield, Megaphone, Mic, MicOff, PhoneOff, Copy, Check, Plus, Users, Settings, Calendar, Bell, Star, ChevronRight } from 'lucide-react'
+import { Hash, Volume2, Send, Crown, Shield, Megaphone, Mic, MicOff, PhoneOff, Copy, Check, Plus, Users, Settings, Calendar, Bell, Star, ChevronRight, Camera, Loader2 } from 'lucide-react'
 import api from '../../lib/api'
 import { getSocket } from '../../lib/socket'
 import useAuthStore from '../../stores/authStore'
@@ -22,7 +22,31 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
   const audioElementsRef = useRef({})
   const inVoiceRoomRef = useRef(null)
   const messagesEndRef = useRef(null)
+  const bannerInputRef = useRef(null)
+  const [uploadingBanner, setUploadingBanner] = useState(false)
   const user = useAuthStore(s => s.user)
+
+  const handleBannerUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file || !community?.id) return
+    setUploadingBanner(true)
+    try {
+      const formData = new FormData()
+      formData.append('banner', file)
+      formData.append('communityId', community.id)
+      const token = localStorage.getItem('accessToken')
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+      const resp = await fetch(`${API_URL}/upload/community-banner`, {
+        method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData
+      })
+      const data = await resp.json()
+      if (data.bannerUrl) {
+        setCommunity(prev => ({ ...prev, banner_url: data.bannerUrl }))
+      }
+    } catch (err) { console.error('Banner upload error:', err) }
+    setUploadingBanner(false)
+    if (bannerInputRef.current) bannerInputRef.current.value = ''
+  }
 
   // Load community
   useEffect(() => {
@@ -154,6 +178,15 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
         <div className="cd__banner-overlay">
           <h1>{community.name} 🎮</h1>
           <span>{community.member_count || members.length} miembros · {onlineMembers} en línea</span>
+          {(community.my_role === 'owner' || community.my_role === 'admin') && (
+            <>
+              <input ref={bannerInputRef} type="file" accept="image/*" hidden onChange={handleBannerUpload} />
+              <button className="cd__banner-upload" onClick={() => bannerInputRef.current?.click()} disabled={uploadingBanner}>
+                {uploadingBanner ? <Loader2 size={16} className="cd__spinner" /> : <Camera size={16} />}
+                {uploadingBanner ? 'Subiendo...' : 'Portada'}
+              </button>
+            </>
+          )}
           <button className="cd__invite-btn" onClick={copyInvite}>
             {copied ? <Check size={14} /> : <Copy size={14} />}
             {copied ? 'Copiado' : 'Invitar'}

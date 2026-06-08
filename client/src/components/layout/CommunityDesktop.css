@@ -20,6 +20,18 @@
 }
 .cd__invite-btn:hover { background: rgba(124,58,237,1); }
 
+.cd__banner-upload {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px; background: rgba(255,255,255,0.12); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;
+  color: white; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s;
+}
+.cd__banner-upload:hover { background: rgba(255,255,255,0.2); }
+.cd__banner-upload:disabled { opacity: 0.7; cursor: default; }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.cd__spinner { animation: spin 1s linear infinite; }
+
 /* Tabs */
 .cd__tabs {
   display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.08);
