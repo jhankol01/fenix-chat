@@ -175,22 +175,84 @@ function AppLayout() {
   /* ============================
      DESKTOP LAYOUT (>= 768px)
      ============================ */
+  const [desktopSection, setDesktopSection] = useState('chats')
+
   if (!isMobile) {
     return (
       <>
       <CallOverlay />
       <div className="app-layout">
-        {/* Panel izquierdo — Lista de conversaciones */}
-        <div className="app-layout__sidebar">
-          <ChatList
-            onSelectConversation={handleSelectConversation}
-            onOpenProfile={handleOpenProfile}
-          />
+        {/* ─── Navigation Rail ─── */}
+        <div className="app-layout__rail">
+          <div className="app-layout__rail-logo">
+            <PhoenixIcon size={28} />
+          </div>
+          <button
+            className={`app-layout__rail-btn ${desktopSection === 'chats' ? 'app-layout__rail-btn--active' : ''}`}
+            onClick={() => { setDesktopSection('chats'); setShowDesktopProfile(false) }}
+            title="Chats"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            <span>Chats</span>
+          </button>
+          <button
+            className={`app-layout__rail-btn ${desktopSection === 'comunidades' ? 'app-layout__rail-btn--active' : ''}`}
+            onClick={() => { setDesktopSection('comunidades'); setShowDesktopProfile(false) }}
+            title="Comunidades"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+            <span>Comunidades</span>
+          </button>
+          {currentUser?.email === ADMIN_EMAIL && (
+            <button
+              className={`app-layout__rail-btn ${desktopSection === 'admin' ? 'app-layout__rail-btn--active' : ''}`}
+              onClick={() => { setDesktopSection('admin'); setShowDesktopProfile(false) }}
+              title="Admin"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+              <span>Admin</span>
+            </button>
+          )}
+          <div className="app-layout__rail-spacer" />
+          <button
+            className={`app-layout__rail-btn ${desktopSection === 'perfil' ? 'app-layout__rail-btn--active' : ''}`}
+            onClick={() => { setDesktopSection('perfil'); setShowDesktopProfile(true) }}
+            title="Perfil"
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Perfil</span>
+          </button>
         </div>
 
-        {/* Panel principal — Chat, Profile o Welcome */}
+        {/* ─── Sidebar (list panel) ─── */}
+        <div className="app-layout__sidebar">
+          {desktopSection === 'chats' && (
+            <ChatList
+              onSelectConversation={handleSelectConversation}
+              onOpenProfile={handleOpenProfile}
+            />
+          )}
+          {desktopSection === 'comunidades' && (
+            <CommunitiesView onOpenCommunity={(c) => {
+              setSelectedCommunity(c)
+            }} />
+          )}
+          {desktopSection === 'admin' && (
+            <OnlineUsers onSelectConversation={handleSelectConversation} />
+          )}
+          {desktopSection === 'perfil' && (
+            <ProfileView />
+          )}
+        </div>
+
+        {/* ─── Main panel ─── */}
         <div className="app-layout__main">
-          {showDesktopProfile ? (
+          {desktopSection === 'comunidades' && selectedCommunity ? (
+            <CommunityDetail
+              community={selectedCommunity}
+              onBack={() => setSelectedCommunity(null)}
+            />
+          ) : showDesktopProfile ? (
             <ProfileView />
           ) : activeConversation ? (
             <ChatView />
@@ -201,7 +263,9 @@ function AppLayout() {
               </div>
               <h1 className="welcome-screen__title">Fenix Messenger</h1>
               <p className="welcome-screen__subtitle">
-                Selecciona una conversación para comenzar a chatear
+                {desktopSection === 'comunidades'
+                  ? 'Selecciona una comunidad para ver sus canales'
+                  : 'Selecciona una conversación para comenzar a chatear'}
               </p>
             </div>
           )}
