@@ -266,12 +266,17 @@ function AppLayout() {
 
         {/* ─── Main Area ─── */}
         <div className="app-layout__main-area">
-          {desktopSection === 'comunidades' && selectedCommunity ? (
-            <CommunityDesktop
-              community={selectedCommunity}
-              onBack={() => setSelectedCommunity(null)}
-            />
-          ) : desktopSection === 'comunidades' && !selectedCommunity ? (
+          {/* CommunityDesktop stays mounted (hidden) so voice isn't killed on nav */}
+          {selectedCommunity && (
+            <div style={{ display: desktopSection === 'comunidades' ? 'contents' : 'none' }}>
+              <CommunityDesktop
+                community={selectedCommunity}
+                onBack={() => setSelectedCommunity(null)}
+              />
+            </div>
+          )}
+
+          {desktopSection === 'comunidades' && !selectedCommunity && (
             <div className="app-layout__main-with-sidebar">
               <div className="app-layout__sidebar">
                 <CommunitiesView onOpenCommunity={(c) => setSelectedCommunity(c)} />
@@ -284,7 +289,9 @@ function AppLayout() {
                 </div>
               </div>
             </div>
-          ) : desktopSection === 'chats' ? (
+          )}
+
+          {desktopSection === 'chats' && (
             <div className="app-layout__main-with-sidebar">
               <div className="app-layout__sidebar">
                 <ChatList onSelectConversation={handleSelectConversation} onOpenProfile={handleOpenProfile} />
@@ -299,22 +306,29 @@ function AppLayout() {
                 )}
               </div>
             </div>
-          ) : desktopSection === 'admin' ? (
+          )}
+
+          {desktopSection === 'admin' && (
             <div className="app-layout__main-with-sidebar">
               <div className="app-layout__sidebar"><OnlineUsers onSelectConversation={handleSelectConversation} /></div>
               <div className="app-layout__main">{activeConversation ? <ChatView /> : <div className="welcome-screen"><h1 className="welcome-screen__title">Panel Admin</h1></div>}</div>
             </div>
-          ) : desktopSection === 'contacts' ? (
+          )}
+
+          {desktopSection === 'contacts' && (
             <div className="app-layout__main-with-sidebar">
               <div className="app-layout__sidebar"><ContactsView onSelectConversation={handleSelectConversation} /></div>
               <div className="app-layout__main">{activeConversation ? <ChatView /> : <div className="welcome-screen"><h1 className="welcome-screen__title">Amigos</h1></div>}</div>
             </div>
-          ) : desktopSection === 'perfil' ? (
-            <ProfileView />
-          ) : (
+          )}
+
+          {desktopSection === 'perfil' && <ProfileView />}
+
+          {desktopSection === 'notifications' && (
             <div className="welcome-screen">
               <div className="welcome-screen__icon"><PhoenixIcon size={56} variant="fire" glow /></div>
-              <h1 className="welcome-screen__title">Fenix Messenger</h1>
+              <h1 className="welcome-screen__title">Notificaciones</h1>
+              <p className="welcome-screen__subtitle">Próximamente</p>
             </div>
           )}
         </div>
@@ -344,14 +358,17 @@ function AppLayout() {
             setMobileSection('community-detail')
           }} />
         )}
-        {mobileSection === 'community-detail' && selectedCommunity && (
-          <CommunityDetail
-            community={selectedCommunity}
-            onBack={() => {
-              setSelectedCommunity(null)
-              setMobileSection('comunidades')
-            }}
-          />
+        {/* Keep CommunityDetail mounted while voice is active */}
+        {selectedCommunity && (
+          <div style={{ display: mobileSection === 'community-detail' ? 'contents' : 'none' }}>
+            <CommunityDetail
+              community={selectedCommunity}
+              onBack={() => {
+                setSelectedCommunity(null)
+                setMobileSection('comunidades')
+              }}
+            />
+          </div>
         )}
         {mobileSection === 'fenix' && (
           <div className="fenix-hub">
