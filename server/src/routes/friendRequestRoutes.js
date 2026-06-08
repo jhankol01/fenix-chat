@@ -7,12 +7,14 @@ const router = Router()
 // POST /api/friend-requests — send friend request by @username
 router.post('/', authenticate, async (req, res, next) => {
   try {
-    const { username } = req.body
+    let { username } = req.body
     if (!username || username.trim().length < 2) {
       return res.status(400).json({ error: 'Usuario requerido' })
     }
+    // Strip @ prefix if present
+    username = username.trim().replace(/^@/, '')
 
-    const targetRes = await query('SELECT id, username FROM users WHERE username = $1', [username.trim()])
+    const targetRes = await query('SELECT id, username FROM users WHERE LOWER(username) = LOWER($1)', [username])
     if (targetRes.rows.length === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' })
     }

@@ -6,7 +6,7 @@ export async function listUsers(req, res, next) {
     const result = await query(
       `SELECT id, username, email, display_name, avatar_url, status_text, status_emoji, is_verified, created_at, updated_at
        FROM users
-       WHERE (is_discoverable = TRUE OR id = $1)
+       WHERE (is_discoverable IS NOT FALSE OR id = $1)
          AND id NOT IN (SELECT blocked_id FROM blocked_users WHERE blocker_id = $1)
          AND id NOT IN (SELECT blocker_id FROM blocked_users WHERE blocked_id = $1)
        ORDER BY created_at DESC`,

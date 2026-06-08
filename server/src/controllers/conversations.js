@@ -104,7 +104,10 @@ export async function searchUsers(req, res, next) {
   try {
     const { q } = req.query
 
-    if (!q || q.trim().length < 2) {
+    // Strip @ prefix if present
+    const cleanQ = (q || '').trim().replace(/^@/, '')
+
+    if (!cleanQ || cleanQ.length < 2) {
       return res.status(400).json({ error: 'Query debe tener al menos 2 caracteres' })
     }
 
@@ -114,12 +117,12 @@ export async function searchUsers(req, res, next) {
        WHERE (username ILIKE $1 OR display_name ILIKE $1)
          AND id != $2
          AND is_verified = TRUE
-         AND is_discoverable = TRUE
+         AND (is_discoverable = TRUE OR is_discoverable IS NULL)
          AND id NOT IN (SELECT blocked_id FROM blocked_users WHERE blocker_id = $2)
          AND id NOT IN (SELECT blocker_id FROM blocked_users WHERE blocked_id = $2)
        ORDER BY username ASC
        LIMIT 20`,
-      [`%${q.trim()}%`, req.user.id]
+      [`%${cleanQ}%`, req.user.id]
     )
 
     res.json({ users: result.rows })
