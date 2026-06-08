@@ -78,15 +78,65 @@ function CommunityDetail({ community: initialCommunity, onBack }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // ─── Voice Room Socket Events ────────────────────────────────
+  // ─── Voice Room ──────────────────────────────────────────────
+  const inVoiceRoomRef = useRef(null)
+
+  const createPeerConnection = useCallback((remoteUserId) => {
+    // Close existing connection if any
+    if (peerConnectionsRef.current[remoteUserId]) {
+      peerConnectionsRef.current[remoteUserId].close()
+    }
+
+    const pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+      ]
+    })
+    peerConnectionsRef.current[remoteUserId] = pc
+
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => {
+        pc.addTrack(track, localStreamRef.current)
+      })
+    }
+
+    pc.ontrack = (e) => {
+      let audio = audioElementsRef.current[remoteUserId]
+      if (!audio) {
+        audio = new Audio()
+        audio.autoplay = true
+        audio.playsInline = true
+        audioElementsRef.current[remoteUserId] = audio
+      }
+      audio.srcObject = e.streams[0]
+      audio.play().catch(() => {})
+    }
+
+    const socket = getSocket()
+    pc.onicecandidate = (e) => {
+      if (e.candidate && socket) {
+        socket.emit('voice_ice', { to: remoteUserId, candidate: e.candidate })
+      }
+    }
+
+    pc.onconnectionstatechange = () => {
+      console.log(`[Voice] Peer ${remoteUserId} state: ${pc.connectionState}`)
+    }
+
+    return pc
+  }, [])
+
+  // Register voice socket listeners ONCE (not dependent on inVoiceRoom)
   useEffect(() => {
     const socket = getSocket()
     if (!socket) return
 
-    // When we join a room, server sends us list of existing users
+    // Server sends list of existing users when we join
     const onRoomUsers = async ({ users }) => {
+      console.log('[Voice] Room users received:', users?.length)
       if (!localStreamRef.current || !users?.length) return
-      // Add existing users to participants list
+
       setVoiceParticipants(prev => {
         const newList = [...prev]
         for (const u of users) {
@@ -94,62 +144,70 @@ function CommunityDetail({ community: initialCommunity, onBack }) {
         }
         return newList
       })
-      // Create WebRTC offers to each existing user
+
+      // Create offers to each existing user
       for (const u of users) {
         if (u.userId !== user?.id) {
           try {
+            console.log('[Voice] Creating offer to:', u.userId)
             const pc = createPeerConnection(u.userId)
             const offer = await pc.createOffer()
             await pc.setLocalDescription(offer)
             socket.emit('voice_offer', { to: u.userId, offer })
           } catch (err) {
-            console.error('Offer creation error:', err)
+            console.error('[Voice] Offer error:', err)
           }
         }
       }
     }
 
     const onUserJoined = (data) => {
+      console.log('[Voice] User joined:', data.username)
       setVoiceParticipants(prev => {
         if (prev.find(p => p.userId === data.userId)) return prev
         return [...prev, data]
       })
-      // Don't create offer here - the new joiner will get voice_room_users
-      // and create offers to us
     }
 
     const onUserLeft = (data) => {
+      console.log('[Voice] User left:', data.userId)
       setVoiceParticipants(prev => prev.filter(p => p.userId !== data.userId))
       if (peerConnectionsRef.current[data.userId]) {
         peerConnectionsRef.current[data.userId].close()
         delete peerConnectionsRef.current[data.userId]
       }
       if (audioElementsRef.current[data.userId]) {
-        audioElementsRef.current[data.userId].remove()
+        audioElementsRef.current[data.userId].srcObject = null
         delete audioElementsRef.current[data.userId]
       }
     }
 
     const onVoiceOffer = async ({ from, offer }) => {
-      if (!localStreamRef.current) return
+      console.log('[Voice] Offer received from:', from)
+      if (!localStreamRef.current) {
+        console.warn('[Voice] No local stream, ignoring offer')
+        return
+      }
       try {
         const pc = createPeerConnection(from)
         await pc.setRemoteDescription(new RTCSessionDescription(offer))
         const answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
         socket.emit('voice_answer', { to: from, answer })
+        console.log('[Voice] Answer sent to:', from)
       } catch (err) {
-        console.error('Answer creation error:', err)
+        console.error('[Voice] Answer error:', err)
       }
     }
 
     const onVoiceAnswer = async ({ from, answer }) => {
+      console.log('[Voice] Answer received from:', from)
       const pc = peerConnectionsRef.current[from]
       if (pc) {
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(answer))
         } catch (err) {
-          console.error('Set answer error:', err)
+          console.error('[Voice] Set answer error:', err)
         }
       }
     }
@@ -159,7 +217,7 @@ function CommunityDetail({ community: initialCommunity, onBack }) {
       if (pc && candidate) {
         try {
           await pc.addIceCandidate(new RTCIceCandidate(candidate))
-        } catch (err) { /* ignore */ }
+        } catch (err) { /* ignore late candidates */ }
       }
     }
 
@@ -178,62 +236,26 @@ function CommunityDetail({ community: initialCommunity, onBack }) {
       socket.off('voice_answer', onVoiceAnswer)
       socket.off('voice_ice', onVoiceIce)
     }
-  }, [inVoiceRoom, user?.id])
-
-  const createPeerConnection = useCallback((remoteUserId) => {
-    const pc = new RTCPeerConnection({
-      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-    })
-    peerConnectionsRef.current[remoteUserId] = pc
-
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(track => {
-        pc.addTrack(track, localStreamRef.current)
-      })
-    }
-
-    pc.ontrack = (e) => {
-      let audio = audioElementsRef.current[remoteUserId]
-      if (!audio) {
-        audio = new Audio()
-        audio.autoplay = true
-        audioElementsRef.current[remoteUserId] = audio
-      }
-      audio.srcObject = e.streams[0]
-    }
-
-    const socket = getSocket()
-    pc.onicecandidate = (e) => {
-      if (e.candidate && socket) {
-        socket.emit('voice_ice', { to: remoteUserId, candidate: e.candidate })
-      }
-    }
-
-    return pc
-  }, [])
-
-  const createOffer = useCallback(async (remoteUserId, socket) => {
-    const pc = createPeerConnection(remoteUserId)
-    const offer = await pc.createOffer()
-    await pc.setLocalDescription(offer)
-    socket.emit('voice_offer', { to: remoteUserId, offer })
-  }, [createPeerConnection])
+  }, [user?.id, createPeerConnection])
 
   // Join voice room
   const joinVoiceRoom = async (roomId) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
       localStreamRef.current = stream
+      inVoiceRoomRef.current = roomId
       setInVoiceRoom(roomId)
       setIsMuted(false)
 
+      // Add ourselves first
+      setVoiceParticipants([{
+        userId: user.id, username: user.username,
+        display_name: user.display_name, avatar_url: user.avatar_url
+      }])
+
+      // Now emit join — listeners are already registered
       const socket = getSocket()
       if (socket) socket.emit('join_voice_room', { roomId })
-
-      setVoiceParticipants(prev => {
-        if (prev.find(p => p.userId === user?.id)) return prev
-        return [...prev, { userId: user.id, username: user.username, display_name: user.display_name, avatar_url: user.avatar_url }]
-      })
     } catch (err) {
       console.error('Mic error:', err)
       alert('No se pudo acceder al micrófono')
@@ -243,7 +265,8 @@ function CommunityDetail({ community: initialCommunity, onBack }) {
   // Leave voice room
   const leaveVoiceRoom = () => {
     const socket = getSocket()
-    if (socket && inVoiceRoom) socket.emit('leave_voice_room', { roomId: inVoiceRoom })
+    const roomId = inVoiceRoomRef.current
+    if (socket && roomId) socket.emit('leave_voice_room', { roomId })
 
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(t => t.stop())
@@ -251,8 +274,9 @@ function CommunityDetail({ community: initialCommunity, onBack }) {
     }
     Object.values(peerConnectionsRef.current).forEach(pc => pc.close())
     peerConnectionsRef.current = {}
-    Object.values(audioElementsRef.current).forEach(a => { try { a.remove() } catch(e){} })
+    Object.values(audioElementsRef.current).forEach(a => { try { a.srcObject = null } catch(e){} })
     audioElementsRef.current = {}
+    inVoiceRoomRef.current = null
     setInVoiceRoom(null)
     setVoiceParticipants([])
   }
