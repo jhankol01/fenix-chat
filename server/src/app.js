@@ -102,6 +102,26 @@ app.get('/api/debug/online', (req, res) => {
   }
   res.json({ onlineCount: users.length, users })
 });
+// ─── Force migration endpoint ─────────────────────────────────────────────────
+app.get('/api/debug/migrate', async (req, res) => {
+  try {
+    await query(`
+      CREATE TABLE IF NOT EXISTS friend_requests (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        receiver_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status VARCHAR(20) DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(sender_id, receiver_id)
+      )
+    `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_friend_req_receiver ON friend_requests(receiver_id, status)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_friend_req_sender ON friend_requests(sender_id, status)`);
+    res.json({ success: true, message: 'friend_requests table created' });
+  } catch (err) {
+    res.status(500).json({ error: err.message, detail: err.detail || null });
+  }
+});
 
 // ─── API Routes ─────────────────────────────────────────────────────────────────
 app.use('/api', routes);
