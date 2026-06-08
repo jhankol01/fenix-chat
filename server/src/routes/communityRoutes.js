@@ -189,7 +189,7 @@ router.post('/:id/voice-rooms', async (req, res, next) => {
     if (community.my_role !== 'owner' && community.my_role !== 'admin' && community.owner_id !== req.user.id) {
       return res.status(403).json({ error: 'Solo el propietario o admin puede crear salas de voz' });
     }
-    const { query } = await import('../db.js');
+    const { query } = await import('../config/database.js');
     const result = await query(
       `INSERT INTO voice_rooms (community_id, name) VALUES ($1, $2) RETURNING *`,
       [req.params.id, name.trim()]
@@ -210,7 +210,7 @@ router.patch('/:id/voice-rooms/:roomId', async (req, res, next) => {
     if (community.my_role !== 'owner' && community.my_role !== 'admin' && community.owner_id !== req.user.id) {
       return res.status(403).json({ error: 'Solo el propietario o admin puede editar salas de voz' });
     }
-    const { query } = await import('../db.js');
+    const { query } = await import('../config/database.js');
     const result = await query(
       `UPDATE voice_rooms SET name = $1 WHERE id = $2 AND community_id = $3 RETURNING *`,
       [name.trim(), req.params.roomId, req.params.id]
@@ -228,7 +228,7 @@ router.delete('/:id/voice-rooms/:roomId', async (req, res, next) => {
     if (community.my_role !== 'owner' && community.my_role !== 'admin' && community.owner_id !== req.user.id) {
       return res.status(403).json({ error: 'Solo el propietario o admin puede eliminar salas de voz' });
     }
-    const { query } = await import('../db.js');
+    const { query } = await import('../config/database.js');
     const result = await query(
       `DELETE FROM voice_rooms WHERE id = $1 AND community_id = $2 RETURNING id`,
       [req.params.roomId, req.params.id]
