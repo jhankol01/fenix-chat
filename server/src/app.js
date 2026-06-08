@@ -90,7 +90,7 @@ setInterval(() => {
 
 // ─── Health Check ───────────────────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', version: 'v8-avatar-calls-fix', features: ['chat', 'voice_notes', 'calls', 'delete_conv', 'delete_msg', 'avatars'] });
+  res.json({ status: 'ok', version: 'v9-privacy-friends', features: ['chat', 'voice_notes', 'calls', 'friend_requests', 'privacy', 'communities'] });
 });
 
 // ─── Debug: online users ────────────────────────────────────────────────────────
