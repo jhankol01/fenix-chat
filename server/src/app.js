@@ -141,6 +141,68 @@ server.listen(config.port, async () => {
     )`);
     await query(`CREATE INDEX IF NOT EXISTS idx_push_subs_user ON push_subscriptions(user_id)`);
     logger.info('✅ Push subscriptions migration applied');
+
+    // ── Communities ──
+    await query(`CREATE TABLE IF NOT EXISTS communities (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      name VARCHAR(100) NOT NULL,
+      description TEXT DEFAULT '',
+      banner_url TEXT,
+      icon_url TEXT,
+      owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      invite_code VARCHAR(20) UNIQUE DEFAULT substr(md5(random()::text), 1, 8),
+      is_public BOOLEAN DEFAULT true,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_communities_owner ON communities(owner_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_communities_invite ON communities(invite_code)`);
+
+    await query(`CREATE TABLE IF NOT EXISTS community_members (
+      community_id UUID NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      role VARCHAR(20) DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'moderator', 'member')),
+      joined_at TIMESTAMPTZ DEFAULT NOW(),
+      PRIMARY KEY (community_id, user_id)
+    )`);
+
+    await query(`CREATE TABLE IF NOT EXISTS community_channels (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      community_id UUID NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+      name VARCHAR(50) NOT NULL,
+      description TEXT DEFAULT '',
+      type VARCHAR(20) DEFAULT 'text' CHECK (type IN ('text', 'announcements', 'vip')),
+      position INTEGER DEFAULT 0,
+      is_private BOOLEAN DEFAULT false,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_channels_community ON community_channels(community_id, position)`);
+
+    await query(`CREATE TABLE IF NOT EXISTS channel_messages (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      channel_id UUID NOT NULL REFERENCES community_channels(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      content TEXT NOT NULL,
+      type VARCHAR(20) DEFAULT 'text' CHECK (type IN ('text', 'image', 'system')),
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_channel_msgs ON channel_messages(channel_id, created_at DESC)`);
+
+    await query(`CREATE TABLE IF NOT EXISTS voice_rooms (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      community_id UUID NOT NULL REFERENCES communities(id) ON DELETE CASCADE,
+      name VARCHAR(50) NOT NULL DEFAULT 'Sala General',
+      max_participants INTEGER DEFAULT 20,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
+
+    await query(`CREATE TABLE IF NOT EXISTS voice_participants (
+      room_id UUID NOT NULL REFERENCES voice_rooms(id) ON DELETE CASCADE,
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      is_muted BOOLEAN DEFAULT false,
+      joined_at TIMESTAMPTZ DEFAULT NOW(),
+      PRIMARY KEY (room_id, user_id)
+    )`);
+    logger.info('✅ Communities migration applied');
   } catch (err) {
     logger.warn('Migration note:', err.message);
   }

@@ -51,4 +51,8 @@ router.use('/stories', storyRoutes);
 import pushRoutes from './pushRoutes.js';
 router.use('/push', pushRoutes);
 
+// Community routes
+import communityRoutes from './communityRoutes.js';
+router.use('/communities', communityRoutes);
+
 export default router;

@@ -410,7 +410,78 @@ export default function chatHandler(io) {
       }
     })
 
-    // ─── Disconnect ───────────────────────────────────────────────────────────
+    // ─── Community Channel Events ─────────────────────────────────────────────
+    socket.on('join_channel', ({ channelId }) => {
+      if (channelId) {
+        socket.join(`channel:${channelId}`)
+      }
+    })
+
+    socket.on('leave_channel', ({ channelId }) => {
+      if (channelId) {
+        socket.leave(`channel:${channelId}`)
+      }
+    })
+
+    socket.on('channel_message', async ({ channelId, content, type }) => {
+      try {
+        if (!channelId || !content?.trim()) return
+        const { default: Channel } = await import('../models/Channel.js')
+        const message = await Channel.sendMessage({
+          channelId,
+          userId: user.id,
+          content: content.trim(),
+          type: type || 'text',
+        })
+        io.to(`channel:${channelId}`).emit('channel_message', message)
+      } catch (err) {
+        logger.error('channel_message error:', err.message)
+      }
+    })
+
+    socket.on('channel_typing', ({ channelId }) => {
+      if (channelId) {
+        socket.to(`channel:${channelId}`).emit('channel_typing', {
+          channelId,
+          userId: user.id,
+          username: user.username,
+        })
+      }
+    })
+
+    // Voice room presence (tracked in-memory + DB)
+    socket.on('join_voice_room', async ({ roomId }) => {
+      try {
+        if (!roomId) return
+        socket.join(`voice:${roomId}`)
+        await query(
+          `INSERT INTO voice_participants (room_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+          [roomId, user.id]
+        )
+        const userRes = await query(
+          `SELECT username, display_name, avatar_url FROM users WHERE id = $1`, [user.id]
+        )
+        io.to(`voice:${roomId}`).emit('voice_user_joined', {
+          roomId, userId: user.id, ...userRes.rows[0],
+        })
+      } catch (err) {
+        logger.error('join_voice_room error:', err.message)
+      }
+    })
+
+    socket.on('leave_voice_room', async ({ roomId }) => {
+      try {
+        if (!roomId) return
+        socket.leave(`voice:${roomId}`)
+        await query(
+          `DELETE FROM voice_participants WHERE room_id = $1 AND user_id = $2`,
+          [roomId, user.id]
+        )
+        io.to(`voice:${roomId}`).emit('voice_user_left', { roomId, userId: user.id })
+      } catch (err) {
+        logger.error('leave_voice_room error:', err.message)
+      }
+    })
     socket.on('disconnect', (reason) => {
       logger.info(`Socket disconnected: ${user.username} (${reason})`)
 
