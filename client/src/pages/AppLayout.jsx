@@ -14,6 +14,7 @@ import StoriesBar from '../components/layout/StoriesBar'
 import VoiceIndicator from '../components/layout/VoiceIndicator'
 import useAuthStore from '../stores/authStore'
 import useChatStore from '../stores/chatStore'
+import useVoiceStore from '../stores/voiceStore'
 import { connectSocket, disconnectSocket, getSocket, onReconnect } from '../lib/socket'
 import { requestNotificationPermission, notifyNewMessage, initPushNotifications } from '../lib/notifications'
 import api from '../lib/api'
@@ -266,7 +267,13 @@ function AppLayout() {
 
           {/* Voice Indicator in sidebar */}
           <VoiceIndicator onGoToVoice={() => {
-            if (selectedCommunity) setDesktopSection('comunidades')
+            const vs = useVoiceStore.getState()
+            if (vs.communityId) {
+              // Find the community in myCommunities or use minimal object
+              const c = myCommunities.find(c => c.id === vs.communityId) || { id: vs.communityId, name: vs.communityName }
+              setSelectedCommunity(c)
+              setDesktopSection('comunidades')
+            }
           }} />
         </div>
 
@@ -439,7 +446,13 @@ function AppLayout() {
       {!showMobileChat && (
         <div className="voice-indicator--floating">
           <VoiceIndicator onGoToVoice={() => {
-            if (selectedCommunity) setMobileSection('community-detail')
+            const vs = useVoiceStore.getState()
+            if (vs.communityId) {
+              if (!selectedCommunity || selectedCommunity.id !== vs.communityId) {
+                setSelectedCommunity({ id: vs.communityId, name: vs.communityName })
+              }
+              setMobileSection('community-detail')
+            }
           }} />
         </div>
       )}

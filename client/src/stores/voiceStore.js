@@ -7,6 +7,7 @@ const useVoiceStore = create((set) => ({
   communityId: null,
   isMuted: false,
   participantCount: 0,
+  joinedAt: null,          // Date.now() when joined
   
   joinRoom: ({ roomId, roomName, communityName, communityId }) => set({
     inVoiceRoom: roomId,
@@ -15,6 +16,7 @@ const useVoiceStore = create((set) => ({
     communityId,
     isMuted: false,
     participantCount: 1,
+    joinedAt: Date.now(),
   }),
   
   leaveRoom: () => set({
@@ -24,6 +26,7 @@ const useVoiceStore = create((set) => ({
     communityId: null,
     isMuted: false,
     participantCount: 0,
+    joinedAt: null,
   }),
   
   setMuted: (muted) => set({ isMuted: muted }),
