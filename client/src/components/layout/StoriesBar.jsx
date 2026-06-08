@@ -12,7 +12,7 @@ const STORY_COLORS = [
 
 const QUICK_EMOJIS = ['🔥', '❤️', '😂', '😍', '👏', '😮']
 
-function StoriesBar() {
+function StoriesBar({ autoOpen = false }) {
   const [storyGroups, setStoryGroups] = useState([])
   const [showCreate, setShowCreate] = useState(false)
   const [createMode, setCreateMode] = useState(null)
@@ -48,11 +48,24 @@ function StoriesBar() {
     }
   }
 
+  const autoOpenedRef = useRef(false)
+
   useEffect(() => {
     loadStories()
     const interval = setInterval(loadStories, 30000)
     return () => clearInterval(interval)
   }, [])
+
+  // Auto-open first story when autoOpen=true and stories load
+  useEffect(() => {
+    if (autoOpen && storyGroups.length > 0 && !autoOpenedRef.current && !showViewer) {
+      autoOpenedRef.current = true
+      // Find first group with unviewed stories, or just first group
+      const unviewedIdx = storyGroups.findIndex(g => g.hasUnviewed)
+      const idx = unviewedIdx >= 0 ? unviewedIdx : 0
+      openStory(idx)
+    }
+  }, [autoOpen, storyGroups])
 
   // ─── Photo handling ─────────────────────────────────────────────
   const handlePhotoSelect = (e) => {

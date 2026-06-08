@@ -232,10 +232,7 @@ function AppLayout() {
         )}
         {mobileSection === 'fenix' && (
           <div className="fenix-hub">
-            <div className="fenix-hub__header">
-              <span className="fenix-hub__title">🔥 Historias</span>
-            </div>
-            <StoriesBar />
+            <StoriesBar autoOpen />
             <div className="section-placeholder__cards" style={{ padding: '12px 16px' }}>
               <div className="section-placeholder__card" onClick={() => {
                 setMobileSection('chats')
