@@ -226,7 +226,12 @@ function AppLayout() {
             {navItems.map(n => (
               <button key={n.key}
                 className={`app-layout__nav-item ${desktopSection === n.key ? 'app-layout__nav-item--active' : ''}`}
-                onClick={() => { setDesktopSection(n.key); setShowDesktopProfile(false); setSelectedCommunity(null) }}>
+                onClick={() => {
+                  setDesktopSection(n.key)
+                  setShowDesktopProfile(false)
+                  // Don't clear community if voice is active (would kill the call)
+                  if (!useVoiceStore.getState().inVoiceRoom) setSelectedCommunity(null)
+                }}>
                 <span className="app-layout__nav-item-icon">{n.icon}</span>
                 <span>{n.label}</span>
               </button>
