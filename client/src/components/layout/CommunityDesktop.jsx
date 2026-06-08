@@ -34,16 +34,14 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
       const formData = new FormData()
       formData.append('banner', file)
       formData.append('communityId', community.id)
-      const token = localStorage.getItem('accessToken')
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
-      const resp = await fetch(`${API_URL}/upload/community-banner`, {
-        method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData
-      })
-      const data = await resp.json()
+      const data = await api.upload('/upload/community-banner', formData)
       if (data.bannerUrl) {
         setCommunity(prev => ({ ...prev, banner_url: data.bannerUrl }))
       }
-    } catch (err) { console.error('Banner upload error:', err) }
+    } catch (err) {
+      console.error('Banner upload error:', err)
+      alert('Error al subir la portada: ' + (err.message || 'Intenta de nuevo'))
+    }
     setUploadingBanner(false)
     if (bannerInputRef.current) bannerInputRef.current.value = ''
   }
@@ -178,7 +176,7 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
         <div className="cd__banner-overlay">
           <h1>{community.name} 🎮</h1>
           <span>{community.member_count || members.length} miembros · {onlineMembers} en línea</span>
-          {(community.my_role === 'owner' || community.my_role === 'admin') && (
+          {(community.my_role === 'owner' || community.my_role === 'admin' || community.owner_id === user?.id) && (
             <>
               <input ref={bannerInputRef} type="file" accept="image/*" hidden onChange={handleBannerUpload} />
               <button className="cd__banner-upload" onClick={() => bannerInputRef.current?.click()} disabled={uploadingBanner}>
