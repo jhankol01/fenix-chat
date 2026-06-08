@@ -116,6 +116,52 @@
 }
 .cd__voice-card-count { font-size: 0.68rem; color: var(--color-text-muted); margin-left: auto; margin-right: 6px; }
 
+/* Voice room management */
+.cd__create-room-btn {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  padding: 10px 12px; margin-top: 8px;
+  background: rgba(255,255,255,0.04); border: 1px dashed rgba(255,255,255,0.15);
+  border-radius: 10px; color: var(--color-text-muted);
+  font-size: 0.78rem; cursor: pointer; transition: all 0.2s;
+}
+.cd__create-room-btn:hover {
+  background: rgba(124,58,237,0.1); border-color: rgba(124,58,237,0.3);
+  color: var(--color-brand);
+}
+
+.cd__create-room-form {
+  padding: 10px; margin-top: 8px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+}
+.cd__create-room-btns { display: flex; gap: 6px; margin-top: 8px; }
+.cd__voice-join--cancel {
+  background: rgba(255,255,255,0.06) !important;
+  color: var(--color-text-muted) !important;
+}
+.cd__voice-join--cancel:hover { background: rgba(255,255,255,0.1) !important; }
+
+.cd__room-edit-input {
+  width: 100%; padding: 6px 10px;
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(124,58,237,0.4);
+  border-radius: 6px; color: var(--color-text-primary);
+  font-size: 0.85rem; outline: none;
+}
+.cd__room-edit-input:focus { border-color: var(--color-brand); }
+.cd__room-edit-form { margin-bottom: 2px; }
+
+.cd__room-delete {
+  width: 22px; height: 22px; border-radius: 50%; border: none;
+  background: rgba(239,68,68,0.1); color: #ef4444;
+  font-size: 1rem; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  opacity: 0; transition: all 0.15s; flex-shrink: 0;
+}
+.cd__voice-card:hover .cd__room-delete { opacity: 1; }
+.cd__room-delete:hover { background: rgba(239,68,68,0.25); }
+
+.cd__voice-card-name { cursor: default; }
+
 /* Column 2: Chat */
 .cd__col-chat { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .cd__chat-header {

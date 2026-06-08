@@ -174,4 +174,68 @@ router.delete('/:id/channels/:channelId', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ─── Voice Rooms ─────────────────────────────────────────
+
+// POST /api/communities/:id/voice-rooms — create voice room
+router.post('/:id/voice-rooms', async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    if (!name || name.trim().length < 2) {
+      return res.status(400).json({ error: 'El nombre debe tener al menos 2 caracteres' });
+    }
+    // Check ownership/admin
+    const community = await Community.getById(req.params.id, req.user.id);
+    if (!community) return res.status(404).json({ error: 'Comunidad no encontrada' });
+    if (community.my_role !== 'owner' && community.my_role !== 'admin' && community.owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Solo el propietario o admin puede crear salas de voz' });
+    }
+    const { query } = await import('../db.js');
+    const result = await query(
+      `INSERT INTO voice_rooms (community_id, name) VALUES ($1, $2) RETURNING *`,
+      [req.params.id, name.trim()]
+    );
+    res.status(201).json({ voiceRoom: result.rows[0] });
+  } catch (err) { next(err); }
+});
+
+// PATCH /api/communities/:id/voice-rooms/:roomId — rename voice room
+router.patch('/:id/voice-rooms/:roomId', async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    if (!name || name.trim().length < 2) {
+      return res.status(400).json({ error: 'El nombre debe tener al menos 2 caracteres' });
+    }
+    const community = await Community.getById(req.params.id, req.user.id);
+    if (!community) return res.status(404).json({ error: 'Comunidad no encontrada' });
+    if (community.my_role !== 'owner' && community.my_role !== 'admin' && community.owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Solo el propietario o admin puede editar salas de voz' });
+    }
+    const { query } = await import('../db.js');
+    const result = await query(
+      `UPDATE voice_rooms SET name = $1 WHERE id = $2 AND community_id = $3 RETURNING *`,
+      [name.trim(), req.params.roomId, req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Sala no encontrada' });
+    res.json({ voiceRoom: result.rows[0] });
+  } catch (err) { next(err); }
+});
+
+// DELETE /api/communities/:id/voice-rooms/:roomId — delete voice room
+router.delete('/:id/voice-rooms/:roomId', async (req, res, next) => {
+  try {
+    const community = await Community.getById(req.params.id, req.user.id);
+    if (!community) return res.status(404).json({ error: 'Comunidad no encontrada' });
+    if (community.my_role !== 'owner' && community.my_role !== 'admin' && community.owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Solo el propietario o admin puede eliminar salas de voz' });
+    }
+    const { query } = await import('../db.js');
+    const result = await query(
+      `DELETE FROM voice_rooms WHERE id = $1 AND community_id = $2 RETURNING id`,
+      [req.params.roomId, req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Sala no encontrada' });
+    res.json({ success: true });
+  } catch (err) { next(err); }
+});
+
 export default router;

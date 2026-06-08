@@ -18,6 +18,11 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
   const [inVoiceRoom, setInVoiceRoom] = useState(null)
   const [voiceParticipants, setVoiceParticipants] = useState([])
   const [isMuted, setIsMuted] = useState(false)
+  // Voice room management
+  const [showCreateRoom, setShowCreateRoom] = useState(false)
+  const [newRoomName, setNewRoomName] = useState('')
+  const [editingRoomId, setEditingRoomId] = useState(null)
+  const [editingRoomName, setEditingRoomName] = useState('')
   const localStreamRef = useRef(null)
   const peerConnectionsRef = useRef({})
   const audioElementsRef = useRef({})
@@ -45,6 +50,45 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
     }
     setUploadingBanner(false)
     if (bannerInputRef.current) bannerInputRef.current.value = ''
+  }
+
+  // Voice room CRUD
+  const createVoiceRoom = async (e) => {
+    e.preventDefault()
+    if (!newRoomName.trim() || !community?.id) return
+    try {
+      const data = await api.post(`/communities/${community.id}/voice-rooms`, { name: newRoomName.trim() })
+      if (data.voiceRoom) {
+        setCommunity(prev => ({ ...prev, voice_rooms: [...(prev.voice_rooms || []), data.voiceRoom] }))
+      }
+      setNewRoomName('')
+      setShowCreateRoom(false)
+    } catch (err) { alert(err.message || 'Error al crear sala') }
+  }
+
+  const saveRoomName = async (roomId) => {
+    if (!editingRoomName.trim() || !community?.id) { setEditingRoomId(null); return }
+    try {
+      const data = await api.patch(`/communities/${community.id}/voice-rooms/${roomId}`, { name: editingRoomName.trim() })
+      if (data.voiceRoom) {
+        setCommunity(prev => ({
+          ...prev,
+          voice_rooms: prev.voice_rooms.map(r => r.id === roomId ? { ...r, name: data.voiceRoom.name } : r)
+        }))
+      }
+    } catch (err) { alert(err.message || 'Error al renombrar sala') }
+    setEditingRoomId(null)
+  }
+
+  const deleteVoiceRoom = async (roomId) => {
+    if (!confirm('¿Eliminar esta sala de voz?')) return
+    try {
+      await api.delete(`/communities/${community.id}/voice-rooms/${roomId}`)
+      setCommunity(prev => ({
+        ...prev,
+        voice_rooms: prev.voice_rooms.filter(r => r.id !== roomId)
+      }))
+    } catch (err) { alert(err.message || 'Error al eliminar sala') }
   }
 
   // Load community
@@ -244,20 +288,41 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
       <div className="cd__body">
         {/* Column 1: Voice Rooms */}
         <div className="cd__col-voice">
-          <div className="cd__section-title">Sala de voz</div>
+          <div className="cd__section-title">Salas de voz</div>
           {community.voice_rooms?.map(room => {
             const isIn = inVoiceRoom === room.id
+            const isEditing = editingRoomId === room.id
             return (
               <div key={room.id} className={`cd__voice-card ${isIn ? 'cd__voice-card--active' : ''}`}>
                 <div className="cd__voice-card-header">
                   <Volume2 size={16} />
-                  <div>
-                    <div className="cd__voice-card-name">{room.name}</div>
+                  <div style={{ flex: 1 }}>
+                    {isEditing ? (
+                      <form onSubmit={(e) => { e.preventDefault(); saveRoomName(room.id) }} className="cd__room-edit-form">
+                        <input
+                          value={editingRoomName}
+                          onChange={e => setEditingRoomName(e.target.value)}
+                          autoFocus
+                          className="cd__room-edit-input"
+                          onBlur={() => saveRoomName(room.id)}
+                        />
+                      </form>
+                    ) : (
+                      <div className="cd__voice-card-name" onDoubleClick={() => {
+                        if (community.my_role === 'owner' || community.my_role === 'admin' || community.owner_id === user?.id) {
+                          setEditingRoomId(room.id); setEditingRoomName(room.name)
+                        }
+                      }}>{room.name}</div>
+                    )}
                     <div className="cd__voice-card-meta">
                       {isIn ? voiceParticipants.length : (room.participant_count || 0)} conectados
                       {isIn && <span className="cd__live-badge">En vivo</span>}
                     </div>
                   </div>
+                  {/* Delete button for owner/admin */}
+                  {(community.my_role === 'owner' || community.my_role === 'admin' || community.owner_id === user?.id) && community.voice_rooms.length > 1 && !isIn && (
+                    <button className="cd__room-delete" onClick={() => deleteVoiceRoom(room.id)} title="Eliminar sala">×</button>
+                  )}
                 </div>
                 {isIn && (
                   <div className="cd__voice-participants">
@@ -290,15 +355,29 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
             )
           })}
 
-          <div className="cd__section-title" style={{ marginTop: 16 }}>Otros canales de voz</div>
-          {[{ name: 'Sala 2', count: 0 }, { name: 'Sala 3', count: 0 }].map((r, i) => (
-            <div key={i} className="cd__voice-card cd__voice-card--mini">
-              <Volume2 size={14} />
-              <span>{r.name}</span>
-              <span className="cd__voice-card-count">{r.count} conectados</span>
-              <button className="cd__voice-join cd__voice-join--small">Unirse</button>
-            </div>
-          ))}
+          {/* Create new voice room */}
+          {(community.my_role === 'owner' || community.my_role === 'admin' || community.owner_id === user?.id) && (
+            showCreateRoom ? (
+              <form className="cd__create-room-form" onSubmit={createVoiceRoom}>
+                <input
+                  value={newRoomName}
+                  onChange={e => setNewRoomName(e.target.value)}
+                  placeholder="Nombre de la sala..."
+                  autoFocus
+                  className="cd__room-edit-input"
+                />
+                <div className="cd__create-room-btns">
+                  <button type="submit" className="cd__voice-join cd__voice-join--small" disabled={!newRoomName.trim()}>Crear</button>
+                  <button type="button" className="cd__voice-join cd__voice-join--small cd__voice-join--cancel" onClick={() => { setShowCreateRoom(false); setNewRoomName('') }}>Cancelar</button>
+                </div>
+              </form>
+            ) : (
+              <button className="cd__create-room-btn" onClick={() => setShowCreateRoom(true)}>
+                <Plus size={14} />
+                Crear sala de voz
+              </button>
+            )
+          )}
         </div>
 
         {/* Column 2: Chat */}
