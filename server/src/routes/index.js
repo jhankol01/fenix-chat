@@ -55,4 +55,8 @@ router.use('/push', pushRoutes);
 import communityRoutes from './communityRoutes.js';
 router.use('/communities', communityRoutes);
 
+// Friend request routes
+import friendRequestRoutes from './friendRequestRoutes.js';
+router.use('/friend-requests', friendRequestRoutes);
+
 export default router;

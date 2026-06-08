@@ -216,6 +216,23 @@ server.listen(config.port, async () => {
     logger.warn('Privacy migration note:', err.message);
   }
 
+  // ── Friend Requests ──
+  try {
+    await query(`CREATE TABLE IF NOT EXISTS friend_requests (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      receiver_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(sender_id, receiver_id)
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_friend_req_receiver ON friend_requests(receiver_id, status)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_friend_req_sender ON friend_requests(sender_id, status)`);
+    logger.info('✅ Friend requests migration applied');
+  } catch (err) {
+    logger.warn('Friend requests migration note:', err.message);
+  }
+
   // ─── Story Cleanup Cron ─────────────────────────────────────────────────────
   // Run once on startup
   Story.cleanExpired()

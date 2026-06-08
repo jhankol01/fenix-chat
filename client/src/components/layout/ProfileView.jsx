@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import {
   User, Bell, Lock, Settings, ChevronRight, Camera, LogOut,
   ArrowLeft, Check, X, Moon, Globe, Trash2, Info, Palette, ImageIcon, Upload,
-  Monitor, Smartphone, AlertTriangle, ExternalLink
+  Monitor, Smartphone, AlertTriangle, ExternalLink, Copy
 } from 'lucide-react'
 import useAuthStore from '../../stores/authStore'
 import api from '../../lib/api'
@@ -56,6 +56,7 @@ function ProfileView() {
   const user = useAuthStore(state => state.user)
   const logout = useAuthStore(state => state.logout)
   const setUser = useAuthStore(state => state.setUser)
+  const [copiedUser, setCopiedUser] = useState(false)
 
   // Edit profile state
   const [editForm, setEditForm] = useState({
@@ -838,7 +839,17 @@ function ProfileView() {
           <div className="profile-view__online-badge" />
         </div>
         <div className="profile-view__username">{user?.display_name || user?.displayName || user?.username || 'Usuario'}</div>
-        <div className="profile-view__handle">@{user?.username}</div>
+        <div className="profile-view__handle-row">
+          <div className="profile-view__handle">@{user?.username}</div>
+          <button className="profile-view__copy-user-btn" onClick={() => {
+            navigator.clipboard.writeText(`@${user?.username}`)
+            setCopiedUser(true)
+            setTimeout(() => setCopiedUser(false), 2000)
+          }}>
+            {copiedUser ? <Check size={14} /> : <Copy size={14} />}
+            {copiedUser ? 'Copiado' : 'Copiar'}
+          </button>
+        </div>
         {(user?.status_text || user?.statusText) && (
           <div className="profile-view__status-text">
             {user?.status_emoji || user?.statusEmoji} {user?.status_text || user?.statusText}

@@ -126,10 +126,36 @@
   margin-bottom: 2px;
 }
 
+.profile-view__handle-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: var(--space-2);
+}
+
 .profile-view__handle {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
-  margin-bottom: var(--space-2);
+}
+
+.profile-view__copy-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(124,58,237,0.15);
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: 8px;
+  color: var(--color-brand);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-view__copy-user-btn:hover {
+  background: rgba(124,58,237,0.25);
 }
 
 .profile-view__status-text {
