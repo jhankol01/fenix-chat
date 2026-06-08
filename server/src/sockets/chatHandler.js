@@ -482,6 +482,36 @@ export default function chatHandler(io) {
         logger.error('leave_voice_room error:', err.message)
       }
     })
+
+    // WebRTC signaling relay for voice rooms
+    socket.on('voice_offer', ({ to, offer }) => {
+      // Find target user's socket and send offer
+      const targetSockets = onlineUsers.get(to)
+      if (targetSockets) {
+        for (const sid of targetSockets) {
+          io.to(sid).emit('voice_offer', { from: user.id, offer })
+        }
+      }
+    })
+
+    socket.on('voice_answer', ({ to, answer }) => {
+      const targetSockets = onlineUsers.get(to)
+      if (targetSockets) {
+        for (const sid of targetSockets) {
+          io.to(sid).emit('voice_answer', { from: user.id, answer })
+        }
+      }
+    })
+
+    socket.on('voice_ice', ({ to, candidate }) => {
+      const targetSockets = onlineUsers.get(to)
+      if (targetSockets) {
+        for (const sid of targetSockets) {
+          io.to(sid).emit('voice_ice', { from: user.id, candidate })
+        }
+      }
+    })
+
     socket.on('disconnect', (reason) => {
       logger.info(`Socket disconnected: ${user.username} (${reason})`)
 
