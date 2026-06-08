@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Hash, Volume2, Send, Crown, Shield, Megaphone, Mic, MicOff, PhoneOff, Copy, Check, Plus, Users, Settings, Calendar, Bell, Star, ChevronRight, Camera, Loader2 } from 'lucide-react'
+import { Hash, Volume2, Send, Crown, Shield, Megaphone, Mic, MicOff, PhoneOff, Copy, Check, Plus, Users, Settings, Calendar, Bell, Star, ChevronRight, Camera, Loader2, Globe, Lock } from 'lucide-react'
 import api from '../../lib/api'
 import { getSocket } from '../../lib/socket'
 import useAuthStore from '../../stores/authStore'
@@ -89,6 +89,16 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
         voice_rooms: prev.voice_rooms.filter(r => r.id !== roomId)
       }))
     } catch (err) { alert(err.message || 'Error al eliminar sala') }
+  }
+
+  const togglePrivacy = async () => {
+    const newVal = community.is_public === false ? true : false
+    try {
+      const data = await api.patch(`/communities/${community.id}`, { isPublic: newVal })
+      if (data.community) {
+        setCommunity(prev => ({ ...prev, is_public: data.community.is_public }))
+      }
+    } catch (err) { alert(err.message || 'Error al cambiar privacidad') }
   }
 
   // Load community
@@ -414,6 +424,27 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
 
         {/* Column 3: Sidebar (Announcements / Events / Members) */}
         <div className="cd__col-sidebar">
+          {/* Privacy toggle for owner/admin */}
+          {(community.my_role === 'owner' || community.my_role === 'admin' || community.owner_id === user?.id) && (
+            <div className="cd__sidebar-card cd__privacy-card">
+              <div className="cd__privacy-row">
+                <div className="cd__privacy-info">
+                  {community.is_public !== false ? <Globe size={16} /> : <Lock size={16} />}
+                  <div>
+                    <div className="cd__privacy-label">{community.is_public !== false ? 'Pública' : 'Privada'}</div>
+                    <div className="cd__privacy-desc">{community.is_public !== false ? 'Visible en Descubrir' : 'Solo con invitación'}</div>
+                  </div>
+                </div>
+                <button
+                  className={`cd__privacy-switch ${community.is_public !== false ? 'cd__privacy-switch--on' : ''}`}
+                  onClick={togglePrivacy}
+                >
+                  <div className="cd__privacy-switch-thumb" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Announcement Card */}
           <div className="cd__sidebar-card">
             <div className="cd__sidebar-card-label"><Bell size={14} /> Anuncio destacado</div>

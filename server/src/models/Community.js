@@ -1,11 +1,11 @@
 import { query } from '../config/database.js';
 
 class Community {
-  static async create({ name, description, bannerUrl, iconUrl, ownerId }) {
+  static async create({ name, description, bannerUrl, iconUrl, ownerId, isPublic = true }) {
     const result = await query(
-      `INSERT INTO communities (name, description, banner_url, icon_url, owner_id)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [name, description || '', bannerUrl || null, iconUrl || null, ownerId]
+      `INSERT INTO communities (name, description, banner_url, icon_url, owner_id, is_public)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [name, description || '', bannerUrl || null, iconUrl || null, ownerId, isPublic]
     );
     const community = result.rows[0];
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Users, Globe, Search, Hash, Volume2, Crown, ChevronRight, X, Copy, Check } from 'lucide-react'
+import { Plus, Users, Globe, Search, Hash, Volume2, Crown, ChevronRight, X, Copy, Check, Lock, Eye } from 'lucide-react'
 import api from '../../lib/api'
 import { getSocket } from '../../lib/socket'
 import useAuthStore from '../../stores/authStore'
@@ -14,6 +14,7 @@ function CommunitiesView({ onOpenCommunity }) {
   const [joinCode, setJoinCode] = useState('')
   const [newName, setNewName] = useState('')
   const [newDesc, setNewDesc] = useState('')
+  const [newIsPublic, setNewIsPublic] = useState(true)
   const [loading, setLoading] = useState(true)
   const user = useAuthStore(s => s.user)
 
@@ -38,10 +39,11 @@ function CommunitiesView({ onOpenCommunity }) {
   const handleCreate = async () => {
     if (!newName.trim()) return
     try {
-      await api.post('/communities', { name: newName.trim(), description: newDesc.trim() })
+      await api.post('/communities', { name: newName.trim(), description: newDesc.trim(), isPublic: newIsPublic })
       setShowCreate(false)
       setNewName('')
       setNewDesc('')
+      setNewIsPublic(true)
       loadMine()
       loadAll()
     } catch (err) { console.error(err) }
@@ -161,6 +163,24 @@ function CommunitiesView({ onOpenCommunity }) {
               maxLength={200}
               rows={3}
             />
+            <div className="communities-view__privacy-toggle">
+              <div className="communities-view__privacy-info">
+                {newIsPublic ? <Globe size={18} /> : <Lock size={18} />}
+                <div>
+                  <div className="communities-view__privacy-label">{newIsPublic ? 'Pública' : 'Privada'}</div>
+                  <div className="communities-view__privacy-desc">
+                    {newIsPublic ? 'Todos pueden descubrir y unirse' : 'Solo con invitación'}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                className={`communities-view__switch ${newIsPublic ? 'communities-view__switch--on' : ''}`}
+                onClick={() => setNewIsPublic(!newIsPublic)}
+              >
+                <div className="communities-view__switch-thumb" />
+              </button>
+            </div>
             <button
               className="communities-view__btn-create communities-view__btn-full"
               onClick={handleCreate}
@@ -225,6 +245,9 @@ function CommunityCard({ community, isMember, onJoin, onClick }) {
           <div className="community-card__meta">
             <Users size={13} />
             <span>{community.member_count || 0} miembros</span>
+            {community.is_public === false && (
+              <span className="community-card__badge community-card__badge--private"><Lock size={11} /> Privada</span>
+            )}
             {community.my_role === 'owner' && (
               <span className="community-card__badge"><Crown size={11} /> Creador</span>
             )}

@@ -312,3 +312,68 @@
   font-size: 0.95rem;
   margin-top: 4px;
 }
+
+/* Privacy Toggle */
+.communities-view__privacy-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.communities-view__privacy-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-text-primary);
+}
+
+.communities-view__privacy-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.communities-view__privacy-desc {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin-top: 1px;
+}
+
+/* Toggle Switch */
+.communities-view__switch {
+  width: 44px; height: 24px;
+  border-radius: 12px; border: none;
+  background: rgba(255,255,255,0.15);
+  cursor: pointer; position: relative;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.communities-view__switch--on {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.communities-view__switch-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 3px; left: 3px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.communities-view__switch--on .communities-view__switch-thumb {
+  transform: translateX(20px);
+}
+
+/* Private badge */
+.community-card__badge--private {
+  background: rgba(239,68,68,0.15);
+  color: #f87171;
+}

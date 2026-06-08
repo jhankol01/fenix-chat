@@ -27,7 +27,7 @@ router.get('/mine', async (req, res, next) => {
 // POST /api/communities — create
 router.post('/', async (req, res, next) => {
   try {
-    const { name, description, bannerUrl, iconUrl } = req.body;
+    const { name, description, bannerUrl, iconUrl, isPublic } = req.body;
     if (!name || name.trim().length < 2) {
       return res.status(400).json({ error: 'El nombre debe tener al menos 2 caracteres' });
     }
@@ -37,6 +37,7 @@ router.post('/', async (req, res, next) => {
       bannerUrl,
       iconUrl,
       ownerId: req.user.id,
+      isPublic: isPublic !== false, // default true
     });
     res.status(201).json({ community });
   } catch (err) { next(err); }
@@ -48,6 +49,34 @@ router.get('/:id', async (req, res, next) => {
     const community = await Community.getById(req.params.id, req.user.id);
     if (!community) return res.status(404).json({ error: 'Comunidad no encontrada' });
     res.json({ community });
+  } catch (err) { next(err); }
+});
+
+// PATCH /api/communities/:id — update community settings (visibility, name, description)
+router.patch('/:id', async (req, res, next) => {
+  try {
+    const community = await Community.getById(req.params.id, req.user.id);
+    if (!community) return res.status(404).json({ error: 'Comunidad no encontrada' });
+    if (community.my_role !== 'owner' && community.my_role !== 'admin' && community.owner_id !== req.user.id) {
+      return res.status(403).json({ error: 'Solo el propietario puede modificar la comunidad' });
+    }
+    const { query: dbQuery } = await import('../config/database.js');
+    const fields = [];
+    const values = [];
+    let idx = 1;
+
+    if (req.body.isPublic !== undefined) { fields.push(`is_public = $${idx++}`); values.push(req.body.isPublic); }
+    if (req.body.name) { fields.push(`name = $${idx++}`); values.push(req.body.name.trim()); }
+    if (req.body.description !== undefined) { fields.push(`description = $${idx++}`); values.push(req.body.description); }
+
+    if (fields.length === 0) return res.status(400).json({ error: 'Nada que actualizar' });
+
+    values.push(req.params.id);
+    const result = await dbQuery(
+      `UPDATE communities SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+    res.json({ community: result.rows[0] });
   } catch (err) { next(err); }
 });
 
