@@ -476,6 +476,63 @@
   transform: translateX(20px);
 }
 
+/* ---------- Privacy Section ---------- */
+.profile-view__section-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 4px 4px;
+  margin-top: 4px;
+}
+
+.profile-view__privacy-select {
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  font-size: 0.82rem;
+  outline: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.profile-view__privacy-select:focus {
+  border-color: var(--color-brand);
+}
+
+.profile-view__privacy-select option {
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+}
+
+.profile-view__privacy-switch {
+  width: 44px; height: 24px;
+  border-radius: 12px; border: none;
+  background: rgba(239,68,68,0.3);
+  cursor: pointer; position: relative;
+  transition: background 0.2s; padding: 0;
+  flex-shrink: 0;
+}
+
+.profile-view__privacy-switch--on {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.profile-view__privacy-switch-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%; background: white;
+  position: absolute; top: 3px; left: 3px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.profile-view__privacy-switch--on .profile-view__privacy-switch-thumb {
+  transform: translateX(20px);
+}
+
 /* ---------- Footer con versión ---------- */
 .profile-view__footer {
   margin-top: auto;

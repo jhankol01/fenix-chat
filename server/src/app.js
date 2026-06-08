@@ -207,6 +207,15 @@ server.listen(config.port, async () => {
     logger.warn('Migration note:', err.message);
   }
 
+  // ── User Privacy Columns ──
+  try {
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS allow_messages VARCHAR(20) DEFAULT 'everyone' CHECK (allow_messages IN ('everyone', 'contacts', 'nobody'))`);
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_discoverable BOOLEAN DEFAULT true`);
+    logger.info('✅ User privacy migration applied');
+  } catch (err) {
+    logger.warn('Privacy migration note:', err.message);
+  }
+
   // ─── Story Cleanup Cron ─────────────────────────────────────────────────────
   // Run once on startup
   Story.cleanExpired()

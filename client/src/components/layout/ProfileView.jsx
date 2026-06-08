@@ -728,6 +728,61 @@ function ProfileView() {
 
           <div className="profile-view__divider" />
 
+          {/* ── Privacy Section ── */}
+          <div className="profile-view__section-label">🔒 Privacidad</div>
+
+          <div className="profile-view__settings-item">
+            <span className="profile-view__settings-icon">
+              <Lock size={20} />
+            </span>
+            <div className="profile-view__settings-text" style={{ flex: 1 }}>
+              <span className="profile-view__settings-label">Quién puede escribirme</span>
+              <span className="profile-view__settings-desc">
+                {user?.allowMessages === 'everyone' ? 'Todos' : user?.allowMessages === 'contacts' ? 'Solo contactos' : 'Nadie'}
+              </span>
+            </div>
+            <select
+              className="profile-view__privacy-select"
+              value={user?.allowMessages || 'everyone'}
+              onChange={async (e) => {
+                try {
+                  await api.patch('/users/me/privacy', { allowMessages: e.target.value })
+                  setUser({ ...user, allowMessages: e.target.value })
+                } catch (err) { alert('Error al actualizar') }
+              }}
+            >
+              <option value="everyone">Todos</option>
+              <option value="contacts">Solo contactos</option>
+              <option value="nobody">Nadie</option>
+            </select>
+          </div>
+
+          <div className="profile-view__settings-item">
+            <span className="profile-view__settings-icon">
+              <Globe size={20} />
+            </span>
+            <div className="profile-view__settings-text" style={{ flex: 1 }}>
+              <span className="profile-view__settings-label">Visible en búsqueda</span>
+              <span className="profile-view__settings-desc">
+                {user?.isDiscoverable !== false ? 'Otros pueden encontrarte' : 'Oculto para todos'}
+              </span>
+            </div>
+            <button
+              className={`profile-view__privacy-switch ${user?.isDiscoverable !== false ? 'profile-view__privacy-switch--on' : ''}`}
+              onClick={async () => {
+                const newVal = user?.isDiscoverable === false ? true : false
+                try {
+                  await api.patch('/users/me/privacy', { isDiscoverable: newVal })
+                  setUser({ ...user, isDiscoverable: newVal })
+                } catch (err) { alert('Error al actualizar') }
+              }}
+            >
+              <div className="profile-view__privacy-switch-thumb" />
+            </button>
+          </div>
+
+          <div className="profile-view__divider" />
+
           <button className="profile-view__settings-item profile-view__settings-item--danger" onClick={handleLogout}>
             <span className="profile-view__settings-icon">
               <LogOut size={20} />

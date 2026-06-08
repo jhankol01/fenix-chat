@@ -1,11 +1,16 @@
 import { query } from '../config/database.js'
 
-// GET /api/admin/users - List all users
+// GET /api/admin/users - List all users (filtered by privacy)
 export async function listUsers(req, res, next) {
   try {
     const result = await query(
       `SELECT id, username, email, display_name, avatar_url, status_text, status_emoji, is_verified, created_at, updated_at
-       FROM users ORDER BY created_at DESC`
+       FROM users
+       WHERE (is_discoverable = TRUE OR id = $1)
+         AND id NOT IN (SELECT blocked_id FROM blocked_users WHERE blocker_id = $1)
+         AND id NOT IN (SELECT blocker_id FROM blocked_users WHERE blocked_id = $1)
+       ORDER BY created_at DESC`,
+      [req.user.id]
     )
     res.json({ users: result.rows, total: result.rows.length })
   } catch (err) {

@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { getMe, updateMe } from '../controllers/users.js'
+import { getMe, updateMe, updatePrivacy } from '../controllers/users.js'
 import authenticate from '../middleware/auth.js'
 import { query } from '../config/database.js'
 
@@ -7,6 +7,7 @@ const router = Router()
 
 router.get('/me', authenticate, getMe)
 router.patch('/me', authenticate, updateMe)
+router.patch('/me/privacy', authenticate, updatePrivacy)
 
 // DELETE /api/users/me — Delete own account
 router.delete('/me', authenticate, async (req, res) => {

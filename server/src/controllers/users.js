@@ -1,4 +1,5 @@
 import User from '../models/User.js'
+import { query } from '../config/database.js'
 
 // GET /api/users/me
 export async function getMe(req, res, next) {
@@ -17,6 +18,8 @@ export async function getMe(req, res, next) {
       statusEmoji: user.status_emoji,
       isVerified: user.is_verified,
       createdAt: user.created_at,
+      allowMessages: user.allow_messages || 'everyone',
+      isDiscoverable: user.is_discoverable !== false,
     })
   } catch (err) {
     next(err)
@@ -39,6 +42,39 @@ export async function updateMe(req, res, next) {
       avatarUrl: user.avatar_url,
       statusText: user.status_text,
       statusEmoji: user.status_emoji,
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+
+// PATCH /api/users/me/privacy
+export async function updatePrivacy(req, res, next) {
+  try {
+    const { allowMessages, isDiscoverable } = req.body
+    const fields = []
+    const values = []
+    let idx = 1
+
+    if (allowMessages !== undefined && ['everyone', 'contacts', 'nobody'].includes(allowMessages)) {
+      fields.push(`allow_messages = $${idx++}`)
+      values.push(allowMessages)
+    }
+    if (isDiscoverable !== undefined) {
+      fields.push(`is_discoverable = $${idx++}`)
+      values.push(!!isDiscoverable)
+    }
+
+    if (fields.length === 0) return res.status(400).json({ error: 'Nada que actualizar' })
+
+    values.push(req.user.id)
+    const result = await query(
+      `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx} RETURNING allow_messages, is_discoverable`,
+      values
+    )
+    res.json({
+      allowMessages: result.rows[0].allow_messages,
+      isDiscoverable: result.rows[0].is_discoverable,
     })
   } catch (err) {
     next(err)

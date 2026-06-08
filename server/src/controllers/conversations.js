@@ -25,13 +25,40 @@ export async function createConversation(req, res, next) {
       return res.status(400).json({ error: 'No puedes crear una conversación contigo mismo' })
     }
 
-    // Verify target user exists
+    // Verify target user exists and check privacy
     const targetCheck = await query(
-      'SELECT id, username FROM users WHERE id = $1',
+      'SELECT id, username, allow_messages FROM users WHERE id = $1',
       [targetUserId]
     )
     if (targetCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' })
+    }
+
+    const targetUser = targetCheck.rows[0]
+
+    // Check if blocked
+    const blocked = await query(
+      'SELECT 1 FROM blocked_users WHERE (blocker_id = $1 AND blocked_id = $2) OR (blocker_id = $2 AND blocked_id = $1)',
+      [req.user.id, targetUserId]
+    )
+    if (blocked.rows.length > 0) {
+      return res.status(403).json({ error: 'No puedes enviar mensajes a este usuario' })
+    }
+
+    // Check allow_messages setting
+    if (targetUser.allow_messages === 'nobody') {
+      return res.status(403).json({ error: 'Este usuario no acepta mensajes' })
+    }
+
+    if (targetUser.allow_messages === 'contacts') {
+      // Check if requester is in target's contacts
+      const isContact = await query(
+        'SELECT 1 FROM contacts WHERE user_id = $1 AND contact_id = $2',
+        [targetUserId, req.user.id]
+      )
+      if (isContact.rows.length === 0) {
+        return res.status(403).json({ error: 'Este usuario solo acepta mensajes de contactos' })
+      }
     }
 
     const conversationId = await Conversation.getOrCreateDM(req.user.id, targetUserId)
@@ -87,6 +114,9 @@ export async function searchUsers(req, res, next) {
        WHERE (username ILIKE $1 OR display_name ILIKE $1)
          AND id != $2
          AND is_verified = TRUE
+         AND is_discoverable = TRUE
+         AND id NOT IN (SELECT blocked_id FROM blocked_users WHERE blocker_id = $2)
+         AND id NOT IN (SELECT blocker_id FROM blocked_users WHERE blocked_id = $2)
        ORDER BY username ASC
        LIMIT 20`,
       [`%${q.trim()}%`, req.user.id]
