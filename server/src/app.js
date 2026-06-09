@@ -105,7 +105,8 @@ app.get('/api/debug/online', (req, res) => {
 // ─── Force migration endpoint ─────────────────────────────────────────────────
 app.get('/api/debug/migrate', async (req, res) => {
   try {
-    await query(`
+    const { query: dbQuery } = await import('./config/database.js');
+    await dbQuery(`
       CREATE TABLE IF NOT EXISTS friend_requests (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -115,11 +116,14 @@ app.get('/api/debug/migrate', async (req, res) => {
         UNIQUE(sender_id, receiver_id)
       )
     `);
-    await query(`CREATE INDEX IF NOT EXISTS idx_friend_req_receiver ON friend_requests(receiver_id, status)`);
-    await query(`CREATE INDEX IF NOT EXISTS idx_friend_req_sender ON friend_requests(sender_id, status)`);
-    res.json({ success: true, message: 'friend_requests table created' });
+    await dbQuery(`CREATE INDEX IF NOT EXISTS idx_friend_req_receiver ON friend_requests(receiver_id, status)`);
+    await dbQuery(`CREATE INDEX IF NOT EXISTS idx_friend_req_sender ON friend_requests(sender_id, status)`);
+    // Also ensure privacy columns exist
+    await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS allow_messages VARCHAR(20) DEFAULT 'everyone'`);
+    await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_discoverable BOOLEAN DEFAULT true`);
+    res.json({ success: true, message: 'friend_requests table + privacy columns created' });
   } catch (err) {
-    res.status(500).json({ error: err.message, detail: err.detail || null });
+    res.status(500).json({ error: err.message, detail: err.detail || null, stack: err.stack?.split('\n').slice(0,3) });
   }
 });
 
