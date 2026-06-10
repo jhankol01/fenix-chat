@@ -627,10 +627,12 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
                             </span>
                           ) : (
                             <span className="chat-list__item-preview">
-                              {conv.last_message_sender && conv.last_message_sender !== otherName
-                                ? `Tú: ${conv.last_message_content || ''}`
-                                : conv.last_message_content || 'Conversación nueva'
-                              }
+                              {(() => {
+                                const raw = conv.last_message_content || ''
+                                const prefix = conv.last_message_sender && conv.last_message_sender !== otherName ? 'Tú: ' : ''
+                                const content = formatPreview(raw)
+                                return prefix + content || 'Conversación nueva'
+                              })()}
                             </span>
                           )}
                           {mutedConvs.includes(conv.id) && (
@@ -766,6 +768,29 @@ function getConversationAvatar(conversation, currentUser) {
 function getInitials(name) {
   if (!name) return '?'
   return name.slice(0, 2).toUpperCase()
+}
+
+/** Format preview — detect media URLs and show friendly labels */
+function formatPreview(content) {
+  if (!content) return ''
+  const c = content.trim()
+  // Image URLs
+  if (/\.(jpg|jpeg|png|gif|webp|svg|bmp|ico)(\?.*)?$/i.test(c) || /^https?:\/\/.*\b(image|img|photo|pic)\b/i.test(c)) return '📷 Imagen'
+  // Backblaze / S3 image URLs
+  if (/^https?:\/\/s3\..*backblaz/i.test(c) || /^https?:\/\/.*\.b2\..*backblaz/i.test(c)) return '📷 Imagen'
+  // S3 generic
+  if (/^https?:\/\/s3[\.-].*\.(jpg|jpeg|png|gif|webp)/i.test(c)) return '📷 Imagen'
+  // Video URLs
+  if (/\.(mp4|mov|avi|webm|mkv)(\?.*)?$/i.test(c)) return '🎥 Video'
+  // Audio URLs
+  if (/\.(mp3|wav|ogg|m4a|aac|flac)(\?.*)?$/i.test(c)) return '🎵 Audio'
+  // Document URLs
+  if (/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|zip|rar|7z)(\?.*)?$/i.test(c)) return '📎 Archivo'
+  // GIF (Tenor/Giphy)
+  if (/tenor\.com|giphy\.com/i.test(c) || /\.gif(\?.*)?$/i.test(c)) return 'GIF'
+  // Generic long URL (not text)
+  if (/^https?:\/\/.{40,}$/i.test(c) && !c.includes(' ')) return '📷 Imagen'
+  return c
 }
 
 export default ChatList

@@ -936,7 +936,48 @@ function ChatView({ onBack }) {
                           <div className="chat-view__msg-markdown">
                             <ReactMarkdown>{msg.content}</ReactMarkdown>
                           </div>
-                        ) : msg.content
+                        ) : (() => {
+                          const text = msg.content || ''
+                          // Check if the entire message is an image URL
+                          const imageUrlPattern = /^https?:\/\/\S+\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?\S*)?$/i
+                          const s3ImagePattern = /^https?:\/\/s3[\w.-]*\.(amazonaws|backblazeb2|backbla)\S+$/i
+                          if (imageUrlPattern.test(text.trim()) || s3ImagePattern.test(text.trim())) {
+                            return (
+                              <img
+                                src={text.trim()}
+                                alt="Imagen"
+                                className="chat-view__msg-image"
+                                onClick={() => setLightboxUrl(text.trim())}
+                                style={{ maxWidth: '280px', borderRadius: '12px', cursor: 'pointer' }}
+                              />
+                            )
+                          }
+                          // Check if message contains URLs mixed with text
+                          const urlRegex = /(https?:\/\/[^\s]+)/g
+                          if (urlRegex.test(text)) {
+                            const parts = text.split(/(https?:\/\/[^\s]+)/g)
+                            return parts.map((part, i) => {
+                              if (/^https?:\/\//.test(part)) {
+                                // Check if this specific URL is an image
+                                if (imageUrlPattern.test(part) || s3ImagePattern.test(part)) {
+                                  return (
+                                    <img
+                                      key={i}
+                                      src={part}
+                                      alt="Imagen"
+                                      className="chat-view__msg-image"
+                                      onClick={() => setLightboxUrl(part)}
+                                      style={{ maxWidth: '280px', borderRadius: '12px', cursor: 'pointer', display: 'block', marginTop: '4px' }}
+                                    />
+                                  )
+                                }
+                                return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#7C3AED', wordBreak: 'break-all' }}>{part}</a>
+                              }
+                              return part
+                            })
+                          }
+                          return text
+                        })()
                       )}
                       {/* 🔥 Read receipt — en cada mensaje propio */}
                       {group.isOwn && msg.type !== 'system' && !msg.deleted_at && (
