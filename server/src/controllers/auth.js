@@ -9,8 +9,9 @@ import { sendVerificationEmail, sendPasswordResetEmail } from '../services/email
 import logger from '../utils/logger.js'
 
 const SALT_ROUNDS = 12
-const ACCESS_TOKEN_EXPIRY = '15m'
+const ACCESS_TOKEN_EXPIRY = '1h'
 const REFRESH_TOKEN_EXPIRY_SECONDS = 7 * 24 * 60 * 60 // 7 days
+const REMEMBER_ME_EXPIRY_SECONDS = 30 * 24 * 60 * 60 // 30 days
 
 // Generate JWT tokens
 function generateAccessToken(user) {
@@ -113,7 +114,7 @@ export async function login(req, res, next) {
       return res.status(400).json({ errors: errors.array() })
     }
 
-    const { email, password } = req.body
+    const { email, password, rememberMe } = req.body
 
     // Find user by email or username
     let user = await User.findByEmail(email)
@@ -143,8 +144,9 @@ export async function login(req, res, next) {
     const accessToken = generateAccessToken(user)
     const refreshToken = generateRefreshToken()
 
-    // Store refresh token (key = refresh:<token>, value = userId)
-    await tokenStore.set(`refresh:${refreshToken}`, user.id, REFRESH_TOKEN_EXPIRY_SECONDS)
+    // Store refresh token — 30 days if rememberMe, 7 days otherwise
+    const expiry = rememberMe ? REMEMBER_ME_EXPIRY_SECONDS : REFRESH_TOKEN_EXPIRY_SECONDS
+    await tokenStore.set(`refresh:${refreshToken}`, user.id, expiry)
 
     logger.info(`User logged in: ${user.username}`)
 

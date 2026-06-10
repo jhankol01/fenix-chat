@@ -33,8 +33,8 @@ const useAuthStore = create((set, get) => {
     },
 
     // Login
-    login: async ({ email, password }) => {
-      const data = await api.post('/auth/login', { email, password })
+    login: async ({ email, password, rememberMe }) => {
+      const data = await api.post('/auth/login', { email, password, rememberMe })
       set({
         user: data.user,
         accessToken: data.accessToken,

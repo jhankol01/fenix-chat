@@ -14,6 +14,7 @@ function LoginPage() {
   const navigate = useNavigate()
   const login = useAuthStore((s) => s.login)
   const [form, setForm] = useState({ email: '', password: '' })
+  const [rememberMe, setRememberMe] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -26,7 +27,7 @@ function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      await login({ email: form.email, password: form.password })
+      await login({ email: form.email, password: form.password, rememberMe })
       navigate('/app', { replace: true })
     } catch (err) {
       if (err.data?.code === 'EMAIL_NOT_VERIFIED') {
@@ -76,6 +77,18 @@ function LoginPage() {
             onChange={handleChange('password')}
             autoComplete="current-password"
           />
+          <div className="auth-card__remember">
+            <label className="auth-card__remember-label">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="auth-card__remember-checkbox"
+              />
+              <span className="auth-card__remember-checkmark" />
+              Recuérdame
+            </label>
+          </div>
           <Button
             type="submit"
             size="lg"
