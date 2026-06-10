@@ -148,8 +148,8 @@ app.get('/api/debug/migrate', async (req, res) => {
     // Create fenix_ia bot user if not exists
     const botExists = await dbQuery("SELECT id FROM users WHERE username = 'fenix_ia'");
     if (botExists.rows.length === 0) {
-      await dbQuery(`INSERT INTO users (username, email, display_name, is_verified, is_bot, avatar_url)
-        VALUES ('fenix_ia', 'bot@fenix.chat', 'Fenix IA', true, true, '/fenix_ia_avatar.png')`);
+      await dbQuery(`INSERT INTO users (username, email, password_hash, display_name, is_verified, is_bot, avatar_url)
+        VALUES ('fenix_ia', 'bot@fenix.chat', 'BOT_NO_LOGIN', 'Fenix IA', true, true, '/fenix_ia_avatar.png')`);
       results.push('fenix_ia bot user created');
     } else {
       await dbQuery("UPDATE users SET is_bot = TRUE, is_verified = TRUE WHERE username = 'fenix_ia'");
