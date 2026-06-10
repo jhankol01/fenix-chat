@@ -1049,3 +1049,77 @@
   vertical-align: middle;
 }
 
+/* ========== Swipeable Chat Items ========== */
+.chat-list__swipeable-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.chat-list__swipeable-content {
+  position: relative;
+  z-index: 2;
+  background: var(--color-bg-secondary);
+  will-change: transform;
+}
+
+.chat-list__swipe-actions {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: stretch;
+  z-index: 1;
+}
+
+.chat-list__swipe-actions--left {
+  right: 0;
+}
+
+.chat-list__swipe-actions--right {
+  left: 0;
+}
+
+.chat-list__swipe-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 72px;
+  border: none;
+  cursor: pointer;
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.chat-list__swipe-btn--more {
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+}
+
+.chat-list__swipe-btn--archive {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+.chat-list__swipe-btn--read {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.chat-list__swipe-btn:active {
+  filter: brightness(0.85);
+}
+
+/* Stagger animation uses swipeable-wrapper now instead of item-wrapper */
+.chat-list__swipeable-wrapper {
+  animation: chatItemFadeIn 0.35s ease both;
+}
+.chat-list__swipeable-wrapper:nth-child(1) { animation-delay: 0.02s; }
+.chat-list__swipeable-wrapper:nth-child(2) { animation-delay: 0.04s; }
+.chat-list__swipeable-wrapper:nth-child(3) { animation-delay: 0.06s; }
+.chat-list__swipeable-wrapper:nth-child(4) { animation-delay: 0.08s; }
+.chat-list__swipeable-wrapper:nth-child(5) { animation-delay: 0.10s; }
+.chat-list__swipeable-wrapper:nth-child(6) { animation-delay: 0.12s; }
+.chat-list__swipeable-wrapper:nth-child(7) { animation-delay: 0.14s; }
+.chat-list__swipeable-wrapper:nth-child(8) { animation-delay: 0.16s; }

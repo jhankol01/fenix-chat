@@ -1,11 +1,114 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2, Rocket, Phone, Users, Check, BellOff, Bell, Heart, Info, Ban, XCircle, Archive, Bot } from 'lucide-react'
+import { Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2, Rocket, Phone, Users, Check, BellOff, Bell, Heart, Info, Ban, XCircle, Archive, Bot, CheckCheck } from 'lucide-react'
 import PhoenixIcon from '../ui/PhoenixIcon'
 import StoriesBar from './StoriesBar'
 import useChatStore from '../../stores/chatStore'
 import useAuthStore from '../../stores/authStore'
 import api from '../../lib/api'
 import './ChatList.css'
+
+/**
+ * SwipeableItem — Wrapper con gestos swipe para items del chat
+ * Izquierda: muestra opciones del menú contextual
+ * Derecha: muestra archivar + marcar como leído
+ */
+function SwipeableItem({ children, onSwipeLeft, onArchive, onMarkRead, hasUnread }) {
+  const ref = useRef(null)
+  const startX = useRef(0)
+  const currentX = useRef(0)
+  const swiping = useRef(false)
+  const [offset, setOffset] = useState(0)
+  const [direction, setDirection] = useState(null) // 'left' | 'right' | null
+
+  const THRESHOLD = 70
+
+  const handleTouchStart = (e) => {
+    startX.current = e.touches[0].clientX
+    currentX.current = startX.current
+    swiping.current = true
+  }
+
+  const handleTouchMove = (e) => {
+    if (!swiping.current) return
+    currentX.current = e.touches[0].clientX
+    const diff = currentX.current - startX.current
+
+    // Limit max swipe distance
+    const clamped = Math.max(-120, Math.min(120, diff))
+    setOffset(clamped)
+
+    if (Math.abs(diff) > 10) {
+      setDirection(diff < 0 ? 'left' : 'right')
+    }
+  }
+
+  const handleTouchEnd = () => {
+    swiping.current = false
+    const diff = currentX.current - startX.current
+
+    if (diff < -THRESHOLD) {
+      // Swiped left → show context menu options
+      onSwipeLeft?.()
+    } else if (diff > THRESHOLD) {
+      // Swiped right → show archive/read actions — keep open briefly
+      setOffset(120)
+      setDirection('right')
+      setTimeout(() => {
+        setOffset(0)
+        setDirection(null)
+      }, 2000)
+      return
+    }
+
+    setOffset(0)
+    setDirection(null)
+  }
+
+  const handleAction = (action) => {
+    action?.()
+    setOffset(0)
+    setDirection(null)
+  }
+
+  return (
+    <div className="chat-list__swipeable-wrapper">
+      {/* Right-side actions (revealed when swiping left) */}
+      <div className="chat-list__swipe-actions chat-list__swipe-actions--left">
+        <button className="chat-list__swipe-btn chat-list__swipe-btn--more" onClick={() => handleAction(onSwipeLeft)}>
+          <Info size={20} />
+          <span>Más</span>
+        </button>
+      </div>
+
+      {/* Left-side actions (revealed when swiping right) */}
+      <div className="chat-list__swipe-actions chat-list__swipe-actions--right">
+        <button className="chat-list__swipe-btn chat-list__swipe-btn--archive" onClick={() => handleAction(onArchive)}>
+          <Archive size={20} />
+          <span>Archivar</span>
+        </button>
+        <button className="chat-list__swipe-btn chat-list__swipe-btn--read" onClick={() => handleAction(onMarkRead)}>
+          <CheckCheck size={20} />
+          <span>{hasUnread ? 'Leído' : 'No leído'}</span>
+        </button>
+      </div>
+
+      {/* Swipeable content */}
+      <div
+        ref={ref}
+        className="chat-list__swipeable-content"
+        style={{
+          transform: `translateX(${offset}px)`,
+          transition: swiping.current ? 'none' : 'transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)',
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {children}
+      </div>
+    </div>
+  )
+}
 
 /**
  * ChatList — Panel izquierdo de conversaciones reales
@@ -471,7 +574,17 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
                 ].filter(Boolean).join(' ')
 
                 return (
-                  <div key={conv.id} className="chat-list__item-wrapper">
+                  <SwipeableItem
+                    key={conv.id}
+                    conv={conv}
+                    onSwipeLeft={() => setContextMenu({ x: 0, y: 0, conv })}
+                    onArchive={() => { /* future archive */ }}
+                    onMarkRead={() => {
+                      const store = useChatStore.getState()
+                      if (store.markConversationRead) store.markConversationRead(conv.id)
+                    }}
+                    hasUnread={hasUnread}
+                  >
                     <div
                       className={itemClasses}
                       onClick={() => handleSelectConversation(conv)}
@@ -479,9 +592,6 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
                       tabIndex={0}
                       onKeyDown={(e) => e.key === 'Enter' && handleSelectConversation(conv)}
                       onContextMenu={(e) => handleContextMenu(e, conv)}
-                      onTouchStart={() => handleTouchStart(conv)}
-                      onTouchEnd={handleTouchEnd}
-                      onTouchMove={handleTouchEnd}
                     >
                       {/* Avatar */}
                       <div className={`chat-list__avatar ${isTyping ? 'chat-list__avatar--typing' : ''}`}>
@@ -534,7 +644,7 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </SwipeableItem>
                 )
               })
             )}
