@@ -1408,21 +1408,36 @@ function AudioMessage({ src }) {
     if (!audio) return
 
     const onTimeUpdate = () => {
-      if (audio.duration) setProgress((audio.currentTime / audio.duration) * 100)
+      if (audio.duration && isFinite(audio.duration)) {
+        setProgress((audio.currentTime / audio.duration) * 100)
+        // Update duration if we didn't get it from metadata
+        if (!duration || !isFinite(duration)) setDuration(audio.duration)
+      }
     }
-    const onLoadedMetadata = () => setDuration(audio.duration)
+    const onLoadedMetadata = () => {
+      if (isFinite(audio.duration) && audio.duration > 0) {
+        setDuration(audio.duration)
+      }
+    }
+    const onDurationChange = () => {
+      if (isFinite(audio.duration) && audio.duration > 0) {
+        setDuration(audio.duration)
+      }
+    }
     const onEnded = () => { setIsPlaying(false); setProgress(0) }
 
     audio.addEventListener('timeupdate', onTimeUpdate)
     audio.addEventListener('loadedmetadata', onLoadedMetadata)
+    audio.addEventListener('durationchange', onDurationChange)
     audio.addEventListener('ended', onEnded)
 
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate)
       audio.removeEventListener('loadedmetadata', onLoadedMetadata)
+      audio.removeEventListener('durationchange', onDurationChange)
       audio.removeEventListener('ended', onEnded)
     }
-  }, [])
+  }, [duration])
 
   const togglePlay = () => {
     const audio = audioRef.current
@@ -1436,7 +1451,7 @@ function AudioMessage({ src }) {
   }
 
   const formatDur = (s) => {
-    if (!s || isNaN(s)) return '0:00'
+    if (!s || !isFinite(s) || isNaN(s)) return '0:00'
     const m = Math.floor(s / 60)
     const sec = Math.floor(s % 60)
     return `${m}:${sec.toString().padStart(2, '0')}`
