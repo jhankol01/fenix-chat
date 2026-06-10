@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Hash, Volume2, Send, Crown, Shield, Megaphone, Mic, MicOff, PhoneOff, Copy, Check, Plus, Users, Settings, Calendar, Bell, Star, ChevronRight, Camera, Loader2, Globe, Lock, TrendingUp, Award, Flame, Clock, MessageSquare, UserPlus, Trash2, LogOut, Edit3, Save, X, AlertTriangle, Zap, Monitor, MonitorOff } from 'lucide-react'
+import { Hash, Volume2, Send, Crown, Shield, Megaphone, Mic, MicOff, PhoneOff, Copy, Check, Plus, Users, Settings, Calendar, Bell, Star, ChevronRight, Camera, Loader2, Globe, Lock, TrendingUp, Award, Flame, Clock, MessageSquare, UserPlus, Trash2, LogOut, Edit3, Save, X, AlertTriangle, Zap, Monitor, MonitorOff, Video, VideoOff, Maximize2, Minimize2, Link2 } from 'lucide-react'
 import api from '../../lib/api'
 import { getSocket } from '../../lib/socket'
 import useAuthStore from '../../stores/authStore'
@@ -31,6 +31,15 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
   const screenStreamRef = useRef(null)
   const screenVideoRef = useRef(null)
   const [screenSharer, setScreenSharer] = useState(null)
+  // Camera
+  const [isCameraOn, setIsCameraOn] = useState(false)
+  const cameraStreamRef = useRef(null)
+  const localVideoRef = useRef(null)
+  const remoteVideosRef = useRef({})
+  // Fullscreen & Invite
+  const [fullscreenVideo, setFullscreenVideo] = useState(null)
+  const [showInviteModal, setShowInviteModal] = useState(false)
+  const [inviteCopied, setInviteCopied] = useState(false)
   const messagesEndRef = useRef(null)
   const bannerInputRef = useRef(null)
   const [uploadingBanner, setUploadingBanner] = useState(false)
@@ -316,9 +325,13 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
     const socket = getSocket(); const rid = inVoiceRoomRef.current
     if (socket && rid) socket.emit('leave_voice_room', { roomId: rid })
     if (localStreamRef.current) { localStreamRef.current.getTracks().forEach(t => t.stop()); localStreamRef.current = null }
+    if (cameraStreamRef.current) { cameraStreamRef.current.getTracks().forEach(t => t.stop()); cameraStreamRef.current = null }
+    if (screenStreamRef.current) { screenStreamRef.current.getTracks().forEach(t => t.stop()); screenStreamRef.current = null }
     Object.values(peerConnectionsRef.current).forEach(pc => pc.close()); peerConnectionsRef.current = {}
     Object.values(audioElementsRef.current).forEach(a => { try { a.srcObject = null } catch(e){} }); audioElementsRef.current = {}
+    Object.values(remoteVideosRef.current).forEach(v => { try { v.srcObject = null } catch(e){} }); remoteVideosRef.current = {}
     inVoiceRoomRef.current = null; setInVoiceRoom(null); setVoiceParticipants([])
+    setIsCameraOn(false); setIsScreenSharing(false); setScreenSharer(null); setFullscreenVideo(null)
     useVoiceStore.getState().leaveRoom()
   }
   const toggleMute = () => {
@@ -329,67 +342,83 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
     }
   }
 
+  // ─── Camera Toggle ────────────────────────────────────────
+  const toggleCamera = async () => {
+    if (isCameraOn) {
+      // Stop camera
+      if (cameraStreamRef.current) {
+        cameraStreamRef.current.getTracks().forEach(t => t.stop())
+        cameraStreamRef.current = null
+      }
+      // Remove camera video senders (not screen share senders)
+      Object.values(peerConnectionsRef.current).forEach(pc => {
+        const senders = pc.getSenders()
+        const camSender = senders.find(s => s.track?.kind === 'video' && s.track?.label?.includes('camera'))
+        if (camSender) pc.removeTrack(camSender)
+      })
+      setIsCameraOn(false)
+    } else {
+      try {
+        const camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false })
+        cameraStreamRef.current = camStream
+        const videoTrack = camStream.getVideoTracks()[0]
+        // Add to all peers
+        Object.values(peerConnectionsRef.current).forEach(pc => {
+          pc.addTrack(videoTrack, camStream)
+        })
+        setIsCameraOn(true)
+        // Show local preview
+        if (localVideoRef.current) localVideoRef.current.srcObject = camStream
+      } catch(e) { console.error('Camera error:', e); alert('No se pudo acceder a la cámara') }
+    }
+  }
+
   // ─── Screen Share ─────────────────────────────────────────
   const toggleScreenShare = async () => {
     if (isScreenSharing) {
-      // Stop sharing
       if (screenStreamRef.current) {
         screenStreamRef.current.getTracks().forEach(t => t.stop())
         screenStreamRef.current = null
       }
-      // Remove video track from all peers
       Object.values(peerConnectionsRef.current).forEach(pc => {
         const senders = pc.getSenders()
-        const videoSender = senders.find(s => s.track?.kind === 'video')
+        const videoSender = senders.find(s => s.track?.kind === 'video' && !s.track?.label?.includes('camera'))
         if (videoSender) pc.removeTrack(videoSender)
       })
       setIsScreenSharing(false)
       setScreenSharer(null)
-      // Notify via socket
-      const socket = getSocket()
-      if (socket) socket.emit('voice_screen_stop', { roomId: inVoiceRoomRef.current })
     } else {
-      // Start sharing
       try {
         const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' }, audio: false })
         screenStreamRef.current = screenStream
         const videoTrack = screenStream.getVideoTracks()[0]
-        
-        // Add video track to all existing peer connections
         Object.values(peerConnectionsRef.current).forEach(pc => {
           pc.addTrack(videoTrack, screenStream)
-          // Renegotiate
-          pc.createOffer().then(offer => {
-            pc.setLocalDescription(offer)
-            const peerId = Object.keys(peerConnectionsRef.current).find(k => peerConnectionsRef.current[k] === pc)
-            const socket = getSocket()
-            if (socket && peerId) socket.emit('voice_offer', { to: peerId, offer })
-          })
         })
-        
         setIsScreenSharing(true)
         setScreenSharer(user?.id)
-        
-        // Show own screen
-        if (screenVideoRef.current) {
-          screenVideoRef.current.srcObject = screenStream
-        }
-        
-        // Handle when user stops sharing via browser UI
+        if (screenVideoRef.current) screenVideoRef.current.srcObject = screenStream
         videoTrack.onended = () => {
           setIsScreenSharing(false)
           setScreenSharer(null)
           screenStreamRef.current = null
           Object.values(peerConnectionsRef.current).forEach(pc => {
             const senders = pc.getSenders()
-            const vs = senders.find(s => s.track?.kind === 'video')
+            const vs = senders.find(s => s.track?.kind === 'video' && !s.track?.label?.includes('camera'))
             if (vs) pc.removeTrack(vs)
           })
         }
-      } catch (e) {
-        console.error('Screen share error:', e)
-      }
+      } catch (e) { console.error('Screen share error:', e) }
     }
+  }
+
+  // ─── Invite ───────────────────────────────────────────────
+  const copyInviteLink = () => {
+    const link = `${window.location.origin}/communities/${community.id}`
+    navigator.clipboard.writeText(link).then(() => {
+      setInviteCopied(true)
+      setTimeout(() => setInviteCopied(false), 2000)
+    })
   }
 
   // Sync participant count to global store
@@ -481,6 +510,7 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
   const onlineMembers = members.filter(m => m.status === 'online').length
 
   return (
+    <>
     <div className="cd">
       {/* ─── Top Banner ─── */}
       <div className="cd__banner">
@@ -670,48 +700,68 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
                       )}
                     </div>
                     {isIn && (
-                      <div className="cd__voice-participants">
-                        {voiceParticipants.map(p => (
-                          <div key={p.userId} className={`cd__voice-user ${p.userId === user?.id && isMuted ? 'cd__voice-user--muted' : ''}`}>
-                            <div className="cd__voice-avatar">
-                              {p.avatar_url ? <img src={p.avatar_url} alt="" /> : <span>{(p.username || '??').slice(0,2).toUpperCase()}</span>}
-                              {p.userId === user?.id && isMuted && <div className="cd__muted-badge"><MicOff size={10} /></div>}
-                            </div>
-                            <span>{p.userId === user?.id ? 'Tú' : (p.display_name || p.username)}</span>
+                      <>
+                        {/* Video Grid */}
+                        {(isCameraOn || screenSharer) && (
+                          <div className="cd__video-grid">
+                            {/* Local camera */}
+                            {isCameraOn && (
+                              <div className="cd__video-tile" onClick={() => setFullscreenVideo('local')}>
+                                <video ref={localVideoRef} autoPlay playsInline muted className="cd__video-feed" />
+                                <div className="cd__video-label">Tú</div>
+                              </div>
+                            )}
+                            {/* Screen share */}
+                            {screenSharer && (
+                              <div className="cd__video-tile cd__video-tile--screen" onClick={() => setFullscreenVideo('screen')}>
+                                <video ref={screenVideoRef} autoPlay playsInline className="cd__video-feed" />
+                                <div className="cd__video-label">
+                                  <Monitor size={12} />
+                                  {screenSharer === user?.id ? 'Tu pantalla' : 'Pantalla compartida'}
+                                </div>
+                                <button className="cd__video-expand" onClick={(e) => { e.stopPropagation(); setFullscreenVideo('screen') }}>
+                                  <Maximize2 size={14} />
+                                </button>
+                              </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                    {/* Screen Share Display */}
-                    {isIn && screenSharer && (
-                      <div className="cd__screen-share">
-                        <div className="cd__screen-share-header">
-                          <Monitor size={14} />
-                          <span>{screenSharer === user?.id ? 'Compartiendo tu pantalla' : 'Pantalla compartida'}</span>
+                        )}
+                        {/* Participants */}
+                        <div className="cd__voice-participants">
+                          {voiceParticipants.map(p => (
+                            <div key={p.userId} className={`cd__voice-user ${p.userId === user?.id && isMuted ? 'cd__voice-user--muted' : ''}`}>
+                              <div className="cd__voice-avatar">
+                                {p.avatar_url ? <img src={p.avatar_url} alt="" /> : <span>{(p.username || '??').slice(0,2).toUpperCase()}</span>}
+                                {p.userId === user?.id && isMuted && <div className="cd__muted-badge"><MicOff size={10} /></div>}
+                              </div>
+                              <span>{p.userId === user?.id ? 'Tú' : (p.display_name || p.username)}</span>
+                            </div>
+                          ))}
                         </div>
-                        <video
-                          ref={screenVideoRef}
-                          className="cd__screen-share-video"
-                          autoPlay
-                          playsInline
-                        />
-                      </div>
+                      </>
                     )}
+                    {/* Discord-style Control Bar */}
                     <div className="cd__voice-actions">
                       {!isIn ? (
                         <button className="cd__voice-join" onClick={() => joinVoiceRoom(room.id)}>Unirse</button>
                       ) : (
-                        <>
-                          <button className={`cd__voice-ctrl ${isMuted ? 'cd__voice-ctrl--red' : ''}`} onClick={toggleMute}>
-                            {isMuted ? <MicOff size={16} /> : <Mic size={16} />}
+                        <div className="cd__discord-bar">
+                          <button className={`cd__dc-btn ${isMuted ? 'cd__dc-btn--off' : ''}`} onClick={toggleMute} title={isMuted ? 'Activar mic' : 'Silenciar'}>
+                            {isMuted ? <MicOff size={18} /> : <Mic size={18} />}
                           </button>
-                          <button className={`cd__voice-ctrl ${isScreenSharing ? 'cd__voice-ctrl--green' : ''}`} onClick={toggleScreenShare} title="Compartir pantalla">
-                            {isScreenSharing ? <MonitorOff size={16} /> : <Monitor size={16} />}
+                          <button className={`cd__dc-btn ${isCameraOn ? 'cd__dc-btn--on' : ''}`} onClick={toggleCamera} title={isCameraOn ? 'Apagar cámara' : 'Encender cámara'}>
+                            {isCameraOn ? <VideoOff size={18} /> : <Video size={18} />}
                           </button>
-                          <button className="cd__voice-ctrl cd__voice-ctrl--red" onClick={leaveVoiceRoom}>
-                            <PhoneOff size={16} />
+                          <button className={`cd__dc-btn ${isScreenSharing ? 'cd__dc-btn--on' : ''}`} onClick={toggleScreenShare} title="Compartir pantalla">
+                            {isScreenSharing ? <MonitorOff size={18} /> : <Monitor size={18} />}
                           </button>
-                        </>
+                          <button className="cd__dc-btn" onClick={() => setShowInviteModal(true)} title="Invitar">
+                            <UserPlus size={18} />
+                          </button>
+                          <button className="cd__dc-btn cd__dc-btn--hang" onClick={leaveVoiceRoom} title="Salir">
+                            <PhoneOff size={18} />
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1174,6 +1224,77 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
 
       </div>
     </div>
+
+    {/* Fullscreen Video Overlay */}
+    {fullscreenVideo && (
+      <div className="cd__fullscreen-overlay" onClick={() => setFullscreenVideo(null)}>
+        <button className="cd__fullscreen-close" onClick={() => setFullscreenVideo(null)}>
+          <Minimize2 size={22} />
+        </button>
+        <video
+          className="cd__fullscreen-video"
+          autoPlay
+          playsInline
+          muted={fullscreenVideo === 'local'}
+          ref={el => {
+            if (el) {
+              if (fullscreenVideo === 'screen' && screenStreamRef.current) {
+                el.srcObject = screenStreamRef.current
+              } else if (fullscreenVideo === 'local' && cameraStreamRef.current) {
+                el.srcObject = cameraStreamRef.current
+              }
+            }
+          }}
+          onClick={e => e.stopPropagation()}
+        />
+        <div className="cd__fullscreen-label">
+          {fullscreenVideo === 'screen' ? '🖥️ Pantalla compartida' : '📹 Tu cámara'}
+        </div>
+      </div>
+    )}
+
+    {/* Invite Modal */}
+    {showInviteModal && (
+      <div className="cd__invite-overlay" onClick={() => setShowInviteModal(false)}>
+        <div className="cd__invite-modal" onClick={e => e.stopPropagation()}>
+          <div className="cd__invite-header">
+            <UserPlus size={20} />
+            <h3>Invitar a la sala de voz</h3>
+            <button className="cd__invite-close" onClick={() => setShowInviteModal(false)}><X size={18} /></button>
+          </div>
+          <div className="cd__invite-body">
+            <p>Comparte este enlace para invitar personas a la comunidad:</p>
+            <div className="cd__invite-link-box">
+              <input
+                type="text"
+                readOnly
+                value={`${window.location.origin}/communities/${community.id}`}
+                className="cd__invite-link-input"
+              />
+              <button className="cd__invite-copy-btn" onClick={copyInviteLink}>
+                {inviteCopied ? <><Check size={16} /> Copiado!</> : <><Link2 size={16} /> Copiar</>}
+              </button>
+            </div>
+            {/* Quick invite list */}
+            <div className="cd__invite-members-title">O invita directamente:</div>
+            <div className="cd__invite-members">
+              {members.filter(m => !voiceParticipants.find(p => p.userId === m.id)).slice(0, 8).map(m => (
+                <div key={m.id} className="cd__invite-member">
+                  <div className="cd__invite-member-avatar">
+                    {m.avatar_url ? <img src={m.avatar_url} alt="" /> : <span>{(m.username || '??').slice(0,2).toUpperCase()}</span>}
+                  </div>
+                  <span>{m.display_name || m.username}</span>
+                </div>
+              ))}
+              {members.filter(m => !voiceParticipants.find(p => p.userId === m.id)).length === 0 && (
+                <div className="cd__empty-state">Todos ya están en la sala</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   )
 }
 
