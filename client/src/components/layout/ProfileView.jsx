@@ -211,9 +211,9 @@ function ProfileView() {
   const handleToggleBrowserNotif = async () => {
     if (!('Notification' in window)) return
 
-    // If currently enabled, just turn off locally
+    // If currently enabled, just turn off locally (also mute sound)
     if (notifSettings.browserNotif) {
-      setNotifSettings(prev => ({ ...prev, browserNotif: false }))
+      setNotifSettings(prev => ({ ...prev, browserNotif: false, sound: false }))
       return
     }
 
@@ -222,7 +222,7 @@ function ProfileView() {
     if (permission === 'default') {
       // Never asked yet — show the browser prompt
       const result = await Notification.requestPermission()
-      setNotifSettings(prev => ({ ...prev, browserNotif: result === 'granted' }))
+      setNotifSettings(prev => ({ ...prev, browserNotif: result === 'granted', sound: result === 'granted' }))
       if (result === 'denied') {
         // They just denied it — show the help modal immediately
         setShowNotifHelpModal(true)
@@ -231,7 +231,7 @@ function ProfileView() {
       // Already blocked — show help modal with instructions
       setShowNotifHelpModal(true)
     } else if (permission === 'granted') {
-      setNotifSettings(prev => ({ ...prev, browserNotif: true }))
+      setNotifSettings(prev => ({ ...prev, browserNotif: true, sound: true }))
     }
   }
 

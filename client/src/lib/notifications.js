@@ -128,6 +128,14 @@ const soundGenerators = {
  */
 export function playNotificationSound(soundId) {
   try {
+    // Check if sound is disabled in settings
+    const saved = localStorage.getItem('fenix_notif_settings')
+    if (saved) {
+      try {
+        const settings = JSON.parse(saved)
+        if (settings.sound === false || settings.browserNotif === false) return
+      } catch(_) {}
+    }
     const id = soundId || localStorage.getItem('fenix_notification_sound') || 'fenix'
     if (id === 'none') return
     const gen = soundGenerators[id] || soundGenerators.fenix
