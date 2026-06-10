@@ -854,7 +854,6 @@ function ChatView({ onBack }) {
               {/* Cuerpo de los mensajes */}
               <div className="chat-view__msg-body">
                 <div className="chat-view__msg-header">
-                  <span className="chat-view__msg-username">{group.username}</span>
                   <span className="chat-view__msg-time">
                     {formatMessageTime(group.messages[0].created_at)}
                   </span>
