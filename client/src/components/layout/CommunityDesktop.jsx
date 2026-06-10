@@ -793,37 +793,103 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
               )}
             </div>
 
-            {/* Column 2: Chat */}
-            <div className="cd__col-chat">
-              <div className="cd__chat-header">
-                <Hash size={16} /> {activeChannel?.name || 'chat-general'}
-              </div>
-              <div className="cd__chat-messages">
-                {messages.length === 0 ? (
-                  <div className="cd__chat-empty">Sé el primero en enviar un mensaje 🔥</div>
-                ) : messages.map(msg => (
-                  <div key={msg.id} className={`cd__msg ${msg.user_id === user?.id ? 'cd__msg--own' : ''}`}>
-                    <div className="cd__msg-avatar">
-                      {msg.avatar_url ? <img src={msg.avatar_url} alt="" /> : <span>{(msg.username || '??').slice(0,2).toUpperCase()}</span>}
-                    </div>
-                    <div className="cd__msg-body">
-                      <div className="cd__msg-header">
-                        <span className="cd__msg-name">{msg.user_id === user?.id ? 'Tú' : (msg.display_name || msg.username)}</span>
-                        <span className="cd__msg-time">{new Date(msg.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span>
+            {/* Column 2: Chat OR Voice Room View */}
+            {inVoiceRoom ? (
+              <div className="cd__col-chat cd__col-voice-room">
+                <div className="cd__vr-header">
+                  <Volume2 size={18} />
+                  <span>{community.voice_rooms?.find(r => r.id === inVoiceRoom)?.name || 'Sala de voz'}</span>
+                  <span className="cd__live-badge">En vivo</span>
+                  <span className="cd__vr-count">{voiceParticipants.length} conectados</span>
+                </div>
+
+                {/* Video Area */}
+                <div className="cd__vr-stage">
+                  {screenSharer ? (
+                    <div className="cd__vr-screen-main" onClick={() => setFullscreenVideo('screen')}>
+                      <video ref={screenVideoRef} autoPlay playsInline className="cd__vr-screen-video" />
+                      <div className="cd__vr-screen-label">
+                        <Monitor size={14} />
+                        {screenSharer === user?.id ? 'Tu pantalla' : 'Pantalla compartida'}
                       </div>
-                      <div className="cd__msg-text">{msg.content}</div>
+                      <button className="cd__video-expand" onClick={(e) => { e.stopPropagation(); setFullscreenVideo('screen') }}>
+                        <Maximize2 size={16} />
+                      </button>
                     </div>
+                  ) : isCameraOn ? (
+                    <div className="cd__vr-camera-main" onClick={() => setFullscreenVideo('local')}>
+                      <video ref={localVideoRef} autoPlay playsInline muted className="cd__vr-camera-video" />
+                      <div className="cd__vr-screen-label">📹 Tu cámara</div>
+                    </div>
+                  ) : null}
+
+                  {/* Participant Grid */}
+                  <div className={`cd__vr-participants ${screenSharer || isCameraOn ? 'cd__vr-participants--small' : ''}`}>
+                    {voiceParticipants.map(p => (
+                      <div key={p.userId} className={`cd__vr-participant ${p.userId === user?.id && isMuted ? 'cd__vr-participant--muted' : ''}`}>
+                        <div className="cd__vr-participant-avatar">
+                          {p.avatar_url ? <img src={p.avatar_url} alt="" /> : <span>{(p.username || '??').slice(0,2).toUpperCase()}</span>}
+                          {p.userId === user?.id && isMuted && <div className="cd__vr-muted-icon"><MicOff size={12} /></div>}
+                        </div>
+                        <div className="cd__vr-participant-name">{p.userId === user?.id ? 'Tú' : (p.display_name || p.username)}</div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-                <div ref={messagesEndRef} />
+                </div>
+
+                {/* Discord Control Bar at bottom */}
+                <div className="cd__vr-controls">
+                  <div className="cd__discord-bar cd__discord-bar--big">
+                    <button className={`cd__dc-btn cd__dc-btn--lg ${isMuted ? 'cd__dc-btn--off' : ''}`} onClick={toggleMute} title={isMuted ? 'Activar mic' : 'Silenciar'}>
+                      {isMuted ? <MicOff size={22} /> : <Mic size={22} />}
+                    </button>
+                    <button className={`cd__dc-btn cd__dc-btn--lg ${isCameraOn ? 'cd__dc-btn--on' : ''}`} onClick={toggleCamera} title={isCameraOn ? 'Apagar cámara' : 'Encender cámara'}>
+                      {isCameraOn ? <VideoOff size={22} /> : <Video size={22} />}
+                    </button>
+                    <button className={`cd__dc-btn cd__dc-btn--lg ${isScreenSharing ? 'cd__dc-btn--on' : ''}`} onClick={toggleScreenShare} title="Compartir pantalla">
+                      {isScreenSharing ? <MonitorOff size={22} /> : <Monitor size={22} />}
+                    </button>
+                    <button className="cd__dc-btn cd__dc-btn--lg" onClick={() => setShowInviteModal(true)} title="Invitar">
+                      <UserPlus size={22} />
+                    </button>
+                    <button className="cd__dc-btn cd__dc-btn--lg cd__dc-btn--hang" onClick={leaveVoiceRoom} title="Desconectar">
+                      <PhoneOff size={22} />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="cd__chat-input">
-                <input value={newMsg} onChange={e => setNewMsg(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleSend() }}
-                  placeholder="Escribe un mensaje..." />
-                {newMsg.trim() && <button className="cd__chat-send" onClick={handleSend}><Send size={18} /></button>}
+            ) : (
+              <div className="cd__col-chat">
+                <div className="cd__chat-header">
+                  <Hash size={16} /> {activeChannel?.name || 'chat-general'}
+                </div>
+                <div className="cd__chat-messages">
+                  {messages.length === 0 ? (
+                    <div className="cd__chat-empty">Sé el primero en enviar un mensaje 🔥</div>
+                  ) : messages.map(msg => (
+                    <div key={msg.id} className={`cd__msg ${msg.user_id === user?.id ? 'cd__msg--own' : ''}`}>
+                      <div className="cd__msg-avatar">
+                        {msg.avatar_url ? <img src={msg.avatar_url} alt="" /> : <span>{(msg.username || '??').slice(0,2).toUpperCase()}</span>}
+                      </div>
+                      <div className="cd__msg-body">
+                        <div className="cd__msg-header">
+                          <span className="cd__msg-name">{msg.user_id === user?.id ? 'Tú' : (msg.display_name || msg.username)}</span>
+                          <span className="cd__msg-time">{new Date(msg.created_at).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        <div className="cd__msg-text">{msg.content}</div>
+                      </div>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+                <div className="cd__chat-input">
+                  <input value={newMsg} onChange={e => setNewMsg(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSend() }}
+                    placeholder="Escribe un mensaje..." />
+                  {newMsg.trim() && <button className="cd__chat-send" onClick={handleSend}><Send size={18} /></button>}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Column 3: Sidebar (Announcements / Events / Members) */}
             <div className="cd__col-sidebar">

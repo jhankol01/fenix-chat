@@ -348,6 +348,160 @@
 .cd__invite-member-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .cd__invite-member span { color: rgba(255,255,255,0.85); font-size: 0.85rem; }
 
+/* ═══ Center Voice Room View ═══ */
+.cd__col-voice-room {
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(ellipse at center top, rgba(124, 58, 237, 0.08) 0%, transparent 60%);
+}
+.cd__vr-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  color: #A855F7;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.cd__vr-count {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  font-weight: 400;
+}
+.cd__vr-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+/* Screen share in center */
+.cd__vr-screen-main, .cd__vr-camera-main {
+  position: relative;
+  width: 100%;
+  max-height: 50%;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.cd__vr-screen-main:hover, .cd__vr-camera-main:hover { border-color: rgba(124, 58, 237, 0.5); }
+.cd__vr-screen-video, .cd__vr-camera-video {
+  width: 100%;
+  max-height: 45vh;
+  object-fit: contain;
+  display: block;
+}
+.cd__vr-screen-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 8px 14px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8));
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Participant grid in center */
+.cd__vr-participants {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
+  padding: 10px;
+}
+.cd__vr-participants--small {
+  gap: 12px;
+}
+.cd__vr-participant {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.cd__vr-participants--small .cd__vr-participant-avatar { width: 52px; height: 52px; }
+.cd__vr-participant-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: rgba(124, 58, 237, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #A855F7;
+  position: relative;
+  border: 3px solid rgba(16, 185, 129, 0.5);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+  animation: voicePulse 2s ease-in-out infinite;
+}
+.cd__vr-participant--muted .cd__vr-participant-avatar {
+  border-color: rgba(239, 68, 68, 0.4);
+  box-shadow: none;
+  animation: none;
+}
+@keyframes voicePulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.15); }
+  50% { box-shadow: 0 0 25px rgba(16, 185, 129, 0.3); }
+}
+.cd__vr-participant-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.cd__vr-participant-avatar span { font-size: inherit; }
+.cd__vr-muted-icon {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: #ef4444;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #1a1a2e;
+}
+.cd__vr-participant-name {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.8);
+  font-weight: 500;
+  text-align: center;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Control bar at bottom */
+.cd__vr-controls {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0, 0, 0, 0.2);
+}
+.cd__discord-bar--big {
+  gap: 10px;
+  padding: 10px 20px;
+}
+.cd__dc-btn--lg {
+  width: 48px;
+  height: 48px;
+}
+
 .cd__voice-card--mini {
   display: flex; align-items: center; gap: 8px; padding: 8px 10px;
   font-size: 0.8rem; color: var(--color-text-secondary);
