@@ -41,6 +41,8 @@ function CallOverlay() {
   if (!remoteAudioRef.current) {
     remoteAudioRef.current = new Audio()
     remoteAudioRef.current.autoplay = true
+    remoteAudioRef.current.volume = 1.0
+    remoteAudioRef.current.setAttribute('playsinline', '')
   }
   const localVideoRef = useRef(null)
   const remoteVideoRef = useRef(null)
@@ -174,16 +176,22 @@ function CallOverlay() {
       } else {
         // Audio track → play in audio element
         const audio = remoteAudioRef.current
+        audio.volume = 1.0
         if (e.streams && e.streams[0]) {
           audio.srcObject = e.streams[0]
         } else {
           audio.srcObject = new MediaStream([e.track])
         }
-        audio.play().then(() => {
-          console.log('🔊 Audio playing!')
-        }).catch(err => {
-          console.warn('🔊 Audio play blocked:', err.message)
-        })
+        // Force play with retry
+        const tryPlay = () => {
+          audio.play().then(() => {
+            console.log('🔊 Audio playing! Volume:', audio.volume)
+          }).catch(err => {
+            console.warn('🔊 Audio play blocked, retrying...', err.message)
+            setTimeout(tryPlay, 500)
+          })
+        }
+        tryPlay()
       }
     }
 
@@ -357,7 +365,11 @@ function CallOverlay() {
     if (audio) {
       const next = !isSpeaker
       setIsSpeaker(next)
-      audio.volume = next ? 1.0 : 0.25
+      // Both modes at full volume — speaker mode uses sinkId if supported
+      audio.volume = 1.0
+      if (audio.setSinkId) {
+        audio.setSinkId(next ? 'default' : '').catch(() => {})
+      }
     }
   }
 
