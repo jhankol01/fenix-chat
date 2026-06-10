@@ -158,6 +158,92 @@
   background: rgba(124,58,237,0.25);
 }
 
+.profile-view__edit-user-btn {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.06);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.profile-view__edit-user-btn:hover {
+  background: rgba(124,58,237,0.2);
+  color: var(--color-brand);
+}
+
+.profile-view__username-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.profile-view__username-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: 10px;
+  padding: 4px 8px;
+}
+
+.profile-view__at-prefix {
+  color: var(--color-brand);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.profile-view__username-edit-row input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+  padding: 4px 2px;
+  outline: none;
+  min-width: 0;
+}
+
+.profile-view__username-save,
+.profile-view__username-cancel {
+  width: 28px; height: 28px;
+  border-radius: 8px; border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.profile-view__username-save {
+  background: rgba(16,185,129,0.15);
+  color: #10b981;
+}
+.profile-view__username-save:hover { background: rgba(16,185,129,0.3); }
+
+.profile-view__username-cancel {
+  background: rgba(239,68,68,0.15);
+  color: #ef4444;
+}
+.profile-view__username-cancel:hover { background: rgba(239,68,68,0.3); }
+
+.profile-view__username-error {
+  font-size: 0.72rem;
+  color: #f87171;
+  text-align: center;
+}
+
+.profile-view__username-hint {
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
 .profile-view__status-text {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);

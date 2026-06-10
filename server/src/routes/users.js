@@ -69,4 +69,51 @@ router.get('/blocked', authenticate, async (req, res) => {
   }
 })
 
+// PATCH /api/users/me/username — Change username (once per month)
+router.patch('/me/username', authenticate, async (req, res) => {
+  try {
+    const { username } = req.body
+    if (!username || username.trim().length < 3) {
+      return res.status(400).json({ error: 'El nombre de usuario debe tener al menos 3 caracteres' })
+    }
+    if (username.trim().length > 30) {
+      return res.status(400).json({ error: 'El nombre de usuario no puede tener más de 30 caracteres' })
+    }
+    // Only allow alphanumeric, underscores, dots
+    if (!/^[a-zA-Z0-9_.]+$/.test(username.trim())) {
+      return res.status(400).json({ error: 'Solo se permiten letras, números, puntos y guiones bajos' })
+    }
+
+    // Check if username is taken
+    const existing = await query(
+      'SELECT id FROM users WHERE LOWER(username) = LOWER($1) AND id != $2',
+      [username.trim(), req.user.id]
+    )
+    if (existing.rows.length > 0) {
+      return res.status(409).json({ error: 'Ese nombre de usuario ya está en uso' })
+    }
+
+    // Check 30-day cooldown
+    const userRow = await query('SELECT username_changed_at FROM users WHERE id = $1', [req.user.id])
+    const lastChanged = userRow.rows[0]?.username_changed_at
+    if (lastChanged) {
+      const daysSince = (Date.now() - new Date(lastChanged).getTime()) / (1000 * 60 * 60 * 24)
+      if (daysSince < 30) {
+        const daysLeft = Math.ceil(30 - daysSince)
+        return res.status(429).json({ error: `Debes esperar ${daysLeft} días más para cambiar tu nombre de usuario` })
+      }
+    }
+
+    // Update username
+    const result = await query(
+      'UPDATE users SET username = $1, username_changed_at = NOW() WHERE id = $2 RETURNING username',
+      [username.trim(), req.user.id]
+    )
+    res.json({ success: true, username: result.rows[0].username, message: 'Nombre de usuario actualizado' })
+  } catch (err) {
+    console.error('Error changing username:', err.message)
+    res.status(500).json({ error: 'Error actualizando nombre de usuario' })
+  }
+})
+
 export default router

@@ -126,6 +126,10 @@ app.get('/api/debug/migrate', async (req, res) => {
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_discoverable BOOLEAN DEFAULT true`);
     results.push('privacy columns');
 
+    // Username change tracking
+    await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS username_changed_at TIMESTAMPTZ`);
+    results.push('username_changed_at column');
+
     // AI Bot columns
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_bot BOOLEAN DEFAULT FALSE`);
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_access BOOLEAN DEFAULT FALSE`);

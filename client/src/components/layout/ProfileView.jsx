@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import {
   User, Bell, Lock, Settings, ChevronRight, Camera, LogOut,
   ArrowLeft, Check, X, Moon, Globe, Trash2, Info, Palette, ImageIcon, Upload,
-  Monitor, Smartphone, AlertTriangle, ExternalLink, Copy
+  Monitor, Smartphone, AlertTriangle, ExternalLink, Copy, Edit2
 } from 'lucide-react'
 import useAuthStore from '../../stores/authStore'
 import api from '../../lib/api'
@@ -57,6 +57,10 @@ function ProfileView() {
   const logout = useAuthStore(state => state.logout)
   const setUser = useAuthStore(state => state.setUser)
   const [copiedUser, setCopiedUser] = useState(false)
+  const [editingUsername, setEditingUsername] = useState(false)
+  const [newUsername, setNewUsername] = useState('')
+  const [usernameError, setUsernameError] = useState('')
+  const [usernameLoading, setUsernameLoading] = useState(false)
 
   // Edit profile state
   const [editForm, setEditForm] = useState({
@@ -193,6 +197,30 @@ function ProfileView() {
       setSaveMsg('❌ Error al subir foto')
     } finally {
       setSaving(false)
+    }
+  }
+
+  // Handle username change
+  const handleChangeUsername = async () => {
+    if (!newUsername.trim() || newUsername.trim().length < 3) {
+      setUsernameError('Mínimo 3 caracteres')
+      return
+    }
+    if (!/^[a-zA-Z0-9_.]+$/.test(newUsername.trim())) {
+      setUsernameError('Solo letras, números, puntos y _')
+      return
+    }
+    setUsernameLoading(true)
+    setUsernameError('')
+    try {
+      const data = await api.patch('/users/me/username', { username: newUsername.trim() })
+      setUser({ ...user, username: data.username })
+      setEditingUsername(false)
+      setNewUsername('')
+    } catch (err) {
+      setUsernameError(err.message || 'Error al cambiar username')
+    } finally {
+      setUsernameLoading(false)
     }
   }
 
@@ -840,15 +868,45 @@ function ProfileView() {
         </div>
         <div className="profile-view__username">{user?.display_name || user?.displayName || user?.username || 'Usuario'}</div>
         <div className="profile-view__handle-row">
-          <div className="profile-view__handle">@{user?.username}</div>
-          <button className="profile-view__copy-user-btn" onClick={() => {
-            navigator.clipboard.writeText(`@${user?.username}`)
-            setCopiedUser(true)
-            setTimeout(() => setCopiedUser(false), 2000)
-          }}>
-            {copiedUser ? <Check size={14} /> : <Copy size={14} />}
-            {copiedUser ? 'Copiado' : 'Copiar'}
-          </button>
+          {editingUsername ? (
+            <div className="profile-view__username-edit">
+              <div className="profile-view__username-edit-row">
+                <span className="profile-view__at-prefix">@</span>
+                <input
+                  type="text"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value.replace(/[^a-zA-Z0-9_.]/g, ''))}
+                  onKeyDown={(e) => e.key === 'Enter' && handleChangeUsername()}
+                  placeholder={user?.username}
+                  maxLength={30}
+                  autoFocus
+                />
+                <button className="profile-view__username-save" onClick={handleChangeUsername} disabled={usernameLoading}>
+                  <Check size={14} />
+                </button>
+                <button className="profile-view__username-cancel" onClick={() => { setEditingUsername(false); setUsernameError(''); setNewUsername('') }}>
+                  <X size={14} />
+                </button>
+              </div>
+              {usernameError && <div className="profile-view__username-error">{usernameError}</div>}
+              <div className="profile-view__username-hint">Puedes cambiarlo 1 vez al mes</div>
+            </div>
+          ) : (
+            <>
+              <div className="profile-view__handle">@{user?.username}</div>
+              <button className="profile-view__edit-user-btn" onClick={() => { setEditingUsername(true); setNewUsername(user?.username || '') }}>
+                <Edit2 size={12} />
+              </button>
+              <button className="profile-view__copy-user-btn" onClick={() => {
+                navigator.clipboard.writeText(`@${user?.username}`)
+                setCopiedUser(true)
+                setTimeout(() => setCopiedUser(false), 2000)
+              }}>
+                {copiedUser ? <Check size={14} /> : <Copy size={14} />}
+                {copiedUser ? 'Copiado' : 'Copiar'}
+              </button>
+            </>
+          )}
         </div>
         {(user?.status_text || user?.statusText) && (
           <div className="profile-view__status-text">
