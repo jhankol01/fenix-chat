@@ -160,6 +160,33 @@ app.get('/api/debug/migrate', async (req, res) => {
       results.push('fenix_ia bot user updated');
     }
 
+    // ── Wallets ──
+    await dbQuery(`CREATE TABLE IF NOT EXISTS user_wallets (
+      user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      balance INTEGER DEFAULT 0,
+      total_earned INTEGER DEFAULT 0,
+      streak_days INTEGER DEFAULT 0,
+      last_story_date DATE,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
+    results.push('user_wallets table');
+
+    await dbQuery(`CREATE TABLE IF NOT EXISTS coin_transactions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      amount INTEGER NOT NULL,
+      reason VARCHAR(100) NOT NULL,
+      story_id UUID REFERENCES stories(id) ON DELETE SET NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
+    await dbQuery(`CREATE INDEX IF NOT EXISTS idx_coin_transactions_user ON coin_transactions(user_id, created_at DESC)`);
+    results.push('coin_transactions table');
+
+    // Add caption and reaction_count to stories
+    await dbQuery(`ALTER TABLE stories ADD COLUMN IF NOT EXISTS caption TEXT DEFAULT ''`);
+    await dbQuery(`ALTER TABLE stories ADD COLUMN IF NOT EXISTS reaction_count INTEGER DEFAULT 0`);
+    results.push('stories caption + reaction_count columns');
+
     res.json({ success: true, migrations: results });
   } catch (err) {
     res.status(500).json({ error: err.message, detail: err.detail || null, completed: results });

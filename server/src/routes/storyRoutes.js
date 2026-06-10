@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import Story from '../models/Story.js'
 import authenticate from '../middleware/auth.js'
+import { checkAndRewardViews, checkDailyStreak } from '../services/rewardsEngine.js'
 
 const router = Router()
 
@@ -45,7 +46,7 @@ router.get('/', authenticate, async (req, res) => {
 // POST /api/stories — Create a new story
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { content, type, backgroundColor, fontSize } = req.body
+    const { content, type, backgroundColor, fontSize, caption } = req.body
     if (!content) return res.status(400).json({ error: 'El contenido es requerido' })
 
     const story = await Story.create({
@@ -54,7 +55,13 @@ router.post('/', authenticate, async (req, res) => {
       type: type || 'text',
       backgroundColor: backgroundColor || '#7C3AED',
       fontSize: fontSize || 'medium',
+      caption: caption || '',
     })
+
+    // Check daily streak and grant coins
+    checkDailyStreak(req.user.id).catch(err =>
+      console.error('Streak check error:', err.message)
+    )
 
     res.json({ story })
   } catch (err) {
@@ -67,10 +74,28 @@ router.post('/', authenticate, async (req, res) => {
 router.post('/:id/view', authenticate, async (req, res) => {
   try {
     await Story.markViewed(req.params.id, req.user.id)
+
+    // Check for view milestone rewards (fire and forget)
+    checkAndRewardViews(req.params.id).catch(err =>
+      console.error('View reward check error:', err.message)
+    )
+
     res.json({ success: true })
   } catch (err) {
     console.error('Error marking story viewed:', err.message)
     res.status(500).json({ error: 'Error' })
+  }
+})
+
+// GET /api/stories/:id/viewers — Get viewers of a story
+router.get('/:id/viewers', authenticate, async (req, res) => {
+  try {
+    const viewers = await Story.getViewers(req.params.id)
+    const viewCount = await Story.getViewCount(req.params.id)
+    res.json({ viewers, viewCount })
+  } catch (err) {
+    console.error('Error fetching viewers:', err.message)
+    res.status(500).json({ error: 'Error obteniendo viewers' })
   }
 })
 
@@ -87,3 +112,4 @@ router.delete('/:id', authenticate, async (req, res) => {
 })
 
 export default router
+

@@ -4,12 +4,12 @@ const Story = {
   /**
    * Create a new story
    */
-  async create({ userId, content, type = 'text', backgroundColor = '#7C3AED', fontSize = 'medium' }) {
+  async create({ userId, content, type = 'text', backgroundColor = '#7C3AED', fontSize = 'medium', caption = '' }) {
     const result = await query(
-      `INSERT INTO stories (user_id, content, type, background_color, font_size)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO stories (user_id, content, type, background_color, font_size, caption)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [userId, content, type, backgroundColor, fontSize]
+      [userId, content, type, backgroundColor, fontSize, caption]
     )
     return result.rows[0]
   },
@@ -70,6 +70,17 @@ const Story = {
       [storyId]
     )
     return result.rows
+  },
+
+  /**
+   * Get view count for a story
+   */
+  async getViewCount(storyId) {
+    const result = await query(
+      'SELECT COUNT(*) AS view_count FROM story_views WHERE story_id = $1',
+      [storyId]
+    )
+    return parseInt(result.rows[0].view_count) || 0
   },
 
   /**

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2, Rocket, Phone, Users, Check, BellOff, Bell, Heart, Info, Ban, XCircle, Archive, Bot, CheckCheck } from 'lucide-react'
+import { Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2, Rocket, Phone, Users, Check, BellOff, Bell, Heart, Info, Ban, XCircle, Archive, Bot, CheckCheck, Camera } from 'lucide-react'
 import PhoenixIcon from '../ui/PhoenixIcon'
 import StoriesBar from './StoriesBar'
 import useChatStore from '../../stores/chatStore'
@@ -739,6 +739,11 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
           </>
         )
       })()}
+
+      {/* Story FAB — mobile only */}
+      <button className="chat-list__fab" onClick={() => window.dispatchEvent(new Event('openStoryCreate'))}>
+        <Camera size={24} />
+      </button>
     </div>
   )
 }

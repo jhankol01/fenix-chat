@@ -59,4 +59,8 @@ router.use('/communities', communityRoutes);
 import friendRequestRoutes from './friendRequestRoutes.js';
 router.use('/friend-requests', friendRequestRoutes);
 
+// Wallet routes
+import walletRoutes from './walletRoutes.js';
+router.use('/wallet', walletRoutes);
+
 export default router;

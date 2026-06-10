@@ -1123,3 +1123,49 @@
 .chat-list__swipeable-wrapper:nth-child(6) { animation-delay: 0.12s; }
 .chat-list__swipeable-wrapper:nth-child(7) { animation-delay: 0.14s; }
 .chat-list__swipeable-wrapper:nth-child(8) { animation-delay: 0.16s; }
+
+/* ========== Story FAB — Mobile Only ========== */
+.chat-list__fab {
+  display: none;
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7C3AED, #A855F7);
+  color: white;
+  border: none;
+  cursor: pointer;
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.5), 0 0 40px rgba(124, 58, 237, 0.15);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: fabPulse 3s ease-in-out infinite;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chat-list__fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 28px rgba(124, 58, 237, 0.6), 0 0 50px rgba(124, 58, 237, 0.2);
+}
+
+.chat-list__fab:active {
+  transform: scale(0.95);
+}
+
+@keyframes fabPulse {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4), 0 0 0 0 rgba(124, 58, 237, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.5), 0 0 0 10px rgba(124, 58, 237, 0);
+  }
+}
+
+@media (max-width: 767px) {
+  .chat-list__fab {
+    display: flex;
+  }
+}

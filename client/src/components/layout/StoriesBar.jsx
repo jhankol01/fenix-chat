@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Plus, X, Send, ImagePlus, Type, Trash2, Heart } from 'lucide-react'
+import { Plus, X, Send, ImagePlus, Type, Trash2, Heart, Video, Eye, Clock } from 'lucide-react'
 import api from '../../lib/api'
 import useAuthStore from '../../stores/authStore'
 import { getSocket } from '../../lib/socket'
@@ -24,19 +24,40 @@ function StoriesBar({ autoOpen = false }) {
   const [photoFile, setPhotoFile] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(0)
 
+  // Video state
+  const [videoPreview, setVideoPreview] = useState(null)
+  const [videoFile, setVideoFile] = useState(null)
+
+  // Caption state
+  const [captionText, setCaptionText] = useState('')
+
   // Viewer state
   const [showHeart, setShowHeart] = useState(false)
   const [replyText, setReplyText] = useState('')
   const [isPaused, setIsPaused] = useState(false)
 
+  // Viewers list state (for own stories)
+  const [showViewersList, setShowViewersList] = useState(false)
+  const [viewersList, setViewersList] = useState([])
+  const [viewersLoading, setViewersLoading] = useState(false)
+
   const scrollRef = useRef(null)
   const timerRef = useRef(null)
   const fileInputRef = useRef(null)
+  const videoInputRef = useRef(null)
   const lastTapRef = useRef(0)
   const touchStartRef = useRef(null)
   const replyInputRef = useRef(null)
+  const videoPlayerRef = useRef(null)
 
   const user = useAuthStore(s => s.user)
+
+  // ─── Listen for FAB event from ChatList ────────────────────────
+  useEffect(() => {
+    const handler = () => setShowCreate(true)
+    window.addEventListener('openStoryCreate', handler)
+    return () => window.removeEventListener('openStoryCreate', handler)
+  }, [])
 
   // ─── Load stories ───────────────────────────────────────────────
   const loadStories = async () => {
@@ -78,6 +99,29 @@ function StoriesBar({ autoOpen = false }) {
     setCreateMode('photo')
   }
 
+  // ─── Video handling ─────────────────────────────────────────────
+  const handleVideoSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate video duration (max 30s)
+    const videoEl = document.createElement('video')
+    videoEl.preload = 'metadata'
+    videoEl.onloadedmetadata = () => {
+      URL.revokeObjectURL(videoEl.src)
+      if (videoEl.duration > 30) {
+        alert('El video debe ser de máximo 30 segundos')
+        return
+      }
+      setVideoFile(file)
+      const reader = new FileReader()
+      reader.onload = (ev) => setVideoPreview(ev.target.result)
+      reader.readAsDataURL(file)
+      setCreateMode('video')
+    }
+    videoEl.src = URL.createObjectURL(file)
+  }
+
   // ─── Create story ──────────────────────────────────────────────
   const handleCreate = async () => {
     if (isCreating) return
@@ -95,12 +139,39 @@ function StoriesBar({ autoOpen = false }) {
           content: uploadRes.url,
           type: 'image',
           backgroundColor: selectedColor,
+          caption: captionText || undefined,
         })
         setUploadProgress(100)
         resetCreate()
         loadStories()
       } catch (err) {
         console.error('Story photo upload error:', err)
+        setUploadProgress(0)
+      }
+      setIsCreating(false)
+      return
+    }
+
+    if (createMode === 'video' && videoFile) {
+      setIsCreating(true)
+      setUploadProgress(10)
+      try {
+        const formData = new FormData()
+        formData.append('media', videoFile)
+        setUploadProgress(30)
+        const uploadRes = await api.upload('/upload/media', formData)
+        setUploadProgress(80)
+        await api.post('/stories', {
+          content: uploadRes.url,
+          type: 'video',
+          backgroundColor: selectedColor,
+          caption: captionText || undefined,
+        })
+        setUploadProgress(100)
+        resetCreate()
+        loadStories()
+      } catch (err) {
+        console.error('Story video upload error:', err)
         setUploadProgress(0)
       }
       setIsCreating(false)
@@ -125,6 +196,9 @@ function StoriesBar({ autoOpen = false }) {
     setNewStoryText('')
     setPhotoPreview(null)
     setPhotoFile(null)
+    setVideoPreview(null)
+    setVideoFile(null)
+    setCaptionText('')
     setUploadProgress(0)
     setShowCreate(false)
     setCreateMode(null)
@@ -136,6 +210,8 @@ function StoriesBar({ autoOpen = false }) {
     setReplyText('')
     setShowHeart(false)
     setIsPaused(false)
+    setShowViewersList(false)
+    setViewersList([])
   }
 
   // Keep refs in sync for use inside timeouts/closures
@@ -192,9 +268,42 @@ function StoriesBar({ autoOpen = false }) {
 
     api.post(`/stories/${story.id}/view`).catch(() => {})
 
+    // For video stories, don't use timer — use onEnded event
+    if (story.type === 'video') return
+
     timerRef.current = setTimeout(nextStory, 5000)
     return () => clearTimeout(timerRef.current)
   }, [showViewer, isPaused, nextStory])
+
+  // ─── Reset viewers list on story change ────────────────────────
+  useEffect(() => {
+    setShowViewersList(false)
+    setViewersList([])
+  }, [showViewer?.storyIndex, showViewer?.groupIndex])
+
+  // ─── Fetch viewers for own story ───────────────────────────────
+  const fetchViewers = async (storyId) => {
+    setViewersLoading(true)
+    try {
+      const data = await api.get(`/stories/${storyId}/viewers`)
+      setViewersList(data.viewers || [])
+    } catch (err) {
+      console.error('Error loading viewers:', err)
+      setViewersList([])
+    }
+    setViewersLoading(false)
+  }
+
+  const handleToggleViewers = () => {
+    if (showViewersList) {
+      setShowViewersList(false)
+      return
+    }
+    if (currentStory) {
+      setShowViewersList(true)
+      fetchViewers(currentStory.id)
+    }
+  }
 
   // ─── Double-tap heart ─────────────────────────────────────────
   const handleContentTap = (e) => {
@@ -386,8 +495,15 @@ function StoriesBar({ autoOpen = false }) {
                   </div>
                   <span>Foto</span>
                 </button>
+                <button className="stories-create-picker__option" onClick={() => videoInputRef.current?.click()}>
+                  <div className="stories-create-picker__icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #ef4444)' }}>
+                    <Video size={28} color="white" />
+                  </div>
+                  <span>Video</span>
+                </button>
               </div>
               <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoSelect} />
+              <input ref={videoInputRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={handleVideoSelect} />
             </div>
           )}
 
@@ -424,7 +540,7 @@ function StoriesBar({ autoOpen = false }) {
           {createMode === 'photo' && photoPreview && (
             <div className="stories-create stories-create--photo">
               <div className="stories-create__header">
-                <button onClick={() => { setCreateMode(null); setPhotoPreview(null); setPhotoFile(null) }}>
+                <button onClick={() => { setCreateMode(null); setPhotoPreview(null); setPhotoFile(null); setCaptionText('') }}>
                   <X size={22} color="white" />
                 </button>
                 <span>Historia con foto</span>
@@ -443,8 +559,37 @@ function StoriesBar({ autoOpen = false }) {
               <textarea
                 className="stories-create__caption"
                 placeholder="Agregar texto (opcional)..."
-                value={newStoryText}
-                onChange={(e) => setNewStoryText(e.target.value)}
+                value={captionText}
+                onChange={(e) => setCaptionText(e.target.value)}
+                maxLength={200}
+              />
+            </div>
+          )}
+
+          {createMode === 'video' && videoPreview && (
+            <div className="stories-create stories-create--photo">
+              <div className="stories-create__header">
+                <button onClick={() => { setCreateMode(null); setVideoPreview(null); setVideoFile(null); setCaptionText('') }}>
+                  <X size={22} color="white" />
+                </button>
+                <span>Historia con video</span>
+                <button onClick={handleCreate} disabled={isCreating}>
+                  {isCreating ? <div className="stories-create__spinner" /> : <Send size={20} color="white" />}
+                </button>
+              </div>
+              <div className="stories-create__photo-preview stories-create__video-preview">
+                <video src={videoPreview} controls playsInline style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 12 }} />
+              </div>
+              {uploadProgress > 0 && (
+                <div className="stories-create__progress">
+                  <div className="stories-create__progress-fill" style={{ width: `${uploadProgress}%` }} />
+                </div>
+              )}
+              <textarea
+                className="stories-create__caption"
+                placeholder="Agregar texto (opcional)..."
+                value={captionText}
+                onChange={(e) => setCaptionText(e.target.value)}
                 maxLength={200}
               />
             </div>
@@ -472,6 +617,11 @@ function StoriesBar({ autoOpen = false }) {
                       i < showViewer.storyIndex ? 'stories-viewer__progress-fill--done' :
                       i === showViewer.storyIndex ? (isPaused ? 'stories-viewer__progress-fill--paused' : 'stories-viewer__progress-fill--active') : ''
                     }`}
+                    style={
+                      i === showViewer.storyIndex && currentStory.type === 'video'
+                        ? { animationDuration: '30s' }
+                        : undefined
+                    }
                   />
                 </div>
               ))}
@@ -510,6 +660,17 @@ function StoriesBar({ autoOpen = false }) {
                 <div className="stories-viewer__text">
                   {currentStory.content}
                 </div>
+              ) : currentStory.type === 'video' ? (
+                <video
+                  ref={videoPlayerRef}
+                  src={currentStory.content}
+                  className="stories-viewer__video"
+                  autoPlay
+                  playsInline
+                  muted={false}
+                  onEnded={nextStory}
+                  onClick={(e) => e.stopPropagation()}
+                />
               ) : (
                 <img src={currentStory.content} className="stories-viewer__image" alt="Story" />
               )}
@@ -522,11 +683,26 @@ function StoriesBar({ autoOpen = false }) {
               )}
             </div>
 
+            {/* Caption overlay */}
+            {currentStory.caption && (
+              <div className="stories-viewer__caption-overlay">
+                <p className="stories-viewer__caption-text">{currentStory.caption}</p>
+              </div>
+            )}
+
             {/* Swipe up indicator */}
             {showViewer.groupIndex < storyGroups.length - 1 && (
               <div className="stories-viewer__swipe-hint">
                 <div className="stories-viewer__swipe-arrow" />
                 <span>Desliza para siguiente</span>
+              </div>
+            )}
+
+            {/* Viewers count (own stories only) */}
+            {isOwnStory && (
+              <div className="stories-viewer__viewers-trigger" onClick={(e) => { e.stopPropagation(); handleToggleViewers() }}>
+                <Eye size={16} />
+                <span>{currentStory.view_count || 0}</span>
               </div>
             )}
 
@@ -563,6 +739,51 @@ function StoriesBar({ autoOpen = false }) {
                   )}
                 </div>
               </div>
+            )}
+
+            {/* Viewers Bottom Sheet (own stories) */}
+            {showViewersList && isOwnStory && (
+              <>
+                <div className="stories-viewer__viewers-overlay" onClick={() => setShowViewersList(false)} />
+                <div className="stories-viewer__viewers-sheet" onClick={(e) => e.stopPropagation()}>
+                  <div className="stories-viewer__viewers-sheet-handle" />
+                  <div className="stories-viewer__viewers-sheet-header">
+                    <Eye size={18} />
+                    <span>Vistas ({currentStory.view_count || viewersList.length})</span>
+                    <button onClick={() => setShowViewersList(false)}>
+                      <X size={18} color="white" />
+                    </button>
+                  </div>
+                  <div className="stories-viewer__viewers-list">
+                    {viewersLoading ? (
+                      <div className="stories-viewer__viewers-loading">Cargando...</div>
+                    ) : viewersList.length === 0 ? (
+                      <div className="stories-viewer__viewers-empty">Nadie ha visto esta historia aún</div>
+                    ) : (
+                      viewersList.map((viewer) => (
+                        <div key={viewer.id || viewer.user_id} className="stories-viewer__viewer-item">
+                          <div className="stories-viewer__viewer-avatar">
+                            {viewer.avatar_url ? (
+                              <img src={viewer.avatar_url} alt={viewer.username} />
+                            ) : (
+                              <span>{viewer.username?.slice(0, 2).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <div className="stories-viewer__viewer-info">
+                            <span className="stories-viewer__viewer-name">{viewer.username}</span>
+                            {viewer.viewed_at && (
+                              <span className="stories-viewer__viewer-time">
+                                <Clock size={12} />
+                                {timeAgo(viewer.viewed_at)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>

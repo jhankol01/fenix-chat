@@ -1282,3 +1282,341 @@
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.85);
 }
+
+/* ═══════════════════════════════════════════════════
+   Earnings Panel — Mis Ganancias
+   ═══════════════════════════════════════════════════ */
+
+.profile-view__earnings-content {
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  overflow-y: auto;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Balance Card ── */
+.profile-view__earnings-card {
+  position: relative;
+  background: rgba(23, 23, 58, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 20px;
+  padding: var(--space-6) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  overflow: hidden;
+}
+
+.profile-view__earnings-card-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(168, 85, 247, 0.04) 50%, rgba(245, 158, 11, 0.06) 100%);
+  pointer-events: none;
+}
+
+.profile-view__earnings-balance {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  position: relative;
+  z-index: 1;
+}
+
+.profile-view__earnings-coin-icon {
+  font-size: 2.5rem;
+  animation: coinPulse 2s ease-in-out infinite;
+}
+
+@keyframes coinPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.profile-view__earnings-amount {
+  font-size: 2.8rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f59e0b, #fbbf24, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  animation: coinPulse 2s ease-in-out infinite;
+}
+
+.profile-view__earnings-subtitle {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+
+.profile-view__earnings-total {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  position: relative;
+  z-index: 1;
+}
+
+.profile-view__earnings-streak {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-2);
+  padding: 6px 14px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(239, 68, 68, 0.1));
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: var(--radius-full);
+  color: #fbbf24;
+  font-size: 0.8rem;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Stats Grid ── */
+.profile-view__earnings-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+
+.profile-view__earnings-stat {
+  background: rgba(23, 23, 58, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  border-radius: 16px;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.profile-view__earnings-stat:hover {
+  border-color: rgba(124, 58, 237, 0.25);
+  background: rgba(23, 23, 58, 0.8);
+}
+
+.profile-view__earnings-stat-icon {
+  color: var(--color-brand, #7C3AED);
+}
+
+.profile-view__earnings-stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.profile-view__earnings-stat-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+/* ── Earnings Sections ── */
+.profile-view__earnings-section {
+  background: rgba(23, 23, 58, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(124, 58, 237, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.profile-view__earnings-section-header {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid rgba(124, 58, 237, 0.08);
+}
+
+.profile-view__earnings-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.profile-view__earnings-section-title svg {
+  color: var(--color-brand, #7C3AED);
+}
+
+/* ── Leaderboard ── */
+.profile-view__earnings-leaderboard {
+  padding: var(--space-2) 0;
+}
+
+.profile-view__earnings-leader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px var(--space-4);
+  transition: background 0.15s;
+}
+
+.profile-view__earnings-leader:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.profile-view__earnings-leader-badge {
+  font-size: 1.3rem;
+  min-width: 28px;
+  text-align: center;
+}
+
+.profile-view__earnings-leader-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+}
+
+.profile-view__earnings-leader--1 .profile-view__earnings-leader-avatar {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+.profile-view__earnings-leader--2 .profile-view__earnings-leader-avatar {
+  background: linear-gradient(135deg, #9ca3af, #d1d5db);
+  box-shadow: 0 0 12px rgba(156, 163, 175, 0.3);
+}
+
+.profile-view__earnings-leader--3 .profile-view__earnings-leader-avatar {
+  background: linear-gradient(135deg, #b45309, #d97706);
+  box-shadow: 0 0 12px rgba(180, 83, 9, 0.3);
+}
+
+.profile-view__earnings-leader-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-view__earnings-leader-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-view__earnings-leader-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.profile-view__earnings-leader-coins {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+/* ── Transactions ── */
+.profile-view__earnings-transactions {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.profile-view__earnings-loading,
+.profile-view__earnings-empty {
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.profile-view__earnings-tx {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px var(--space-4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 0.15s;
+}
+
+.profile-view__earnings-tx:last-child {
+  border-bottom: none;
+}
+
+.profile-view__earnings-tx:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.profile-view__earnings-tx-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profile-view__earnings-tx-icon--positive {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+}
+
+.profile-view__earnings-tx-icon--negative {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.profile-view__earnings-tx-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profile-view__earnings-tx-reason {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-view__earnings-tx-date {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+.profile-view__earnings-tx-amount {
+  font-size: 0.9rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.profile-view__earnings-tx-amount--positive {
+  color: #10b981;
+}
+
+.profile-view__earnings-tx-amount--negative {
+  color: #ef4444;
+}

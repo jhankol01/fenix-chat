@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import {
   User, Bell, Lock, Settings, ChevronRight, Camera, LogOut,
   ArrowLeft, Check, X, Moon, Globe, Trash2, Info, Palette, ImageIcon, Upload,
-  Monitor, Smartphone, AlertTriangle, ExternalLink, Copy, Edit2
+  Monitor, Smartphone, AlertTriangle, ExternalLink, Copy, Edit2,
+  Coins, TrendingUp, Eye, Flame, Trophy, ArrowUpRight, ArrowDownRight, Clock
 } from 'lucide-react'
 import useAuthStore from '../../stores/authStore'
 import api from '../../lib/api'
@@ -46,7 +47,7 @@ function getBackgroundCSS(chatBg) {
 }
 
 function ProfileView() {
-  const [activePanel, setActivePanel] = useState(null) // null | 'editProfile' | 'notifications' | 'privacy' | 'settings' | 'chatBackground' | 'colorTheme'
+  const [activePanel, setActivePanel] = useState(null) // null | 'editProfile' | 'notifications' | 'privacy' | 'settings' | 'chatBackground' | 'colorTheme' | 'earnings'
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
   const [showNotifHelpModal, setShowNotifHelpModal] = useState(false)
@@ -111,8 +112,35 @@ function ProfileView() {
     localStorage.setItem('fenix_notif_settings', JSON.stringify(notifSettings))
   }, [notifSettings])
 
+  // ─── Earnings state ────────────────────────────────────────────
+  const [earningsData, setEarningsData] = useState(null)
+  const [earningsStats, setEarningsStats] = useState(null)
+  const [earningsTransactions, setEarningsTransactions] = useState([])
+  const [earningsLeaderboard, setEarningsLeaderboard] = useState([])
+  const [earningsLoading, setEarningsLoading] = useState(false)
+
+  const loadEarningsData = async () => {
+    setEarningsLoading(true)
+    try {
+      const [balanceRes, statsRes, txRes, lbRes] = await Promise.allSettled([
+        api.get('/wallet/balance'),
+        api.get('/wallet/stats'),
+        api.get('/wallet/transactions'),
+        api.get('/wallet/leaderboard'),
+      ])
+      if (balanceRes.status === 'fulfilled') setEarningsData(balanceRes.value)
+      if (statsRes.status === 'fulfilled') setEarningsStats(statsRes.value)
+      if (txRes.status === 'fulfilled') setEarningsTransactions(txRes.value.transactions || [])
+      if (lbRes.status === 'fulfilled') setEarningsLeaderboard(lbRes.value.leaderboard || [])
+    } catch (err) {
+      console.error('Error loading earnings:', err)
+    }
+    setEarningsLoading(false)
+  }
+
   const menuItems = [
     { id: 'editProfile', icon: User, label: 'Editar perfil', color: '#00F5FF' },
+    { id: 'earnings', icon: Coins, label: 'Mis Ganancias', color: '#f59e0b' },
     { id: 'chatBackground', icon: ImageIcon, label: 'Fondo de chat', color: '#A855F7' },
     { id: 'colorTheme', icon: Palette, label: 'Tema de color', color: '#00F5FF' },
     { id: 'notifications', icon: Bell, label: 'Notificaciones', color: '#FFD93D' },
@@ -325,6 +353,134 @@ function ProfileView() {
   }
 
   // --- SUB PANELS ---
+
+  // ─── Earnings Panel ────────────────────────────────────────────
+  if (activePanel === 'earnings') {
+    const rankBadges = ['🥇', '🥈', '🥉']
+
+    return (
+      <div className="profile-view">
+        <div className="profile-view__panel-header">
+          <button className="profile-view__back-btn" onClick={() => setActivePanel(null)}>
+            <ArrowLeft size={20} />
+          </button>
+          <span className="profile-view__panel-title">Mis Ganancias</span>
+          <div style={{ width: 32 }} />
+        </div>
+
+        <div className="profile-view__earnings-content">
+          {/* Balance Card */}
+          <div className="profile-view__earnings-card">
+            <div className="profile-view__earnings-card-bg" />
+            <div className="profile-view__earnings-balance">
+              <span className="profile-view__earnings-coin-icon">🪙</span>
+              <span className="profile-view__earnings-amount">
+                {earningsData?.balance ?? '—'}
+              </span>
+            </div>
+            <div className="profile-view__earnings-subtitle">Total ganado</div>
+            <div className="profile-view__earnings-total">
+              {earningsData?.total_earned ?? 0} monedas
+            </div>
+            {(earningsData?.streak_days ?? 0) > 0 && (
+              <div className="profile-view__earnings-streak">
+                <Flame size={16} />
+                <span>{earningsData.streak_days} días de racha</span>
+              </div>
+            )}
+          </div>
+
+          {/* Stats Grid */}
+          <div className="profile-view__earnings-stats">
+            <div className="profile-view__earnings-stat">
+              <Eye size={20} className="profile-view__earnings-stat-icon" />
+              <span className="profile-view__earnings-stat-value">{earningsStats?.total_views ?? '—'}</span>
+              <span className="profile-view__earnings-stat-label">Vistas</span>
+            </div>
+            <div className="profile-view__earnings-stat">
+              <Coins size={20} className="profile-view__earnings-stat-icon" />
+              <span className="profile-view__earnings-stat-value">{earningsStats?.total_coins ?? '—'}</span>
+              <span className="profile-view__earnings-stat-label">Monedas</span>
+            </div>
+            <div className="profile-view__earnings-stat">
+              <Flame size={20} className="profile-view__earnings-stat-icon" />
+              <span className="profile-view__earnings-stat-value">{earningsStats?.streak ?? '—'}</span>
+              <span className="profile-view__earnings-stat-label">Racha</span>
+            </div>
+            <div className="profile-view__earnings-stat">
+              <Trophy size={20} className="profile-view__earnings-stat-icon" />
+              <span className="profile-view__earnings-stat-value">#{earningsStats?.rank ?? '—'}</span>
+              <span className="profile-view__earnings-stat-label">Ranking</span>
+            </div>
+          </div>
+
+          {/* Leaderboard Preview */}
+          {earningsLeaderboard.length > 0 && (
+            <div className="profile-view__earnings-section">
+              <div className="profile-view__earnings-section-header">
+                <span className="profile-view__earnings-section-title">
+                  <Trophy size={16} /> Top Creadores
+                </span>
+              </div>
+              <div className="profile-view__earnings-leaderboard">
+                {earningsLeaderboard.slice(0, 3).map((creator, i) => (
+                  <div key={creator.user_id || i} className={`profile-view__earnings-leader profile-view__earnings-leader--${i + 1}`}>
+                    <span className="profile-view__earnings-leader-badge">{rankBadges[i]}</span>
+                    <div className="profile-view__earnings-leader-avatar">
+                      {creator.avatar_url ? (
+                        <img src={creator.avatar_url} alt={creator.username} />
+                      ) : (
+                        <span>{creator.username?.slice(0, 2).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className="profile-view__earnings-leader-info">
+                      <span className="profile-view__earnings-leader-name">{creator.username}</span>
+                      <span className="profile-view__earnings-leader-coins">
+                        🪙 {creator.total_coins ?? creator.coins ?? 0}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recent Transactions */}
+          <div className="profile-view__earnings-section">
+            <div className="profile-view__earnings-section-header">
+              <span className="profile-view__earnings-section-title">
+                <Clock size={16} /> Transacciones recientes
+              </span>
+            </div>
+            <div className="profile-view__earnings-transactions">
+              {earningsLoading ? (
+                <div className="profile-view__earnings-loading">Cargando...</div>
+              ) : earningsTransactions.length === 0 ? (
+                <div className="profile-view__earnings-empty">Sin transacciones aún</div>
+              ) : (
+                earningsTransactions.slice(0, 10).map((tx, i) => (
+                  <div key={tx.id || i} className="profile-view__earnings-tx">
+                    <div className={`profile-view__earnings-tx-icon ${tx.amount >= 0 ? 'profile-view__earnings-tx-icon--positive' : 'profile-view__earnings-tx-icon--negative'}`}>
+                      {tx.amount >= 0 ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                    </div>
+                    <div className="profile-view__earnings-tx-info">
+                      <span className="profile-view__earnings-tx-reason">{tx.reason || tx.description || 'Transacción'}</span>
+                      <span className="profile-view__earnings-tx-date">
+                        {tx.created_at ? new Date(tx.created_at).toLocaleDateString('es', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
+                      </span>
+                    </div>
+                    <span className={`profile-view__earnings-tx-amount ${tx.amount >= 0 ? 'profile-view__earnings-tx-amount--positive' : 'profile-view__earnings-tx-amount--negative'}`}>
+                      {tx.amount >= 0 ? '+' : ''}{tx.amount} 🪙
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Color Theme Picker Panel
   if (activePanel === 'colorTheme') {
@@ -927,6 +1083,7 @@ function ProfileView() {
               onClick={() => {
                 if (item.id === 'editProfile') handleOpenEdit()
                 else if (item.id === 'colorTheme') { setSelectedTheme(savedTheme); setActivePanel('colorTheme') }
+                else if (item.id === 'earnings') { setActivePanel('earnings'); loadEarningsData() }
                 else setActivePanel(item.id)
               }}
               aria-label={item.label}
