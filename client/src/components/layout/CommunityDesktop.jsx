@@ -217,9 +217,14 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
     const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] })
     peerConnectionsRef.current[remoteUserId] = pc
     if (localStreamRef.current) localStreamRef.current.getTracks().forEach(t => pc.addTrack(t, localStreamRef.current))
+    // Also add screen share track if currently sharing
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach(t => pc.addTrack(t, screenStreamRef.current))
+    }
     pc.ontrack = (e) => {
       if (e.track.kind === 'video') {
-        // Screen share track
+        // Screen share track from remote
+        console.log('🖥️ Received screen share from', remoteUserId)
         setScreenSharer(remoteUserId)
         if (screenVideoRef.current) {
           screenVideoRef.current.srcObject = e.streams[0] || new MediaStream([e.track])
@@ -230,6 +235,15 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
         if (!audio) { audio = new Audio(); audio.autoplay = true; audio.volume = 1.0; audioElementsRef.current[remoteUserId] = audio }
         audio.srcObject = e.streams[0]; audio.play().catch(() => {})
       }
+    }
+    // Handle renegotiation needed (e.g. when screen share track is added)
+    pc.onnegotiationneeded = async () => {
+      try {
+        const offer = await pc.createOffer()
+        await pc.setLocalDescription(offer)
+        const socket = getSocket()
+        if (socket) socket.emit('voice_offer', { to: remoteUserId, offer })
+      } catch(e) { console.error('Renegotiation error:', e) }
     }
     const socket = getSocket()
     pc.onicecandidate = (e) => { if (e.candidate && socket) socket.emit('voice_ice', { to: remoteUserId, candidate: e.candidate }) }
@@ -256,7 +270,24 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
     }
     const onOffer = async ({ from, offer }) => {
       if (!localStreamRef.current) return
-      try { const pc = createPeerConnection(from); await pc.setRemoteDescription(new RTCSessionDescription(offer)); const answer = await pc.createAnswer(); await pc.setLocalDescription(answer); socket.emit('voice_answer', { to: from, answer }) } catch (e) { console.error(e) }
+      try {
+        // Check if we already have a PC for this peer (renegotiation)
+        let pc = peerConnectionsRef.current[from]
+        if (pc && pc.signalingState !== 'closed') {
+          // Renegotiation — reuse existing connection
+          await pc.setRemoteDescription(new RTCSessionDescription(offer))
+          const answer = await pc.createAnswer()
+          await pc.setLocalDescription(answer)
+          socket.emit('voice_answer', { to: from, answer })
+        } else {
+          // New connection
+          pc = createPeerConnection(from)
+          await pc.setRemoteDescription(new RTCSessionDescription(offer))
+          const answer = await pc.createAnswer()
+          await pc.setLocalDescription(answer)
+          socket.emit('voice_answer', { to: from, answer })
+        }
+      } catch (e) { console.error('onOffer error:', e) }
     }
     const onAnswer = async ({ from, answer }) => { const pc = peerConnectionsRef.current[from]; if (pc) try { await pc.setRemoteDescription(new RTCSessionDescription(answer)) } catch(e){} }
     const onIce = async ({ from, candidate }) => { const pc = peerConnectionsRef.current[from]; if (pc && candidate) try { await pc.addIceCandidate(new RTCIceCandidate(candidate)) } catch(e){} }
