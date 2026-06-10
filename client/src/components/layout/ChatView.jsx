@@ -1229,7 +1229,26 @@ function ChatView({ onBack }) {
         <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={async (e) => {
           const file = e.target.files?.[0]; if (!file) return; e.target.value = ''
           setIsUploading(true)
-          try { const fd = new FormData(); fd.append('media', file); const data = await api.upload('/upload/media', fd); sendMessage(data.url, data.type) }
+          try {
+            // Fix mirrored/rotated photos: re-encode through canvas to strip EXIF orientation
+            const fixedFile = await new Promise((resolve) => {
+              const img = new Image()
+              img.onload = () => {
+                const canvas = document.createElement('canvas')
+                canvas.width = img.naturalWidth
+                canvas.height = img.naturalHeight
+                const ctx = canvas.getContext('2d')
+                ctx.drawImage(img, 0, 0)
+                canvas.toBlob((blob) => {
+                  resolve(new File([blob], file.name || 'photo.jpg', { type: 'image/jpeg' }))
+                }, 'image/jpeg', 0.92)
+                URL.revokeObjectURL(img.src)
+              }
+              img.src = URL.createObjectURL(file)
+            })
+            const fd = new FormData(); fd.append('media', fixedFile)
+            const data = await api.upload('/upload/media', fd); sendMessage(data.url, data.type)
+          }
           catch (err) { console.error('Upload error:', err); alert('Error al subir archivo') }
           finally { setIsUploading(false) }
         }} />
