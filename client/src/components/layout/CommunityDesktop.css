@@ -501,6 +501,16 @@
   width: 48px;
   height: 48px;
 }
+.cd__discord-bar--compact {
+  gap: 4px;
+  padding: 6px 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.cd__dc-btn--sm {
+  width: 32px;
+  height: 32px;
+}
 
 .cd__voice-card--mini {
   display: flex; align-items: center; gap: 8px; padding: 8px 10px;

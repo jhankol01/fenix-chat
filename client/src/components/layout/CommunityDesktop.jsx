@@ -745,21 +745,21 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
                       {!isIn ? (
                         <button className="cd__voice-join" onClick={() => joinVoiceRoom(room.id)}>Unirse</button>
                       ) : (
-                        <div className="cd__discord-bar">
-                          <button className={`cd__dc-btn ${isMuted ? 'cd__dc-btn--off' : ''}`} onClick={toggleMute} title={isMuted ? 'Activar mic' : 'Silenciar'}>
-                            {isMuted ? <MicOff size={18} /> : <Mic size={18} />}
+                        <div className="cd__discord-bar cd__discord-bar--compact">
+                          <button className={`cd__dc-btn cd__dc-btn--sm ${isMuted ? 'cd__dc-btn--off' : ''}`} onClick={toggleMute}>
+                            {isMuted ? <MicOff size={15} /> : <Mic size={15} />}
                           </button>
-                          <button className={`cd__dc-btn ${isCameraOn ? 'cd__dc-btn--on' : ''}`} onClick={toggleCamera} title={isCameraOn ? 'Apagar cámara' : 'Encender cámara'}>
-                            {isCameraOn ? <VideoOff size={18} /> : <Video size={18} />}
+                          <button className={`cd__dc-btn cd__dc-btn--sm ${isCameraOn ? 'cd__dc-btn--on' : ''}`} onClick={toggleCamera}>
+                            {isCameraOn ? <VideoOff size={15} /> : <Video size={15} />}
                           </button>
-                          <button className={`cd__dc-btn ${isScreenSharing ? 'cd__dc-btn--on' : ''}`} onClick={toggleScreenShare} title="Compartir pantalla">
-                            {isScreenSharing ? <MonitorOff size={18} /> : <Monitor size={18} />}
+                          <button className={`cd__dc-btn cd__dc-btn--sm ${isScreenSharing ? 'cd__dc-btn--on' : ''}`} onClick={toggleScreenShare}>
+                            {isScreenSharing ? <MonitorOff size={15} /> : <Monitor size={15} />}
                           </button>
-                          <button className="cd__dc-btn" onClick={() => setShowInviteModal(true)} title="Invitar">
-                            <UserPlus size={18} />
+                          <button className="cd__dc-btn cd__dc-btn--sm" onClick={() => setShowInviteModal(true)}>
+                            <UserPlus size={15} />
                           </button>
-                          <button className="cd__dc-btn cd__dc-btn--hang" onClick={leaveVoiceRoom} title="Salir">
-                            <PhoneOff size={18} />
+                          <button className="cd__dc-btn cd__dc-btn--sm cd__dc-btn--hang" onClick={leaveVoiceRoom}>
+                            <PhoneOff size={15} />
                           </button>
                         </div>
                       )}
