@@ -104,31 +104,78 @@ app.get('/api/debug/online', (req, res) => {
 });
 // ─── Force migration endpoint ─────────────────────────────────────────────────
 app.get('/api/debug/migrate', async (req, res) => {
+  const results = [];
   try {
     const { query: dbQuery } = await import('./config/database.js');
-    await dbQuery(`
-      CREATE TABLE IF NOT EXISTS friend_requests (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        receiver_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        status VARCHAR(20) DEFAULT 'pending',
-        created_at TIMESTAMPTZ DEFAULT NOW(),
-        UNIQUE(sender_id, receiver_id)
-      )
-    `);
+    
+    // Friend requests
+    await dbQuery(`CREATE TABLE IF NOT EXISTS friend_requests (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      sender_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      receiver_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      status VARCHAR(20) DEFAULT 'pending',
+      created_at TIMESTAMPTZ DEFAULT NOW(),
+      UNIQUE(sender_id, receiver_id)
+    )`);
     await dbQuery(`CREATE INDEX IF NOT EXISTS idx_friend_req_receiver ON friend_requests(receiver_id, status)`);
     await dbQuery(`CREATE INDEX IF NOT EXISTS idx_friend_req_sender ON friend_requests(sender_id, status)`);
-    // Also ensure privacy columns exist
+    results.push('friend_requests table');
+
+    // Privacy columns
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS allow_messages VARCHAR(20) DEFAULT 'everyone'`);
     await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_discoverable BOOLEAN DEFAULT true`);
-    res.json({ success: true, message: 'friend_requests table + privacy columns created' });
+    results.push('privacy columns');
+
+    // AI Bot columns
+    await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_bot BOOLEAN DEFAULT FALSE`);
+    await dbQuery(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_access BOOLEAN DEFAULT FALSE`);
+    results.push('ai_access + is_bot columns');
+
+    // Bot ideas table
+    await dbQuery(`CREATE TABLE IF NOT EXISTS bot_ideas (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      title VARCHAR(200) NOT NULL,
+      description TEXT,
+      category VARCHAR(50) DEFAULT 'general',
+      priority VARCHAR(20) DEFAULT 'media',
+      status VARCHAR(20) DEFAULT 'pending',
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )`);
+    await dbQuery(`CREATE INDEX IF NOT EXISTS idx_bot_ideas_user ON bot_ideas(user_id)`);
+    results.push('bot_ideas table');
+
+    // Create fenix_ia bot user if not exists
+    const botExists = await dbQuery("SELECT id FROM users WHERE username = 'fenix_ia'");
+    if (botExists.rows.length === 0) {
+      await dbQuery(`INSERT INTO users (username, email, display_name, is_verified, is_bot, avatar_url)
+        VALUES ('fenix_ia', 'bot@fenix.chat', 'Fenix IA', true, true, '/fenix_ia_avatar.png')`);
+      results.push('fenix_ia bot user created');
+    } else {
+      await dbQuery("UPDATE users SET is_bot = TRUE, is_verified = TRUE WHERE username = 'fenix_ia'");
+      results.push('fenix_ia bot user updated');
+    }
+
+    res.json({ success: true, migrations: results });
   } catch (err) {
-    res.status(500).json({ error: err.message, detail: err.detail || null, stack: err.stack?.split('\n').slice(0,3) });
+    res.status(500).json({ error: err.message, detail: err.detail || null, completed: results });
   }
 });
 
 // Store io instance on app for access in routes
 app.set('io', io);
+
+// ─── Grant AI access (debug) ─────────────────────────────────────────────────
+app.get('/api/debug/grant-ai/:username', async (req, res) => {
+  try {
+    const { query: dbQuery } = await import('./config/database.js');
+    const r = await dbQuery('UPDATE users SET ai_access = TRUE WHERE LOWER(username) = LOWER($1) RETURNING username, ai_access', [req.params.username]);
+    if (r.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+    res.json({ success: true, user: r.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ─── API Routes ─────────────────────────────────────────────────────────────────
 app.use('/api', routes);
