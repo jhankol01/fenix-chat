@@ -154,6 +154,20 @@ const Conversation = {
   },
 
   /**
+   * Clear all messages in a conversation (keep conversation + members).
+   */
+  async clearMessages(conversationId, userId) {
+    const isMember = await query(
+      'SELECT 1 FROM conversation_members WHERE conversation_id = $1 AND user_id = $2',
+      [conversationId, userId]
+    )
+    if (isMember.rows.length === 0) return false
+
+    await query('DELETE FROM messages WHERE conversation_id = $1', [conversationId])
+    return true
+  },
+
+  /**
    * Create a group conversation with multiple members.
    */
   async createGroup(creatorId, name, memberIds = []) {

@@ -144,3 +144,17 @@ export async function deleteConversation(req, res, next) {
     next(err)
   }
 }
+
+// POST /api/conversations/:id/clear
+export async function clearChat(req, res, next) {
+  try {
+    const { id } = req.params
+    const cleared = await Conversation.clearMessages(id, req.user.id)
+    if (!cleared) {
+      return res.status(403).json({ error: 'No tienes acceso a esta conversación' })
+    }
+    res.json({ success: true })
+  } catch (err) {
+    next(err)
+  }
+}

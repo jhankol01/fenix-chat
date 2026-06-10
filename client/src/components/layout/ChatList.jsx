@@ -186,12 +186,17 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
 
   const handleClearChat = useCallback(async () => {
     if (!contextMenu) return
-    if (!confirm('¿Vaciar este chat? Se borrarán todos los mensajes para ti.')) return
+    if (!confirm('¿Vaciar este chat? Se borrarán todos los mensajes.')) return
     try {
-      await deleteConversation(contextMenu.conv.id)
+      await api.post(`/conversations/${contextMenu.conv.id}/clear`)
+      // Clear messages in the store if this is the active conversation
+      const store = useChatStore.getState()
+      if (store.activeConversation?.id === contextMenu.conv.id) {
+        useChatStore.setState({ messages: [] })
+      }
     } catch (err) { console.error(err) }
     setContextMenu(null)
-  }, [contextMenu, deleteConversation])
+  }, [contextMenu])
   // Group creation state
   const [showCreateGroup, setShowCreateGroup] = useState(false)
   const [groupName, setGroupName] = useState('')
