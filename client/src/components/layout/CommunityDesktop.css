@@ -109,6 +109,34 @@
 .cd__voice-ctrl:hover { background: rgba(255,255,255,0.1); }
 .cd__voice-ctrl--red { background: rgba(239,68,68,0.15); color: #ef4444; }
 .cd__voice-ctrl--red:hover { background: rgba(239,68,68,0.25); }
+.cd__voice-ctrl--green { background: rgba(16,185,129,0.15); color: #10b981; }
+.cd__voice-ctrl--green:hover { background: rgba(16,185,129,0.25); }
+
+/* Screen Share */
+.cd__screen-share {
+  margin-top: 10px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+}
+.cd__screen-share-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(124, 58, 237, 0.1);
+  color: #A855F7;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.cd__screen-share-video {
+  width: 100%;
+  max-height: 400px;
+  object-fit: contain;
+  background: #000;
+  display: block;
+}
 
 .cd__voice-card--mini {
   display: flex; align-items: center; gap: 8px; padding: 8px 10px;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Hash, Volume2, Send, Crown, Shield, Megaphone, Mic, MicOff, PhoneOff, Copy, Check, Plus, Users, Settings, Calendar, Bell, Star, ChevronRight, Camera, Loader2, Globe, Lock, TrendingUp, Award, Flame, Clock, MessageSquare, UserPlus, Trash2, LogOut, Edit3, Save, X, AlertTriangle, Zap } from 'lucide-react'
+import { Hash, Volume2, Send, Crown, Shield, Megaphone, Mic, MicOff, PhoneOff, Copy, Check, Plus, Users, Settings, Calendar, Bell, Star, ChevronRight, Camera, Loader2, Globe, Lock, TrendingUp, Award, Flame, Clock, MessageSquare, UserPlus, Trash2, LogOut, Edit3, Save, X, AlertTriangle, Zap, Monitor, MonitorOff } from 'lucide-react'
 import api from '../../lib/api'
 import { getSocket } from '../../lib/socket'
 import useAuthStore from '../../stores/authStore'
@@ -27,6 +27,10 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
   const peerConnectionsRef = useRef({})
   const audioElementsRef = useRef({})
   const inVoiceRoomRef = useRef(null)
+  const [isScreenSharing, setIsScreenSharing] = useState(false)
+  const screenStreamRef = useRef(null)
+  const screenVideoRef = useRef(null)
+  const [screenSharer, setScreenSharer] = useState(null)
   const messagesEndRef = useRef(null)
   const bannerInputRef = useRef(null)
   const [uploadingBanner, setUploadingBanner] = useState(false)
@@ -214,9 +218,18 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
     peerConnectionsRef.current[remoteUserId] = pc
     if (localStreamRef.current) localStreamRef.current.getTracks().forEach(t => pc.addTrack(t, localStreamRef.current))
     pc.ontrack = (e) => {
-      let audio = audioElementsRef.current[remoteUserId]
-      if (!audio) { audio = new Audio(); audio.autoplay = true; audioElementsRef.current[remoteUserId] = audio }
-      audio.srcObject = e.streams[0]; audio.play().catch(() => {})
+      if (e.track.kind === 'video') {
+        // Screen share track
+        setScreenSharer(remoteUserId)
+        if (screenVideoRef.current) {
+          screenVideoRef.current.srcObject = e.streams[0] || new MediaStream([e.track])
+        }
+        e.track.onended = () => { setScreenSharer(null) }
+      } else {
+        let audio = audioElementsRef.current[remoteUserId]
+        if (!audio) { audio = new Audio(); audio.autoplay = true; audio.volume = 1.0; audioElementsRef.current[remoteUserId] = audio }
+        audio.srcObject = e.streams[0]; audio.play().catch(() => {})
+      }
     }
     const socket = getSocket()
     pc.onicecandidate = (e) => { if (e.candidate && socket) socket.emit('voice_ice', { to: remoteUserId, candidate: e.candidate }) }
@@ -282,6 +295,69 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
       localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = isMuted })
       setIsMuted(!isMuted)
       useVoiceStore.getState().setMuted(!isMuted)
+    }
+  }
+
+  // ─── Screen Share ─────────────────────────────────────────
+  const toggleScreenShare = async () => {
+    if (isScreenSharing) {
+      // Stop sharing
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(t => t.stop())
+        screenStreamRef.current = null
+      }
+      // Remove video track from all peers
+      Object.values(peerConnectionsRef.current).forEach(pc => {
+        const senders = pc.getSenders()
+        const videoSender = senders.find(s => s.track?.kind === 'video')
+        if (videoSender) pc.removeTrack(videoSender)
+      })
+      setIsScreenSharing(false)
+      setScreenSharer(null)
+      // Notify via socket
+      const socket = getSocket()
+      if (socket) socket.emit('voice_screen_stop', { roomId: inVoiceRoomRef.current })
+    } else {
+      // Start sharing
+      try {
+        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: 'always' }, audio: false })
+        screenStreamRef.current = screenStream
+        const videoTrack = screenStream.getVideoTracks()[0]
+        
+        // Add video track to all existing peer connections
+        Object.values(peerConnectionsRef.current).forEach(pc => {
+          pc.addTrack(videoTrack, screenStream)
+          // Renegotiate
+          pc.createOffer().then(offer => {
+            pc.setLocalDescription(offer)
+            const peerId = Object.keys(peerConnectionsRef.current).find(k => peerConnectionsRef.current[k] === pc)
+            const socket = getSocket()
+            if (socket && peerId) socket.emit('voice_offer', { to: peerId, offer })
+          })
+        })
+        
+        setIsScreenSharing(true)
+        setScreenSharer(user?.id)
+        
+        // Show own screen
+        if (screenVideoRef.current) {
+          screenVideoRef.current.srcObject = screenStream
+        }
+        
+        // Handle when user stops sharing via browser UI
+        videoTrack.onended = () => {
+          setIsScreenSharing(false)
+          setScreenSharer(null)
+          screenStreamRef.current = null
+          Object.values(peerConnectionsRef.current).forEach(pc => {
+            const senders = pc.getSenders()
+            const vs = senders.find(s => s.track?.kind === 'video')
+            if (vs) pc.removeTrack(vs)
+          })
+        }
+      } catch (e) {
+        console.error('Screen share error:', e)
+      }
     }
   }
 
@@ -575,6 +651,21 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
                         ))}
                       </div>
                     )}
+                    {/* Screen Share Display */}
+                    {isIn && screenSharer && (
+                      <div className="cd__screen-share">
+                        <div className="cd__screen-share-header">
+                          <Monitor size={14} />
+                          <span>{screenSharer === user?.id ? 'Compartiendo tu pantalla' : 'Pantalla compartida'}</span>
+                        </div>
+                        <video
+                          ref={screenVideoRef}
+                          className="cd__screen-share-video"
+                          autoPlay
+                          playsInline
+                        />
+                      </div>
+                    )}
                     <div className="cd__voice-actions">
                       {!isIn ? (
                         <button className="cd__voice-join" onClick={() => joinVoiceRoom(room.id)}>Unirse</button>
@@ -582,6 +673,9 @@ function CommunityDesktop({ community: initialCommunity, onBack }) {
                         <>
                           <button className={`cd__voice-ctrl ${isMuted ? 'cd__voice-ctrl--red' : ''}`} onClick={toggleMute}>
                             {isMuted ? <MicOff size={16} /> : <Mic size={16} />}
+                          </button>
+                          <button className={`cd__voice-ctrl ${isScreenSharing ? 'cd__voice-ctrl--green' : ''}`} onClick={toggleScreenShare} title="Compartir pantalla">
+                            {isScreenSharing ? <MonitorOff size={16} /> : <Monitor size={16} />}
                           </button>
                           <button className="cd__voice-ctrl cd__voice-ctrl--red" onClick={leaveVoiceRoom}>
                             <PhoneOff size={16} />
