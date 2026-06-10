@@ -60,7 +60,14 @@
 .app-layout__nav-user-dot {
   position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
   border-radius: 50%; background: #10b981; border: 2px solid rgba(0,0,0,0.5);
+  animation: onlineDotPulse 2.5s ease-in-out infinite;
 }
+
+@keyframes onlineDotPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
+}
+
 .app-layout__nav-user-info { display: flex; flex-direction: column; }
 .app-layout__nav-user-info span { font-size: 0.82rem; font-weight: 600; color: var(--color-text-primary); }
 .app-layout__nav-user-info small { font-size: 0.68rem; color: #10b981; }

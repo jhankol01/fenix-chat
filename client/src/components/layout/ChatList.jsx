@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2, Rocket, Phone, Users, Check } from 'lucide-react'
+import { Search, Plus, Settings, MessageCircle, User, X, Loader2, Trash2, Rocket, Phone, Users, Check, BellOff, Bell, Heart, Info, Ban, XCircle, Archive, Bot } from 'lucide-react'
 import PhoenixIcon from '../ui/PhoenixIcon'
 import StoriesBar from './StoriesBar'
 import useChatStore from '../../stores/chatStore'
 import useAuthStore from '../../stores/authStore'
+import api from '../../lib/api'
 import './ChatList.css'
 
 /**
@@ -24,14 +25,18 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
   const [newChatQuery, setNewChatQuery] = useState('')
   const [isStartingDM, setIsStartingDM] = useState(false)
   const [contextMenu, setContextMenu] = useState(null)
-  // Group creation state
-  const [showCreateGroup, setShowCreateGroup] = useState(false)
-  const [groupName, setGroupName] = useState('')
-  const [groupMembers, setGroupMembers] = useState([])
-  const [groupSearch, setGroupSearch] = useState('')
-  const [groupSearchResults, setGroupSearchResults] = useState([])
-  const searchTimeoutRef = useRef(null)
-  const newChatInputRef = useRef(null)
+  // Muted conversations
+  const [mutedConvs, setMutedConvs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('fenix_muted_convs') || '[]') } catch { return [] }
+  })
+  // Favorites
+  const [favorites, setFavorites] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('fenix_favorites') || '[]') } catch { return [] }
+  })
+  // Blocked users
+  const [blockedUsers, setBlockedUsers] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('fenix_blocked_users') || '[]') } catch { return [] }
+  })
 
   const {
     conversations,
@@ -48,6 +53,52 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
   } = useChatStore()
 
   const user = useAuthStore(state => state.user)
+
+  const toggleMuteConv = useCallback((convId) => {
+    setMutedConvs(prev => {
+      const updated = prev.includes(convId) ? prev.filter(id => id !== convId) : [...prev, convId]
+      localStorage.setItem('fenix_muted_convs', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
+  const toggleFavorite = useCallback((convId) => {
+    setFavorites(prev => {
+      const updated = prev.includes(convId) ? prev.filter(id => id !== convId) : [...prev, convId]
+      localStorage.setItem('fenix_favorites', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
+  const toggleBlockUser = useCallback((userId, userName) => {
+    if (!userId) return
+    setBlockedUsers(prev => {
+      const isBlocked = prev.includes(userId)
+      if (!isBlocked && !confirm(`¿Bloquear a ${userName}? Ya no podrá enviarte mensajes.`)) return prev
+      const updated = isBlocked ? prev.filter(id => id !== userId) : [...prev, userId]
+      localStorage.setItem('fenix_blocked_users', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
+  const handleClearChat = useCallback(async () => {
+    if (!contextMenu) return
+    if (!confirm('¿Vaciar este chat? Se borrarán todos los mensajes para ti.')) return
+    try {
+      await deleteConversation(contextMenu.conv.id)
+    } catch (err) { console.error(err) }
+    setContextMenu(null)
+  }, [contextMenu, deleteConversation])
+  // Group creation state
+  const [showCreateGroup, setShowCreateGroup] = useState(false)
+  const [groupName, setGroupName] = useState('')
+  const [groupMembers, setGroupMembers] = useState([])
+  const [groupSearch, setGroupSearch] = useState('')
+  const [groupSearchResults, setGroupSearchResults] = useState([])
+  const searchTimeoutRef = useRef(null)
+  const newChatInputRef = useRef(null)
+
+  // (store and user extracted above)
 
   // Focus en el input de nuevo chat cuando se abre
   useEffect(() => {
@@ -89,6 +140,22 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
     } finally {
       setIsStartingDM(false)
     }
+  }
+
+  // Start bot chat
+  const [startingBot, setStartingBot] = useState(false)
+
+  const startBotChat = async () => {
+    setStartingBot(true)
+    try {
+      const data = await api.post('/bot/start')
+      if (data.conversation) {
+        handleSelectConversation(data.conversation)
+      }
+    } catch (err) {
+      console.error('Error starting bot chat:', err)
+    }
+    setStartingBot(false)
   }
 
   // Group search
@@ -180,6 +247,15 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
             <span className="chat-list__logo-chat">MESSENGER</span>
           </div>
         </div>
+        <button
+          className="chat-list__new-btn chat-list__bot-btn"
+          aria-label="Fenix IA"
+          onClick={startBotChat}
+          disabled={startingBot}
+          title="Chatear con Fenix IA"
+        >
+          <Bot size={18} />
+        </button>
         <button
           className="chat-list__new-btn"
           aria-label="Crear grupo"
@@ -421,7 +497,12 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
                       {/* Contenido */}
                       <div className="chat-list__item-content">
                         <div className="chat-list__item-top">
-                          <span className="chat-list__item-name">{otherName}</span>
+                          <span className="chat-list__item-name">
+                            {otherName}
+                            {(otherName === 'Fenix IA' || otherName === 'fenix_ia') && (
+                              <span className="chat-list__ai-badge">IA</span>
+                            )}
+                          </span>
                           <span className="chat-list__item-time">
                             {formatTime(conv.last_message_at)}
                           </span>
@@ -442,7 +523,10 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
                               }
                             </span>
                           )}
-                          {hasUnread && (
+                          {mutedConvs.includes(conv.id) && (
+                            <BellOff size={14} className="chat-list__muted-icon" />
+                          )}
+                          {hasUnread && !mutedConvs.includes(conv.id) && (
                             <span className="chat-list__unread-badge">
                               🔥 {unreadCount}
                             </span>
@@ -477,17 +561,72 @@ function ChatList({ section, onSelectConversation, onOpenProfile }) {
         </div>
       )}
 
-      {contextMenu && (
-        <>
-          <div className="chat-list__context-overlay" onClick={() => setContextMenu(null)} />
-          <div className="chat-list__context-menu" style={{ top: contextMenu.y, left: Math.min(contextMenu.x, window.innerWidth - 200) }}>
-            <button className="chat-list__context-item chat-list__context-item--danger" onClick={handleDeleteConversation}>
-              <Trash2 size={16} />
-              <span>Eliminar conversación</span>
-            </button>
-          </div>
-        </>
-      )}
+      {/* WhatsApp-style Bottom Sheet */}
+      {contextMenu && (() => {
+        const conv = contextMenu.conv
+        const sheetName = getConversationName(conv, user)
+        const sheetAvatar = getConversationAvatar(conv, user)
+        const otherId = conv.other_user_id
+        const isMuted = mutedConvs.includes(conv.id)
+        const isFav = favorites.includes(conv.id)
+        const isBlocked = otherId ? blockedUsers.includes(otherId) : false
+        return (
+          <>
+            <div className="chat-list__sheet-overlay" onClick={() => setContextMenu(null)} />
+            <div className="chat-list__sheet">
+              {/* Header */}
+              <div className="chat-list__sheet-header">
+                <div className="chat-list__sheet-user">
+                  <div className="chat-list__sheet-avatar">
+                    {sheetAvatar ? <img src={sheetAvatar} alt="" /> : <User size={22} />}
+                  </div>
+                  <span className="chat-list__sheet-name">{sheetName}</span>
+                </div>
+                <button className="chat-list__sheet-close" onClick={() => setContextMenu(null)}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Options */}
+              <div className="chat-list__sheet-options">
+                <button className="chat-list__sheet-item" onClick={() => { toggleMuteConv(conv.id); setContextMenu(null) }}>
+                  {isMuted ? <Bell size={20} /> : <BellOff size={20} />}
+                  <span>{isMuted ? 'Activar notificaciones' : 'Silenciar'}</span>
+                </button>
+
+                <button className="chat-list__sheet-item" onClick={() => { handleSelectConversation(conv); setContextMenu(null) }}>
+                  <Info size={20} />
+                  <span>Info. del contacto</span>
+                </button>
+
+                <button className="chat-list__sheet-item" onClick={() => { toggleFavorite(conv.id); setContextMenu(null) }}>
+                  <Heart size={20} className={isFav ? 'chat-list__sheet-fav-active' : ''} />
+                  <span>{isFav ? 'Quitar de Favoritos' : 'Añadir a Favoritos'}</span>
+                </button>
+
+                <button className="chat-list__sheet-item" onClick={handleClearChat}>
+                  <XCircle size={20} />
+                  <span>Vaciar chat</span>
+                </button>
+              </div>
+
+              {/* Danger zone */}
+              <div className="chat-list__sheet-danger">
+                {otherId && (
+                  <button className="chat-list__sheet-item chat-list__sheet-item--danger" onClick={() => { toggleBlockUser(otherId, sheetName); setContextMenu(null) }}>
+                    <Ban size={20} />
+                    <span>{isBlocked ? `Desbloquear a ${sheetName}` : `Bloquear a ${sheetName}`}</span>
+                  </button>
+                )}
+                <button className="chat-list__sheet-item chat-list__sheet-item--danger" onClick={handleDeleteConversation}>
+                  <Trash2 size={20} />
+                  <span>Eliminar chat</span>
+                </button>
+              </div>
+            </div>
+          </>
+        )
+      })()}
     </div>
   )
 }

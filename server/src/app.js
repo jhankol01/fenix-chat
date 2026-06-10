@@ -127,8 +127,129 @@ app.get('/api/debug/migrate', async (req, res) => {
   }
 });
 
+// Store io instance on app for access in routes
+app.set('io', io);
+
 // ─── API Routes ─────────────────────────────────────────────────────────────────
 app.use('/api', routes);
+
+// ─── Fenix IA Bot ───────────────────────────────────────────────────────────────
+import authenticate from './middleware/auth.js';
+import pool from './config/database.js';
+
+app.post('/api/bot/start', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.id
+
+    // Check if user has AI access
+    const accessCheck = await pool.query('SELECT ai_access FROM users WHERE id = $1', [userId])
+    if (!accessCheck.rows[0]?.ai_access) {
+      return res.status(403).json({ error: '🔒 Acceso a Fenix IA restringido. Necesitas una clave de acceso beta.' })
+    }
+
+    const botResult = await pool.query("SELECT id FROM users WHERE username = 'fenix_ia' AND is_bot = TRUE LIMIT 1")
+    if (!botResult.rows[0]) {
+      return res.status(404).json({ error: 'Fenix IA no está disponible' })
+    }
+    const botUserId = botResult.rows[0].id
+
+    // Get or create DM with bot
+    const Conversation = (await import('./models/Conversation.js')).default
+    const conversationId = await Conversation.getOrCreateDM(userId, botUserId)
+
+    // Check if this is a new conversation (no messages yet)
+    const msgCount = await pool.query('SELECT COUNT(*) FROM messages WHERE conversation_id = $1', [conversationId])
+    if (parseInt(msgCount.rows[0].count) === 0) {
+      // Send welcome message from bot
+      const Message = (await import('./models/Message.js')).default
+      const welcomeMsg = await Message.create({
+        conversationId,
+        senderId: botUserId,
+        content: '¡Hola! 👋 Soy **Fenix IA**, tu asistente inteligente.\n\nPuedo ayudarte con:\n🧠 Preguntas generales\n💻 Programación y código\n📝 Escribir textos\n🔢 Matemáticas\n💡 Ideas y brainstorming\n\n¡Pregúntame lo que quieras! 🔥',
+        type: 'text'
+      })
+
+      // Emit via socket if available
+      const ioInstance = req.app.get('io')
+      if (ioInstance) {
+        ioInstance.to(conversationId).emit('new_message', welcomeMsg)
+      }
+    }
+
+    res.json({ conversation: { id: conversationId } })
+  } catch (err) {
+    console.error('Bot start error:', err)
+    res.status(500).json({ error: 'Error al iniciar chat con Fenix IA' })
+  }
+})
+
+// Get saved ideas (authenticated user sees their own, or all with ?all=true for admin)
+app.get('/api/bot/ideas', authenticate, async (req, res) => {
+  try {
+    const userId = req.user.id
+    if (req.query.all === 'true') {
+      // Admin/Antigravity view — all ideas
+      const result = await pool.query(`
+        SELECT bi.*, u.username, u.display_name 
+        FROM bot_ideas bi JOIN users u ON u.id = bi.user_id 
+        ORDER BY bi.created_at DESC
+      `)
+      return res.json({ ideas: result.rows })
+    }
+    const result = await pool.query(
+      'SELECT * FROM bot_ideas WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId]
+    )
+    res.json({ ideas: result.rows })
+  } catch (err) {
+    console.error('Ideas fetch error:', err)
+    res.status(500).json({ error: 'Error al obtener ideas' })
+  }
+})
+
+// Delete an idea
+app.delete('/api/bot/ideas/:id', authenticate, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM bot_ideas WHERE id = $1 AND user_id = $2', [req.params.id, req.user.id])
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: 'Error al eliminar idea' })
+  }
+})
+
+// Grant/revoke AI access (admin only - jhankol)
+app.post('/api/bot/access', authenticate, async (req, res) => {
+  try {
+    // Only jhankol can manage access
+    const admin = await pool.query('SELECT username FROM users WHERE id = $1', [req.user.id])
+    if (admin.rows[0]?.username !== 'jhankol') {
+      return res.status(403).json({ error: 'Solo el administrador puede gestionar acceso' })
+    }
+
+    const { username, grant } = req.body
+    if (!username) return res.status(400).json({ error: 'Username requerido' })
+
+    const r = await pool.query(
+      'UPDATE users SET ai_access = $1 WHERE username = $2 RETURNING username, ai_access',
+      [grant !== false, username]
+    )
+    if (r.rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' })
+
+    res.json({ success: true, user: r.rows[0], message: grant !== false ? '✅ Acceso AI otorgado' : '🔒 Acceso AI revocado' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// List users with AI access (admin only)
+app.get('/api/bot/access', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query("SELECT username, display_name, ai_access FROM users WHERE is_bot = FALSE ORDER BY ai_access DESC, username")
+    res.json({ users: result.rows })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 // ─── Error Handling ─────────────────────────────────────────────────────────────
 app.use(notFound);
@@ -261,6 +382,29 @@ server.listen(config.port, async () => {
     await query(`CREATE INDEX IF NOT EXISTS idx_friend_req_sender ON friend_requests(sender_id, status)`);
   } catch (err) {
     logger.warn('Friend requests index note:', err.message);
+  }
+
+  // ── Fenix IA Bot User ──
+  try {
+    await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_bot BOOLEAN DEFAULT FALSE`);
+    await query(`
+      INSERT INTO users (username, email, password_hash, display_name, avatar_url, is_verified, is_bot, status_text, status_emoji)
+      VALUES (
+        'fenix_ia',
+        'ia@fenixmessenger.com',
+        '$2b$10$dummyHashForBotUserNeverUsedForLogin000000000000',
+        'Fenix IA',
+        NULL,
+        TRUE,
+        TRUE,
+        'Asistente inteligente',
+        '🤖'
+      )
+      ON CONFLICT (username) DO NOTHING
+    `);
+    logger.info('✅ Fenix IA bot user migration applied');
+  } catch (err) {
+    logger.warn('Fenix IA bot migration note:', err.message);
   }
 
   // ─── Story Cleanup Cron ─────────────────────────────────────────────────────

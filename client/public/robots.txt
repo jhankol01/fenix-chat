@@ -1,0 +1,12 @@
+# 🔥 Fenix Messenger — Robots.txt
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /app/
+Disallow: /admin
+Disallow: /admin/
+Disallow: /verify/
+Disallow: /reset-password/
+
+# Sitemap
+Sitemap: https://fenixmessenger.com/sitemap.xml

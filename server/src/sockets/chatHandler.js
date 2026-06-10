@@ -3,9 +3,10 @@ import config from '../config/index.js'
 import Message from '../models/Message.js'
 import Conversation from '../models/Conversation.js'
 import Reaction from '../models/Reaction.js'
-import { query } from '../config/database.js'
+import pool, { query } from '../config/database.js'
 import logger from '../utils/logger.js'
 import { sendPushToUser } from '../routes/pushRoutes.js'
+import { getAIResponse, getBotUserId, parseAndSaveIdeas, cleanBotResponse } from '../services/aiBot.js'
 
 // Track online users: Map<userId, Set<socketId>>
 const onlineUsers = new Map()
@@ -144,6 +145,73 @@ export default function chatHandler(io) {
         }
 
         logger.debug(`Message from ${user.username} in ${conversationId}: ${content.substring(0, 50)}`)
+
+        // ─── Fenix IA Bot Response ───
+        try {
+          const botUserId = await getBotUserId(pool)
+          if (botUserId && botUserId !== user.id) {
+            // Check if the other user in this conversation is the bot
+            const botCheck = await query(
+              'SELECT 1 FROM conversation_members WHERE conversation_id = $1 AND user_id = $2',
+              [conversationId, botUserId]
+            )
+            if (botCheck.rows.length > 0) {
+              // Check if user has AI access
+              const accessCheck = await query('SELECT ai_access FROM users WHERE id = $1', [user.id])
+              if (!accessCheck.rows[0]?.ai_access) {
+                // No access — send a locked message
+                const lockedMsg = await Message.create({
+                  conversationId,
+                  senderId: botUserId,
+                  content: '🔒 **Acceso restringido**\n\nFenix IA está en **beta cerrada**. Necesitas una clave de acceso para chatear conmigo.\n\nContacta al administrador para obtener tu clave. 🔑',
+                  type: 'text'
+                })
+                io.to(conversationId).emit('new_message', lockedMsg)
+              } else {
+              // Bot is in this conversation - generate AI response
+              io.to(conversationId).emit('user_typing', { conversationId, userId: botUserId, username: 'Fenix IA' })
+
+              // Get recent messages for context
+              const historyResult = await query(
+                `SELECT m.content, u.is_bot FROM messages m
+                 JOIN users u ON u.id = m.sender_id
+                 WHERE m.conversation_id = $1 AND m.deleted_at IS NULL
+                 ORDER BY m.created_at DESC LIMIT 10`,
+                [conversationId]
+              )
+              const history = historyResult.rows.reverse()
+
+              const aiResponse = await getAIResponse(content, history, user.id, pool)
+
+              // Parse and save any ideas from the bot's response
+              await parseAndSaveIdeas(aiResponse, user.id, pool)
+
+              // Clean the response (remove [IDEA_SAVE] blocks from visible message)
+              const cleanedResponse = cleanBotResponse(aiResponse)
+
+              // Save bot's response
+              const botMsg = await Message.create({
+                conversationId,
+                senderId: botUserId,
+                content: cleanedResponse,
+                type: 'text'
+              })
+
+              io.to(conversationId).emit('user_stop_typing', { conversationId, userId: botUserId })
+              io.to(conversationId).emit('new_message', botMsg)
+
+              // Update conversation last message
+              await query(
+                'UPDATE conversations SET last_message_at = NOW(), last_message_content = $1, last_message_sender = $2 WHERE id = $3',
+                [cleanedResponse.slice(0, 100), 'Fenix IA', conversationId]
+              ).catch(() => {})
+              } // close else (ai_access)
+            }
+          }
+        } catch (botErr) {
+          console.error('Fenix IA bot error:', botErr)
+          io.to(conversationId).emit('user_stop_typing', { conversationId })
+        }
       } catch (err) {
         logger.error('Error sending message:', err.message)
         socket.emit('error_message', { error: 'Error al enviar el mensaje' })

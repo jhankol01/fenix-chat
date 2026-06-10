@@ -1,12 +1,13 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import {
-  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Video, Trash2, UserPlus, UserCheck, Paperclip, Image, Camera, Reply, Ban, Search, Forward
+  ArrowLeft, MoreVertical, Send, Smile, Loader2, X, Mail, Calendar, User, Mic, Square, Play, Pause, Phone, Video, Trash2, UserPlus, UserCheck, Paperclip, Image, Camera, Reply, Ban, Search, Forward, VolumeX, Volume2, Bot
 } from 'lucide-react'
 import EmojiPicker, { Theme } from 'emoji-picker-react'
 import { getSocket } from '../../lib/socket'
 import useChatStore from '../../stores/chatStore'
 import useAuthStore from '../../stores/authStore'
 import api from '../../lib/api'
+import ReactMarkdown from 'react-markdown'
 import './ChatView.css'
 
 /**
@@ -58,12 +59,25 @@ function ChatView({ onBack }) {
   const [isLoadingGifs, setIsLoadingGifs] = useState(false)
   const gifSearchTimeoutRef = useRef(null)
 
+  // Muted users
+  const [mutedUsers, setMutedUsers] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('fenix_muted_users') || '[]') } catch { return [] }
+  })
+
   // Voice note state
   const [isRecording, setIsRecording] = useState(false)
   const [recordingDuration, setRecordingDuration] = useState(0)
   const mediaRecorderRef = useRef(null)
   const audioChunksRef = useRef([])
   const recordingTimerRef = useRef(null)
+
+  const toggleMuteUser = useCallback((userId) => {
+    setMutedUsers(prev => {
+      const updated = prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+      localStorage.setItem('fenix_muted_users', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
 
   const {
     activeConversation,
@@ -522,7 +536,11 @@ function ChatView({ onBack }) {
   const isOtherOnline = otherId ? onlineUsers.has(otherId) : false
 
   // Agrupar mensajes consecutivos del mismo usuario
-  const groupedMessages = groupMessages(messages, user)
+  const filteredMessages = messages.filter(msg => {
+    const senderId = msg.sender_id || msg.user_id
+    return !mutedUsers.includes(senderId)
+  })
+  const groupedMessages = groupMessages(filteredMessages, user)
 
   // Formatear hora del mensaje
   const formatMessageTime = (dateString) => {
@@ -569,8 +587,17 @@ function ChatView({ onBack }) {
         </div>
 
         <div className="chat-view__header-info" onClick={() => setShowContactInfo(true)} style={{ cursor: 'pointer' }}>
-          <div className="chat-view__header-name">{otherName}</div>
-          <div className={`chat-view__header-subtitle ${typingUser ? 'chat-view__header-subtitle--typing' : ''}`}>
+          <div className="chat-view__header-name">
+            {otherName}
+            {(otherName === 'Fenix IA' || otherName === 'fenix_ia') && (
+              <span className="chat-view__ai-badge">🤖 IA</span>
+            )}
+          </div>
+          <div
+            className={`chat-view__header-subtitle ${typingUser ? 'chat-view__header-subtitle--typing' : ''}`}
+            aria-live="polite"
+            aria-atomic="true"
+          >
             {typingUser
               ? 'escribiendo...'
               : isOtherOnline
@@ -906,7 +933,11 @@ function ChatView({ onBack }) {
                       ) : msg.type === 'system' ? (
                         <span className="chat-view__msg-system">{msg.content}</span>
                       ) : (
-                        msg.content
+                        (msg.sender_username === 'fenix_ia' || msg.sender_display_name === 'Fenix IA') ? (
+                          <div className="chat-view__msg-markdown">
+                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          </div>
+                        ) : msg.content
                       )}
                       {/* 🔥 Read receipt — en cada mensaje propio */}
                       {group.isOwn && msg.type !== 'system' && !msg.deleted_at && (
@@ -959,50 +990,87 @@ function ChatView({ onBack }) {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* --- Message Context Menu --- */}
-      {msgContextMenu && (
-        <>
-          <div className="chat-list__context-overlay" onClick={() => setMsgContextMenu(null)} />
-          <div className="chat-list__context-menu" style={{ top: Math.min(msgContextMenu.y, window.innerHeight - 120), left: Math.min(msgContextMenu.x, window.innerWidth - 200) }}>
-            {/* Reply option — available for all messages */}
-            {!msgContextMenu.msg.deleted_at && (
-              <button className="chat-list__context-item" onClick={handleReply}>
-                <Reply size={16} />
-                <span>Responder</span>
-              </button>
-            )}
-            {/* Reaction shortcut */}
-            {!msgContextMenu.msg.deleted_at && (
-              <button className="chat-list__context-item" onClick={() => {
-                setReactionPickerMsgId(msgContextMenu.msg.id)
-                setMsgContextMenu(null)
-              }}>
-                <Smile size={16} />
-                <span>Reaccionar</span>
-              </button>
-            )}
-            {/* Forward */}
-            {!msgContextMenu.msg.deleted_at && (
-              <button className="chat-list__context-item" onClick={handleForward}>
-                <Forward size={16} />
-                <span>Reenviar</span>
-              </button>
-            )}
-            {msgContextMenu.msg.sender_id === user?.id && !msgContextMenu.msg.deleted_at && (
-              <>
-                <button className="chat-list__context-item chat-list__context-item--danger" onClick={handleDeleteMessage}>
-                  <Trash2 size={16} />
-                  <span>Eliminar mensaje</span>
+      {/* --- WhatsApp-style Message Bottom Sheet --- */}
+      {msgContextMenu && (() => {
+        const msg = msgContextMenu.msg
+        const isOwn = msg.sender_id === user?.id
+        const senderName = msg.sender_username || msg.username || msg.display_name || 'Usuario'
+        const senderAvatar = msg.sender_avatar_url || msg.avatar_url || null
+        const senderId = msg.sender_id || msg.user_id
+        const isMutedUser = !isOwn && mutedUsers.includes(senderId)
+        return (
+          <>
+            <div className="chat-view__sheet-overlay" onClick={() => setMsgContextMenu(null)} />
+            <div className="chat-view__sheet">
+              {/* Header with sender info */}
+              <div className="chat-view__sheet-header">
+                <div className="chat-view__sheet-user">
+                  <div className="chat-view__sheet-avatar">
+                    {senderAvatar ? <img src={senderAvatar} alt="" /> : <User size={20} />}
+                  </div>
+                  <div className="chat-view__sheet-info">
+                    <span className="chat-view__sheet-name">{isOwn ? 'Tú' : senderName}</span>
+                    {msg.content && (
+                      <span className="chat-view__sheet-preview">{msg.content.slice(0, 50)}{msg.content.length > 50 ? '...' : ''}</span>
+                    )}
+                  </div>
+                </div>
+                <button className="chat-view__sheet-close" onClick={() => setMsgContextMenu(null)}>
+                  <X size={20} />
                 </button>
-                <button className="chat-list__context-item chat-list__context-item--danger" onClick={handleDeleteForAll}>
-                  <Ban size={16} />
-                  <span>Eliminar para todos</span>
-                </button>
-              </>
-            )}
-          </div>
-        </>
-      )}
+              </div>
+
+              {/* Main options */}
+              {!msg.deleted_at && (
+                <div className="chat-view__sheet-options">
+                  <button className="chat-view__sheet-item" onClick={handleReply}>
+                    <Reply size={20} />
+                    <span>Responder</span>
+                  </button>
+
+                  <button className="chat-view__sheet-item" onClick={() => {
+                    setReactionPickerMsgId(msg.id)
+                    setMsgContextMenu(null)
+                  }}>
+                    <Smile size={20} />
+                    <span>Reaccionar</span>
+                  </button>
+
+                  <button className="chat-view__sheet-item" onClick={handleForward}>
+                    <Forward size={20} />
+                    <span>Reenviar</span>
+                  </button>
+
+                  {/* Mute user - only for others */}
+                  {!isOwn && (
+                    <button className="chat-view__sheet-item" onClick={() => {
+                      toggleMuteUser(senderId)
+                      setMsgContextMenu(null)
+                    }}>
+                      {isMutedUser ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                      <span>{isMutedUser ? 'Desilenciar usuario' : 'Silenciar usuario'}</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Danger zone */}
+              {isOwn && !msg.deleted_at && (
+                <div className="chat-view__sheet-danger">
+                  <button className="chat-view__sheet-item chat-view__sheet-item--danger" onClick={handleDeleteMessage}>
+                    <Trash2 size={20} />
+                    <span>Eliminar para mí</span>
+                  </button>
+                  <button className="chat-view__sheet-item chat-view__sheet-item--danger" onClick={handleDeleteForAll}>
+                    <Ban size={20} />
+                    <span>Eliminar para todos</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </>
+        )
+      })()}
 
       {/* --- Emoji Picker --- */}
       {showEmojiPicker && (

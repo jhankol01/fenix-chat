@@ -1,0 +1,209 @@
+/* ============================================
+   🔥 Toast / Snackbar Component Styles
+   Glassmorphism, auto-dismiss, responsive
+   ============================================ */
+
+/* ---------- Container ---------- */
+.toast-container {
+  position: fixed;
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  pointer-events: none;
+
+  /* Desktop: top-right */
+  top: var(--space-5);
+  right: var(--space-5);
+  max-width: 380px;
+  width: calc(100% - var(--space-10));
+}
+
+/* ---------- Individual Toast ---------- */
+.toast {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  pointer-events: auto;
+
+  /* Glassmorphism */
+  background: var(--color-surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--color-surface-border);
+  box-shadow: var(--shadow-lg);
+
+  /* Colored left border */
+  border-left: 3px solid var(--toast-color, var(--color-brand));
+
+  /* Entry animation: slideInRight on desktop */
+  animation: toastSlideInRight var(--transition-base) forwards;
+}
+
+/* --- Exit animation --- */
+.toast--exiting {
+  animation: toastFadeOut var(--transition-fast) forwards;
+}
+
+/* --- Type variants (set --toast-color) --- */
+.toast--success {
+  --toast-color: var(--color-success);
+}
+
+.toast--error {
+  --toast-color: var(--color-error);
+}
+
+.toast--warning {
+  --toast-color: var(--color-warning);
+}
+
+.toast--info {
+  --toast-color: var(--color-brand);
+}
+
+/* ---------- Icon ---------- */
+.toast__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  color: var(--toast-color, var(--color-brand));
+}
+
+/* ---------- Content ---------- */
+.toast__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast__message {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-primary);
+  line-height: var(--leading-normal);
+  word-break: break-word;
+}
+
+/* ---------- Close Button ---------- */
+.toast__close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-tertiary);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
+  margin-top: -1px;
+}
+
+.toast__close:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-hover);
+}
+
+/* ---------- Progress Bar ---------- */
+.toast__progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--toast-color, var(--color-brand));
+  opacity: 0.6;
+  border-radius: 0 var(--radius-sm) 0 0;
+  animation: toastProgress var(--toast-duration, 3000ms) linear forwards;
+}
+
+/* ---------- Keyframes ---------- */
+
+/* Desktop entry: slide in from right */
+@keyframes toastSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Mobile entry: slide in from bottom */
+@keyframes toastSlideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Exit: fade out */
+@keyframes toastFadeOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+
+/* Progress bar shrink */
+@keyframes toastProgress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* ---------- Mobile responsive ---------- */
+@media (max-width: 768px) {
+  .toast-container {
+    top: auto;
+    right: auto;
+    bottom: 80px; /* Above bottom nav */
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 360px;
+    width: calc(100% - var(--space-8));
+    align-items: center;
+  }
+
+  .toast {
+    width: 100%;
+    animation-name: toastSlideInUp;
+  }
+
+  .toast--exiting {
+    animation: toastFadeOutMobile var(--transition-fast) forwards;
+  }
+}
+
+/* Mobile exit: fade down */
+@keyframes toastFadeOutMobile {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}

@@ -200,7 +200,7 @@ function AppLayout() {
       <CallOverlay />
       <div className="app-layout">
         {/* ─── Left Sidebar Nav ─── */}
-        <div className="app-layout__nav-sidebar">
+        <div className="app-layout__nav-sidebar" role="navigation" aria-label="Menú principal">
           {/* Logo */}
           <div className="app-layout__nav-logo">
             <PhoenixIcon size={24} />
@@ -222,10 +222,12 @@ function AppLayout() {
           </div>
 
           {/* Nav Items */}
-          <div className="app-layout__nav-items">
+          <div className="app-layout__nav-items" role="menubar" aria-label="Secciones">
             {navItems.map(n => (
               <button key={n.key}
                 className={`app-layout__nav-item ${desktopSection === n.key ? 'app-layout__nav-item--active' : ''}`}
+                role="menuitem"
+                aria-current={desktopSection === n.key ? 'page' : undefined}
                 onClick={() => {
                   setDesktopSection(n.key)
                   setShowDesktopProfile(false)

@@ -38,6 +38,9 @@ const config = {
 
   // Tenor GIF API
   tenorApiKey: process.env.TENOR_API_KEY || '',
+
+  // OpenAI (Fenix IA Bot)
+  openaiApiKey: process.env.OPENAI_API_KEY || '',
 };
 
 /**

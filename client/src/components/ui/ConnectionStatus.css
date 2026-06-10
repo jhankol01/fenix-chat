@@ -1,0 +1,83 @@
+/* ============================================
+   🔥 ConnectionStatus Banner Styles
+   Slide-down notification bar for socket state
+   ============================================ */
+
+/* ---------- Banner base ---------- */
+.connection-status {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-inverse);
+  animation: connectionSlideDown var(--transition-base) forwards;
+}
+
+/* --- Exiting animation --- */
+.connection-status--hiding {
+  animation: connectionSlideUp var(--transition-base) forwards;
+}
+
+/* ---------- State variants ---------- */
+.connection-status--disconnected {
+  background: var(--color-error);
+}
+
+.connection-status--reconnecting {
+  background: var(--color-warning);
+  color: #1A1A2E;
+}
+
+.connection-status--reconnected {
+  background: var(--color-success);
+  color: #1A1A2E;
+}
+
+/* ---------- Icon ---------- */
+.connection-status__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Spinner for reconnecting state */
+.connection-status__icon--spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ---------- Text ---------- */
+.connection-status__text {
+  line-height: var(--leading-tight);
+}
+
+/* ---------- Keyframes ---------- */
+@keyframes connectionSlideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes connectionSlideUp {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}

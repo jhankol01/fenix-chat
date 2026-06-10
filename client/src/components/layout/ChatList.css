@@ -423,6 +423,39 @@
   box-shadow: 0 0 8px rgba(124, 58, 237, 0.5);
 }
 
+/* ── Staggered entrance animation for conversation items ── */
+.chat-list__item-wrapper {
+  animation: chatItemFadeIn 0.35s ease both;
+}
+
+.chat-list__item-wrapper:nth-child(1) { animation-delay: 0.02s; }
+.chat-list__item-wrapper:nth-child(2) { animation-delay: 0.04s; }
+.chat-list__item-wrapper:nth-child(3) { animation-delay: 0.06s; }
+.chat-list__item-wrapper:nth-child(4) { animation-delay: 0.08s; }
+.chat-list__item-wrapper:nth-child(5) { animation-delay: 0.10s; }
+.chat-list__item-wrapper:nth-child(6) { animation-delay: 0.12s; }
+.chat-list__item-wrapper:nth-child(7) { animation-delay: 0.14s; }
+.chat-list__item-wrapper:nth-child(8) { animation-delay: 0.16s; }
+.chat-list__item-wrapper:nth-child(9) { animation-delay: 0.18s; }
+.chat-list__item-wrapper:nth-child(10) { animation-delay: 0.20s; }
+
+@keyframes chatItemFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ── Subtle press effect for touch feedback ── */
+.chat-list__item:active {
+  transform: scale(0.985);
+  background: var(--color-bg-active);
+}
+
 /* ---------- Avatar redondo ---------- */
 .chat-list__avatar {
   width: 48px;
@@ -785,3 +818,234 @@
 .chat-list__group-member-chip button {
   display: flex; align-items: center; color: var(--color-brand); opacity: 0.7;
 }
+
+/* Muted conversation icon */
+.chat-list__muted-icon {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* ============================================
+   WHATSAPP-STYLE BOTTOM SHEET
+   ============================================ */
+.chat-list__sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 300;
+  animation: sheetFadeIn 0.2s ease;
+}
+
+@keyframes sheetFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.chat-list__sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 301;
+  background: var(--color-bg-elevated, #1a2332);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  padding: 0;
+  max-height: 85vh;
+  overflow-y: auto;
+  animation: sheetSlideUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* Desktop: center as a card */
+@media (min-width: 768px) {
+  .chat-list__sheet {
+    bottom: auto;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    width: 360px;
+    max-height: 80vh;
+    border-radius: 20px;
+    animation: sheetPopIn 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+}
+
+@keyframes sheetSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes sheetPopIn {
+  from { opacity: 0; transform: translate(-50%, -45%) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Header */
+.chat-list__sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.chat-list__sheet-user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.chat-list__sheet-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.chat-list__sheet-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chat-list__sheet-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.chat-list__sheet-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+
+.chat-list__sheet-close:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--color-text-primary);
+}
+
+/* Options section */
+.chat-list__sheet-options {
+  padding: 8px 10px;
+}
+
+/* Danger section */
+.chat-list__sheet-danger {
+  padding: 8px 10px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 2px;
+}
+
+/* Sheet items */
+.chat-list__sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  color: var(--color-text-primary);
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: background 0.15s;
+  text-align: left;
+}
+
+.chat-list__sheet-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.chat-list__sheet-item:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.chat-list__sheet-item svg {
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+/* Danger items */
+.chat-list__sheet-item--danger {
+  color: #FF4757;
+}
+
+.chat-list__sheet-item--danger svg {
+  color: #FF4757;
+}
+
+.chat-list__sheet-item--danger:hover {
+  background: rgba(255, 71, 87, 0.08);
+}
+
+/* Favorite active heart */
+.chat-list__sheet-fav-active {
+  color: #ef4444 !important;
+  fill: #ef4444;
+}
+
+/* Favorite indicator in chat list */
+.chat-list__fav-icon {
+  color: #ef4444;
+  flex-shrink: 0;
+}
+
+/* Fenix IA Bot Button */
+.chat-list__bot-btn {
+  background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+  color: white !important;
+  border-radius: 10px !important;
+  position: relative;
+  overflow: hidden;
+}
+.chat-list__bot-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+  animation: botShimmer 2s infinite;
+}
+@keyframes botShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.chat-list__bot-btn:disabled {
+  opacity: 0.6;
+}
+
+/* AI Badge */
+.chat-list__ai-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: white;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-left: 6px;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+}
+
