@@ -181,6 +181,19 @@ app.get('/api/debug/grant-ai/:username', async (req, res) => {
   }
 });
 
+// ─── Debug: view all ideas ────────────────────────────────────────────────────
+app.get('/api/debug/ideas', async (req, res) => {
+  try {
+    const { query: dbQuery } = await import('./config/database.js');
+    const result = await dbQuery(`SELECT bi.*, u.username, u.display_name
+      FROM bot_ideas bi JOIN users u ON u.id = bi.user_id
+      ORDER BY bi.created_at DESC`);
+    res.json({ ideas: result.rows, total: result.rows.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ─── API Routes ─────────────────────────────────────────────────────────────────
 app.use('/api', routes);
 
