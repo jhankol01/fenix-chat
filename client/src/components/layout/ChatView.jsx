@@ -1410,13 +1410,15 @@ function AudioMessage({ src }) {
     const onTimeUpdate = () => {
       if (audio.duration && isFinite(audio.duration)) {
         setProgress((audio.currentTime / audio.duration) * 100)
-        // Update duration if we didn't get it from metadata
         if (!duration || !isFinite(duration)) setDuration(audio.duration)
       }
     }
     const onLoadedMetadata = () => {
       if (isFinite(audio.duration) && audio.duration > 0) {
         setDuration(audio.duration)
+      } else {
+        // Trick: seek to end to force browser to calculate real duration
+        audio.currentTime = 1e10
       }
     }
     const onDurationChange = () => {
@@ -1424,17 +1426,26 @@ function AudioMessage({ src }) {
         setDuration(audio.duration)
       }
     }
+    const onSeeked = () => {
+      // After the seek trick, reset to start and capture the real duration
+      if (isFinite(audio.duration) && audio.duration > 0) {
+        setDuration(audio.duration)
+        audio.currentTime = 0
+      }
+    }
     const onEnded = () => { setIsPlaying(false); setProgress(0) }
 
     audio.addEventListener('timeupdate', onTimeUpdate)
     audio.addEventListener('loadedmetadata', onLoadedMetadata)
     audio.addEventListener('durationchange', onDurationChange)
+    audio.addEventListener('seeked', onSeeked)
     audio.addEventListener('ended', onEnded)
 
     return () => {
       audio.removeEventListener('timeupdate', onTimeUpdate)
       audio.removeEventListener('loadedmetadata', onLoadedMetadata)
       audio.removeEventListener('durationchange', onDurationChange)
+      audio.removeEventListener('seeked', onSeeked)
       audio.removeEventListener('ended', onEnded)
     }
   }, [duration])
