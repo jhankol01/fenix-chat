@@ -115,11 +115,13 @@ export async function login(req, res, next) {
     }
 
     const { email, password, rememberMe } = req.body
+    const loginInput = (email || '').trim()
 
-    // Find user by email or username
-    let user = await User.findByEmail(email)
+    // Find user by email or username (strip @ if present)
+    let user = await User.findByEmail(loginInput)
     if (!user) {
-      user = await User.findByUsername(email)
+      const cleanUsername = loginInput.startsWith('@') ? loginInput.slice(1) : loginInput
+      user = await User.findByUsername(cleanUsername)
     }
     if (!user) {
       return res.status(401).json({ error: 'Credenciales inválidas' })
