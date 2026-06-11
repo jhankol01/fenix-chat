@@ -63,4 +63,8 @@ router.use('/friend-requests', friendRequestRoutes);
 import walletRoutes from './walletRoutes.js';
 router.use('/wallet', walletRoutes);
 
+// Webhook routes (external notifications from Empire Call, etc.)
+import webhookRoutes from './webhookRoutes.js';
+router.use('/webhook', webhookRoutes);
+
 export default router;

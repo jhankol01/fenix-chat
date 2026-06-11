@@ -32,6 +32,9 @@ const io = new SocketIOServer(server, {
 // Register socket event handlers
 chatHandler(io);
 
+// Store io on app so routes (webhooks) can send real-time notifications
+app.set('io', io);
+
 // ─── Security Middleware ────────────────────────────────────────────────────────
 app.use(helmet());
 
