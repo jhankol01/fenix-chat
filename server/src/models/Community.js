@@ -128,7 +128,7 @@ class Community {
 
   static async getMembers(communityId) {
     const result = await query(`
-      SELECT u.id, u.username, u.display_name, u.avatar_url, u.status,
+      SELECT u.id, u.username, u.display_name, u.avatar_url, u.status_text, u.status_emoji,
         cm.role, cm.joined_at
       FROM community_members cm
       JOIN users u ON cm.user_id = u.id
