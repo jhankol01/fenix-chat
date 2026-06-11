@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fenix Messenger - Nos mudamos!</title>
+  <meta name="description" content="Fenix Chat se ha mudado a fenixmessenger.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a1a;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Animated background */
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .bg-glow::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 30% 20%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
+                  radial-gradient(ellipse at 70% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
+                  radial-gradient(ellipse at 50% 50%, rgba(236, 72, 153, 0.05) 0%, transparent 50%);
+      animation: bgRotate 20s linear infinite;
+    }
+    @keyframes bgRotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Particles */
+    .particle {
+      position: fixed;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(168, 85, 247, 0.4);
+      animation: float 8s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); opacity: 0.4; }
+      50% { transform: translateY(-100px) scale(1.5); opacity: 0.8; }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 440px;
+      max-width: 94vw;
+    }
+
+    /* Logo */
+    .logo-area {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .logo-icon {
+      width: 70px;
+      height: 70px;
+      background: linear-gradient(135deg, #7C3AED, #EC4899);
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      margin-bottom: 12px;
+      box-shadow: 0 10px 40px rgba(124, 58, 237, 0.3);
+      animation: logoPulse 3s ease-in-out infinite;
+    }
+    @keyframes logoPulse {
+      0%, 100% { box-shadow: 0 10px 40px rgba(124, 58, 237, 0.3); }
+      50% { box-shadow: 0 10px 60px rgba(124, 58, 237, 0.5); }
+    }
+    .logo-text {
+      font-size: 1.6rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #A855F7, #EC4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Chat Window */
+    .chat-window {
+      background: rgba(20, 20, 40, 0.8);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+    .chat-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .chat-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #7C3AED, #EC4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+    .chat-name { font-weight: 700; font-size: 0.95rem; }
+    .chat-status {
+      font-size: 0.72rem;
+      color: #10b981;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chat-status::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+    }
+
+    .chat-body {
+      padding: 20px;
+      min-height: 260px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .msg {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 18px;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: msgIn 0.4s ease forwards;
+    }
+    .msg--bot {
+      background: rgba(124, 58, 237, 0.15);
+      border: 1px solid rgba(124, 58, 237, 0.1);
+      border-bottom-left-radius: 6px;
+      align-self: flex-start;
+    }
+    .msg--highlight {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(236, 72, 153, 0.15));
+      border: 1px solid rgba(168, 85, 247, 0.25);
+    }
+    @keyframes msgIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Typing indicator */
+    .typing {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 12px 18px;
+      background: rgba(124, 58, 237, 0.1);
+      border-radius: 18px;
+      border-bottom-left-radius: 6px;
+      align-self: flex-start;
+      max-width: 70px;
+    }
+    .typing-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: rgba(168, 85, 247, 0.6);
+      animation: typingBounce 1.4s ease-in-out infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-6px); }
+    }
+
+    /* CTA Button */
+    .cta-area {
+      padding: 0 20px 20px;
+    }
+    .cta-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #7C3AED, #A855F7);
+      border: none;
+      border-radius: 14px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: msgIn 0.5s ease forwards;
+      box-shadow: 0 8px 30px rgba(124, 58, 237, 0.3);
+    }
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(124, 58, 237, 0.5);
+    }
+    .cta-btn svg { flex-shrink: 0; }
+
+    /* Timer */
+    .redirect-timer {
+      text-align: center;
+      padding: 12px 20px 16px;
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.35);
+    }
+
+    .hidden { display: none; }
+
+    /* Mobile */
+    @media (max-width: 480px) {
+      .container { max-width: 96vw; }
+      .chat-body { min-height: 220px; padding: 16px; }
+      .msg { font-size: 0.84rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <!-- Particles -->
+  <div class="particle" style="left:10%;top:20%;animation-delay:0s"></div>
+  <div class="particle" style="left:80%;top:30%;animation-delay:1s"></div>
+  <div class="particle" style="left:40%;top:70%;animation-delay:2s"></div>
+  <div class="particle" style="left:70%;top:85%;animation-delay:3s"></div>
+  <div class="particle" style="left:20%;top:60%;animation-delay:4s"></div>
+  <div class="particle" style="left:90%;top:10%;animation-delay:5s"></div>
+
+  <div class="container">
+    <div class="logo-area">
+      <div class="logo-icon">🔥</div>
+      <div class="logo-text">Fenix Messenger</div>
+    </div>
+
+    <div class="chat-window">
+      <div class="chat-header">
+        <div class="chat-avatar">🤖</div>
+        <div>
+          <div class="chat-name">Fenix Bot</div>
+          <div class="chat-status">En línea</div>
+        </div>
+      </div>
+
+      <div class="chat-body" id="chatBody">
+        <!-- Messages will be injected here -->
+      </div>
+
+      <div class="cta-area hidden" id="ctaArea">
+        <a href="https://fenixmessenger.com" class="cta-btn" id="ctaBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Ir a fenixmessenger.com
+        </a>
+      </div>
+
+      <div class="redirect-timer hidden" id="timer">
+        Serás redirigido automáticamente en <strong id="countdown">15</strong> segundos
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const messages = [
+      { text: "¡Hola! 👋 Soy el bot de Fenix.", delay: 800 },
+      { text: "Tenemos noticias importantes para ti...", delay: 1600 },
+      { text: "🚀 ¡Fenix Chat ha evolucionado! Ahora somos <strong>Fenix Messenger</strong> y nos hemos mudado a un nuevo hogar.", delay: 2400, highlight: true },
+      { text: "📍 Nuestra nueva dirección es: <strong>fenixmessenger.com</strong>", delay: 2000 },
+      { text: "Tu cuenta, tus chats y tus comunidades siguen ahí. ¡Solo cambia la dirección! 🔥", delay: 2000 },
+    ];
+
+    const chatBody = document.getElementById('chatBody');
+    const ctaArea = document.getElementById('ctaArea');
+    const timerEl = document.getElementById('timer');
+    const countdownEl = document.getElementById('countdown');
+
+    let currentMsg = 0;
+    let typingEl = null;
+
+    function showTyping() {
+      typingEl = document.createElement('div');
+      typingEl.className = 'typing';
+      typingEl.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+      chatBody.appendChild(typingEl);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    function hideTyping() {
+      if (typingEl) {
+        typingEl.remove();
+        typingEl = null;
+      }
+    }
+
+    function showMessage(msgData) {
+      hideTyping();
+      const div = document.createElement('div');
+      div.className = `msg msg--bot ${msgData.highlight ? 'msg--highlight' : ''}`;
+      div.innerHTML = msgData.text;
+      div.style.animationDelay = '0s';
+      chatBody.appendChild(div);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    function playSequence() {
+      if (currentMsg >= messages.length) {
+        // Show CTA and timer
+        setTimeout(() => {
+          ctaArea.classList.remove('hidden');
+          timerEl.classList.remove('hidden');
+          startCountdown();
+        }, 600);
+        return;
+      }
+
+      const msg = messages[currentMsg];
+      showTyping();
+
+      setTimeout(() => {
+        showMessage(msg);
+        currentMsg++;
+        setTimeout(playSequence, 400);
+      }, msg.delay);
+    }
+
+    function startCountdown() {
+      let seconds = 15;
+      const interval = setInterval(() => {
+        seconds--;
+        countdownEl.textContent = seconds;
+        if (seconds <= 0) {
+          clearInterval(interval);
+          window.location.href = 'https://fenixmessenger.com';
+        }
+      }, 1000);
+    }
+
+    // Start the sequence
+    setTimeout(playSequence, 500);
+  </script>
+</body>
+</html>
