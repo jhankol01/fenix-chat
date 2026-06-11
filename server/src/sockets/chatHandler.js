@@ -224,15 +224,16 @@ export default function chatHandler(io) {
           )
           if (empireCheck.rows.length > 0) {
             // Admin is replying to Empire Call — forward to Empire
-            const fetch = (await import('node-fetch')).default
             fetch('https://ssnempire.shop/admin_reply.php', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 secret: 'fenix-empire-2024-secure',
                 message: content,
-                target_user: '', // last escalated user
+                target_user: '',
               }),
+            }).then(r => r.json()).then(d => {
+              logger.info(`Empire reply forwarded: ${JSON.stringify(d)}`)
             }).catch(err => logger.error('Empire reply forward error:', err.message))
             logger.info(`Forwarded admin reply to Empire Call: ${content.slice(0, 50)}`)
           }
