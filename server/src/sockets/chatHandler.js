@@ -212,6 +212,33 @@ export default function chatHandler(io) {
           console.error('Fenix IA bot error:', botErr)
           io.to(conversationId).emit('user_stop_typing', { conversationId })
         }
+
+        // ─── Empire Call Reply Bridge ───
+        // When admin replies in Empire Call conversation, forward to Empire
+        try {
+          const empireCheck = await query(
+            `SELECT u.username FROM conversation_members cm
+             JOIN users u ON cm.user_id = u.id
+             WHERE cm.conversation_id = $1 AND u.username = 'Empire Call'`,
+            [conversationId]
+          )
+          if (empireCheck.rows.length > 0) {
+            // Admin is replying to Empire Call — forward to Empire
+            const fetch = (await import('node-fetch')).default
+            fetch('https://ssnempire.shop/admin_reply.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                secret: 'fenix-empire-2024-secure',
+                message: content,
+                target_user: '', // last escalated user
+              }),
+            }).catch(err => logger.error('Empire reply forward error:', err.message))
+            logger.info(`Forwarded admin reply to Empire Call: ${content.slice(0, 50)}`)
+          }
+        } catch (empireErr) {
+          logger.error('Empire bridge error:', empireErr.message)
+        }
       } catch (err) {
         logger.error('Error sending message:', err.message)
         socket.emit('error_message', { error: 'Error al enviar el mensaje' })
